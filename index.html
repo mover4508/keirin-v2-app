@@ -1,0 +1,2806 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="application-name" content="競輪予想"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icon-192.png"><meta name="theme-color" content="#096450"><title>競輪予想 Ver.2</title>
+<style>
+:root{color-scheme:light;--ink:#142827;--accent:#096450;--line:#ccd9d3}*{box-sizing:border-box}body{margin:0;background:#eef4f0;color:var(--ink);font:16px/1.55 system-ui,sans-serif}main{max-width:760px;margin:auto;padding:24px 15px 60px}h1{font-size:clamp(26px,7vw,40px);margin:0}h2{font-size:20px;margin:0 0 12px}header{margin-bottom:20px}p{margin:8px 0}section{background:white;border:1px solid var(--line);border-radius:16px;padding:17px;margin:14px 0}label{display:block;font-weight:650;margin-top:10px}input,textarea,select,button{font:inherit}input:not([type=file]),textarea,select{width:100%;padding:9px;border:1px solid #879e92;border-radius:7px;background:white}textarea{min-height:104px}button{border:0;border-radius:8px;background:var(--accent);color:white;padding:9px 12px;margin:8px 5px 0 0;min-height:44px}button.secondary{background:#e0eee8;color:var(--ink)}.muted{color:#47625a;font-size:14px}.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:10px}.backup-jump{display:inline-block;color:var(--accent);padding:10px 0;margin-right:20px;min-height:44px;font-weight:700}#predictionPanel,#backupPanel{scroll-margin-top:12px}#jumpToPrediction{display:inline-block;color:var(--accent);padding:10px 0;min-height:44px;font-weight:700}#jumpToPrediction[hidden]{display:none}.raceDivision{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;margin:0 0 8px}.raceDivision span{border-radius:6px;background:#e0eee8;color:#124f40;padding:4px 8px;font-weight:750}.ticketSummary{display:flex;align-items:baseline;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:10px;background:#f4faf6;padding:8px 12px;margin:7px 0}.ticketSummary strong{font-variant-numeric:tabular-nums;font-size:clamp(23px,8vw,32px);letter-spacing:.03em;line-height:1.2}.ticketSummary span{font-size:14px}.ticket{border-top:1px solid var(--line);padding-top:9px;margin-top:9px}.audit-card{border-left:3px solid var(--accent);background:#f4faf6;margin:12px 0;padding:8px 12px;border-radius:0 8px 8px 0}.audit-card p{margin:5px 0}.audit-card strong{font-size:18px}.num{font-size:24px;font-weight:750}.point-table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}.point-table th,.point-table td{text-align:right;padding:7px 3px;border-bottom:1px solid var(--line)}.point-table th:first-child{text-align:left}pre{white-space:pre-wrap;overflow-wrap:anywhere}details{margin:10px 0}[role=status]{overflow-wrap:anywhere;color:#6c310d}
+</style>
+<main><header><h1>競輪予想 Ver.2</h1><p>3連複 · 1点100円 · 1〜3点を自動選択</p><a id="jumpToLearning" class="backup-jump" href="#learningRecord">学習・改善記録</a><a class="backup-jump" href="#backupPanel">バックアップ</a><a id="jumpToPrediction" href="#predictionPanel" hidden>買い目を見る</a>
+<details id="appSetup"><summary id="appSetupHeading">ホーム画面に追加</summary>
+<button id="installApp" type="button" hidden>競輪予想をインストール</button>
+<p id="installHelp">スマートフォンで配信版を開くと、ホーム画面に追加できます。</p><p id="offlineStatus" class="muted" role="status"></p>
+</details></header>
+<section><h2>予想</h2>
+<label for="entry">出走表・3連複オッズ表</label><textarea id="entry" rows="4" placeholder="チャリロトの開催情報、出走表と3連複オッズ表を貼り付け"></textarea>
+<p class="muted">チャリロトで3連複を表示し、開催情報を含む1レース分の出走表とオッズ表をまとめて貼り付けます。 締切・発走時刻が別にある場合は、開催日・競輪場・レース番号が載った時刻情報を先にこの欄へ貼り付けられます。</p>
+<button id="retryEntry" class="secondary">貼り付けた表を読み取る</button>
+<p id="entryStatus" role="status"></p>
+<details id="receivePanel"><summary>共有・ファイルから取り込む</summary>
+<label for="raceFile">1レース分の取込ファイル</label><input id="raceFile" type="file" accept=".json,.txt,application/json,text/plain">
+<p class="muted">チャットの取込用JSON、または表の本文を保存したテキストを選びます。</p>
+<div id="receivedRace" hidden><p id="receivedInfo"></p><button id="acceptReceived" type="button">このレースを取り込む</button><button id="dismissReceived" class="secondary" type="button">この受信を取り消す</button></div>
+<p id="receiveStatus" role="status"></p></details>
+<details id="sourceRecovery"><summary id="sourceRecoveryHeading">貼り付け履歴</summary>
+<label for="sourceChoice">保存した原文</label><select id="sourceChoice"></select>
+<button id="restoreSource" class="secondary" type="button">入力欄に戻す</button>
+<p id="sourceRecoveryStatus" role="status"></p></details></section>
+<section id="predictionPanel" aria-labelledby="predictionHeading"><h2 id="predictionHeading" tabindex="-1">予想された買い目</h2>
+<div id="prediction"><p class="muted">出走表と3連複オッズ表を貼り付けると、ここに買い目が表示されます。</p></div>
+<label for="history">保存済みレース</label><select id="history"><option value="">レースを選択</option></select></section>
+<section><h2>結果照合</h2><label for="result">結果表</label><textarea id="result" rows="4" placeholder="KEIRIN.JPの開催情報と3連複払戻欄を含めて貼り付け"></textarea>
+<button id="retryResult" class="secondary" type="button">貼り付けた結果を読み取る</button><p id="resultStatus" role="status"></p><div id="review"></div></section>
+<section><h2>集計</h2><div id="metrics"></div>
+<details id="dailyBalance"><summary>開催日別の収支</summary><p id="balanceTrend" class="muted"></p><div id="balancePicker" hidden><label for="balanceDate">開催日を選択</label><select id="balanceDate"></select></div><div id="balanceDay"></div></details>
+<details><summary>オッズ人気順との成績比較</summary><div id="marketComparison"></div></details><h3>自動学習</h3><div id="learningStatus"></div><details><summary>継続改善の点検</summary><div id="continuousReview"></div></details><details><summary>入力・照合・学習の点検</summary><div id="systemCheck"></div></details><details><summary>1点・2点・3点・自動選択の比較</summary><div id="pointComparison"></div></details><details><summary>区分・グレード・車立・点数別の成績</summary><div id="segments"><p class="muted">照合済みのレースはまだありません。</p></div></details><details id="learningRecord" open><summary>学習・改善記録</summary><p id="learningHistorySummary" class="muted"></p><label for="learningRace">学習の活用状況を見るレース</label><select id="learningRace"></select><div id="audit"><p class="muted">予想を保存すると、使ったモデルとその理由が表示されます。</p></div><details open><summary>過去レースへの学習適用（事後検証）</summary><div id="pastLearning"></div></details></details>
+<details><summary>詳細設定・検証条件</summary><p class="muted">ここは初期の検証条件を変更するときだけ使います。通常の学習は結果照合から自動で進みます。</p><div id="settings" class="row"></div><button id="saveSettings">検証条件を保存</button><button id="resetSettings" class="secondary">検証条件を初期値に戻す</button><p id="settingsStatus" role="status"></p><details><summary>設定変更履歴・復元</summary><p class="muted">変更前の設定を記録します。復元時も新しい履歴を作成し、既存レースは変更しません。</p><div id="configHistory"></div></details></details>
+</section>
+<section id="backupPanel"><h2>バックアップ</h2>
+<p id="driveConnectionStatus" role="status">保存状態を確認しています。</p>
+<p id="driveReceipt" class="muted"></p>
+<button id="share" type="button">Driveに共有</button>
+<button id="export" class="secondary" type="button">JSONをダウンロード</button>
+<button id="auditExport" class="secondary" type="button">整合性を点検・監査レポートを保存</button>
+<details id="autoDriveSettings"><summary>Google Driveの自動保存</summary>
+<p class="muted">初回は、配信元を登録したGoogle OAuthクライアントIDと、Googleアカウントでの許可が必要です。共有・ダウンロードはこの設定なしで使えます。</p>
+<label>Google OAuth クライアントID<input id="client" autocomplete="off"></label>
+<button id="connect" type="button">接続してバックアップ</button><button id="backupNow" class="secondary" type="button">今すぐ保存</button><button id="disconnect" class="secondary" type="button">切断</button>
+<details><summary>既存のフォルダを指定する</summary>
+<div class="row"><label>Picker用プロジェクト番号<input id="project" inputmode="numeric" autocomplete="off"></label><label>Picker用APIキー<input id="pickerKey" autocomplete="off"></label></div>
+<button id="chooseFolder" class="secondary" type="button">既存フォルダを選ぶ</button></details></details>
+<details><summary>バックアップを復元する</summary><label>JSONファイルを選ぶ<input id="import" type="file" accept=".json,application/json"></label></details>
+<p id="backupStatus" role="status"></p></section><p id="releaseNumber" class="muted"></p></main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const KEY="keirin-v2.1";
+const VERSION="2.2.0", supportedVersions=new Set(["2.1.0",VERSION]);
+const RELEASE="2.4.12";
+const TRAINING_PROTOCOL=2;
+const BUY=Object.freeze({yen:100,min:1,max:3,minRiders:5,maxRiders:9});
+const POINT_POLICY=Object.freeze({version:1,id:"standard",label:"標準基準",firstGap:.10,secondGap:.075});
+const POINT_VARIANTS=[
+  {...POINT_POLICY,id:"compact",label:"少ない点数を選びやすい基準",firstGap:.08,secondGap:.06},
+  {...POINT_POLICY,id:"wide",label:"多い点数を選びやすい基準",firstGap:.12,secondGap:.09}
+];
+const POINT_REVIEW={minimum:60,window:100,minChanged:4,minReturnGain:.03};
+const EXPECTED_POLICY={...POINT_POLICY,id:"expected",label:"期待値を使う基準"};
+const EXPECTED={minimum:30,window:300,oddsBands:[5,10,20,40,80],z:1.6448536269514722};
+const ENGINE_SIZE=12;
+const sourceStates={saved:"原文保存済み",waiting:"表の一部を読み取り済み",complete:"処理済み",failed:"原文保存済み・要確認"};
+let displayedSources=new Map();
+const PARAMS=Object.freeze({
+  raceSpread:20, marketCoverage:.7, favoriteOddsStart:4, favoriteOddsScale:16,
+  hardThreshold:.33, upsetThreshold:.66, historyWindow:300, trainingMinimum:30,
+  shrinkage:50, weightSensitivity:4, weightMin:.85, weightMax:1.15,
+  validationWindow:100, validationMinimum:50, validationHitMargin:3,
+  validationAlpha:.05, validationReturnMargin:0, minLineWeight:1.6, forecastTimeoutMs:3500,
+  relatedGradeFactor:.65, relatedRegimeFactor:.55, localValidationMinimum:12,
+  pointFirstGap:POINT_POLICY.firstGap, pointSecondGap:POINT_POLICY.secondGap,
+  compactFirstGap:POINT_VARIANTS[0].firstGap, compactSecondGap:POINT_VARIANTS[0].secondGap,
+  wideFirstGap:POINT_VARIANTS[1].firstGap, wideSecondGap:POINT_VARIANTS[1].secondGap,
+  pointMinimum:POINT_REVIEW.minimum, pointWindow:POINT_REVIEW.window,
+  pointMinChanged:POINT_REVIEW.minChanged, pointMinReturnGain:POINT_REVIEW.minReturnGain,
+  expectedMinimum:EXPECTED.minimum, expectedWindow:EXPECTED.window,
+  expectedOdds1:EXPECTED.oddsBands[0], expectedOdds2:EXPECTED.oddsBands[1], expectedOdds3:EXPECTED.oddsBands[2],
+  expectedOdds4:EXPECTED.oddsBands[3], expectedOdds5:EXPECTED.oddsBands[4],
+  expectedZ:EXPECTED.z, expectedNetMinimum:0, reviewBatch:4, backupDelayMs:250,
+  marketValidationMinimum:50, venueHistoryWindow:60, venueHistoryMinimum:10,
+  venueScoreWeight:.12, venueScoreCap:.04, venueShrinkage:30
+});
+const divisions=["堅め","標準","荒れ"];
+const fields={
+  raceSpread:["得点差の基準",1,60,.5],
+  marketCoverage:["区分判定に使うオッズ取得率",.1,1,.05],
+  favoriteOddsStart:["人気オッズの基準",1,100,.5],
+  favoriteOddsScale:["人気オッズの差の基準",1,100,.5],
+  hardThreshold:["堅めの境界",.05,.85,.01],
+  upsetThreshold:["荒れの境界",.15,.95,.01],
+  historyWindow:["学習の最大件数",30,2000,1],
+  trainingMinimum:["学習開始件数",30,500,1],
+  shrinkage:["少数データの補正",50,500,1],
+  weightSensitivity:["学習重みの反応",0,8,.1],
+  weightMin:["学習重みの下限",.8,1,.01],
+  weightMax:["学習重みの上限",1,1.2,.01],
+  validationWindow:["比較の最大件数",50,500,1],
+  validationMinimum:["比較の最低件数",50,500,1],
+  validationHitMargin:["必要な的中レース差",3,20,1],
+  validationReturnMargin:["各期間で必要な回収率差（0.01＝1ポイント）",0,.20,.01],
+  minLineWeight:["ライン評価の倍率",1,3,.1],
+  relatedGradeFactor:["異なるグレードの補助データの倍率",.1,1,.01],
+  relatedRegimeFactor:["異なる区分の補助データの倍率",.1,1,.01],
+  localValidationMinimum:["補助データ利用時に必要な同条件の比較件数",12,500,1],
+  validationAlpha:["モデル採用の確率基準",.005,.05,.005],
+  pointFirstGap:["標準の1点判定に必要な評価差",.01,.4,.005],
+  pointSecondGap:["標準の2点判定に必要な評価差",.01,.4,.005],
+  compactFirstGap:["少なめ基準の1点判定に必要な評価差",.01,.4,.005],
+  compactSecondGap:["少なめ基準の2点判定に必要な評価差",.01,.4,.005],
+  wideFirstGap:["多め基準の1点判定に必要な評価差",.01,.4,.005],
+  wideSecondGap:["多め基準の2点判定に必要な評価差",.01,.4,.005],
+  pointMinimum:["点数基準の採用比較に必要な件数",60,500,1],
+  pointWindow:["点数基準の採用比較の最大件数",60,600,1],
+  pointMinChanged:["各検証期間で点数が変わる必要件数",4,50,1],
+  pointMinReturnGain:["点数基準に必要な回収率差（0.01＝1ポイント）",.03,.5,.01],
+  expectedMinimum:["期待値を計算するために必要な件数",30,500,1],
+  expectedWindow:["期待値の計算に使う最大件数",30,2000,1],
+  expectedOdds1:["オッズ帯の境界1",1.1,1000,.1],
+  expectedOdds2:["オッズ帯の境界2",1.1,1000,.1],
+  expectedOdds3:["オッズ帯の境界3",1.1,1000,.1],
+  expectedOdds4:["オッズ帯の境界4",1.1,1000,.1],
+  expectedOdds5:["オッズ帯の境界5",1.1,1000,.1],
+  expectedZ:["期待値推定の保守性（z値）",EXPECTED.z,4,"any"],
+  expectedNetMinimum:["点数追加に必要な保守推定の期待収支（円）",0,100,1],
+  forecastTimeoutMs:["天気予報の取得待ち（ミリ秒）",1000,15000,100],
+  reviewBatch:["継続検証で一度に処理する件数",1,16,1],
+  backupDelayMs:["Drive書き込みをまとめる待ち時間（ミリ秒）",100,5000,50],
+  marketValidationMinimum:["人気順を採用判定に使う最低比較件数",50,500,1],
+  venueHistoryWindow:["開催地の傾向に使う最大件数",10,300,1],
+  venueHistoryMinimum:["開催地の傾向に必要な最低件数",10,100,1],
+  venueScoreWeight:["開催地のライン傾向を反映する倍率",0,.25,.01],
+  venueScoreCap:["開催地情報による評価差の上限",.005,.08,.005],
+  venueShrinkage:["開催地の少数データを補正する件数",10,100,1]
+};
+const expectedBands=p=>[p.expectedOdds1,p.expectedOdds2,p.expectedOdds3,p.expectedOdds4,p.expectedOdds5];
+const expectedSignature=p=>JSON.stringify([p.expectedMinimum,p.expectedWindow,...expectedBands(p),p.expectedZ,p.expectedNetMinimum]);
+let db={schema:1,records:{}};
+let journal=null, queue=Promise.resolve();
+const ready=openJournal().catch(()=>null).then(async value=>{
+  journal=value;
+  const saved=await readStored();
+  if(saved)db=saved;
+}).catch(()=>{$("backupStatus").textContent="既存データを読み込めません。バックアップを確認してください。";});
+function openJournal(){
+  return new Promise((resolve,reject)=>{
+    if(!window.indexedDB){resolve(null);return}
+    const request=indexedDB.open(KEY+"-journal",1);
+    request.onupgradeneeded=()=>request.result.createObjectStore("state");
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+    request.onblocked=()=>reject(Error("端末内の記録を開けません。"));
+  });
+}
+function readStored(){
+  const legacy=()=>JSON.parse(localStorage.getItem(KEY)||"null");
+  if(!journal)return Promise.resolve().then(legacy);
+  return new Promise((resolve,reject)=>{
+    const request=journal.transaction("state","readonly").objectStore("state").get("snapshot");
+    request.onsuccess=()=>{try{resolve(request.result??legacy())}catch(e){reject(e)}};
+    request.onerror=()=>reject(request.error);
+  });
+}
+function writeStored(next){
+  if(!journal){localStorage.setItem(KEY,JSON.stringify(next));return Promise.resolve()}
+  return new Promise((resolve,reject)=>{
+    const transaction=journal.transaction("state","readwrite");
+    transaction.oncomplete=()=>resolve();
+    transaction.onabort=()=>reject(transaction.error??Error("端末内に保存できませんでした。"));
+    transaction.objectStore("state").put(next,"snapshot");
+  });
+}
+const normal=s=>String(s).normalize("NFKC").replace(/\r/g,"");
+const combo=a=>a.map(Number).sort((x,y)=>x-y).join("-");
+const clamp=(x,lo=0,hi=1)=>Math.max(lo,Math.min(hi,x));
+const betPattern="([1-9])\\s*[-=＝–−－]\\s*([1-9])\\s*[-=＝–−－]\\s*([1-9])";
+const pattern=(suffix="")=>new RegExp("(?<!\\d)"+betPattern+"(?!\\d)"+suffix,"g");
+const todayJst=now=>new Date(now.getTime()+9*3600000).toISOString().slice(0,10);
+const venues="函館 青森 いわき平 弥彦 前橋 取手 宇都宮 大宮 西武園 京王閣 立川 松戸 千葉 TIPSTARドーム千葉 川崎 平塚 小田原 伊東温泉 伊東 静岡 名古屋 岐阜 大垣 豊橋 富山 松阪 四日市 福井 奈良 向日町 京都向日町 和歌山 岸和田 玉野 広島 防府 高松 小松島 高知 松山 小倉 久留米 武雄 佐世保 別府 熊本".split(" ").sort((a,b)=>b.length-a.length);
+const venueMatcher=new RegExp("(?:^|[\\s>【（(｜|])("+venues.join("|")+")(?=競輪|[\\s】）)｜|]|$)","u");
+const canonicalVenue=name=>({"伊東":"伊東温泉","向日町":"京都向日町"}[name]??name);
+const dateMatcher=/(\d{4})[年/.-]\s*(\d{1,2})[月/.-]\s*(\d{1,2})日?/u;
+const raceMatcher=/(?<!\d)(?:第\s*)?(1[0-2]|0?[1-9])\s*(?:R\b|レース)/giu;
+const dateKey=m=>m.slice(1,4).map((v,i)=>i?v.padStart(2,"0"):v).join("-");
+const jpMeetingHeading=new RegExp("^("+venues.join("|")+")競輪場[ \\t]+(?:[FG](?:III|II|I|[123])|GP)(?=[ \\t]|$)","iu");
+function jpResultIdentity(lines){
+  const payouts=lines.map((line,i)=>({match:/^■\s*払戻金\s*(\d{4})[年/.-](\d{1,2})[月/.-](\d{1,2})日?[ \t]+\d{1,2}:\d{2}[ \t]+更新$/u.exec(line),i})).filter(x=>x.match);
+  if(!lines.some(line=>/^KEIRIN\.JP\s+TOP$/iu.test(line))||!payouts.length||
+     !lines.some(line=>/^■\s*着順$/u.test(line)))return null;
+  const meetings=lines.map((line,i)=>({match:jpMeetingHeading.exec(line),i})).filter(x=>x.match);
+  const selected=lines.map((line,i)=>({match:/^(1[0-2]|0?[1-9])\s*R\s*[ASL]級.*(?:発売)?締切\s+\d{1,2}:\d{2}\s+発走予定\s+\d{1,2}:\d{2}(?:\s|$)/iu.exec(line),i})).filter(x=>x.match);
+  if(meetings.length!==1||selected.length!==1||payouts.length!==1||
+     meetings[0].i>=selected[0].i||selected[0].i>=payouts[0].i)
+    throw Error("KEIRIN.JPの対象レースを1件に特定できません。松山などの開催場、対象レース、払戻金が載った1レースのページを貼り付けてください。");
+  const date=dateKey(payouts[0].match);
+  const [,month,day]=date.split("-").map(Number);
+  const isDate=m=>Number(m?.[1])===month&&Number(m?.[2])===day;
+  const meetingDates=lines.slice(meetings[0].i+1,selected[0].i).map(line=>/^(\d{1,2})\/(\d{1,2})\((?:初日|[0-9]+日目|最終日)\)$/u.exec(line));
+  const today=lines.slice(selected[0].i+1,payouts[0].i).map(line=>/^今日\((\d{1,2})\/(\d{1,2})\)$/u.exec(line)).filter(Boolean);
+  if(!meetingDates.some(isDate)||today.length!==1||!isDate(today[0]))
+    throw Error("KEIRIN.JPの開催日を確認できません。開催日と対象レースが明記された結果表を貼り付けてください。");
+  const venue=canonicalVenue(meetings[0].match[1]), race=Number(selected[0].match[1])+"R";
+  const timing=readRaceTimes(selected[0].match[0],{date,venue,race});
+  return {id:date+" "+venue+" "+race,date,venue,race,officialDeadlineAt:timing.deadlineAt,officialStartAt:timing.startAt};
+}
+function raceIdentity(text){
+  const lines=normal(text).split("\n").map(l=>l.trim()).filter(Boolean);
+  const official=jpResultIdentity(lines);
+  if(official){
+    if(!Number.isFinite(Date.parse(official.date))||new Date(official.date).toISOString().slice(0,10)!==official.date)
+      throw Error("開催日を読み取れませんでした。開催情報を含めて貼り付けてください。");
+    return official;
+  }
+  const explicit=new Set(lines.filter(l=>/^(?:第\s*(?:1[0-2]|[1-9])\s*レース|(?:1[0-2]|[1-9])\s*R\s*(?:[ASL]級|着順))/iu.test(l)).flatMap(l=>[...l.matchAll(raceMatcher)].map(m=>Number(m[1]))));
+  if(explicit.size>1)throw Error("複数のレースの詳細があります。1レース分を貼り付けてください。");
+  const complete=new Set();
+  for(const line of lines){
+    if(line.length>240)continue;
+    const date=line.match(dateMatcher), venue=line.match(venueMatcher);
+    const races=[...line.matchAll(raceMatcher)];
+    if(date&&venue&&races.length===1)complete.add(dateKey(date)+" "+canonicalVenue(venue[1])+" "+Number(races[0][1])+"R");
+  }
+  if(!complete.size){
+    for(let i=0;i<lines.length;i++){
+      const window=lines.slice(i,i+5).filter(l=>l.length<140);
+      const oneDate=new Set(window.map(l=>l.match(dateMatcher)).filter(Boolean).map(dateKey));
+      const oneVenue=new Set(window.map(l=>l.match(venueMatcher)?.[1]).filter(Boolean).map(canonicalVenue));
+      const raceLines=window.filter(l=>/^(?:第\s*)?(?:1[0-2]|0?[1-9])\s*(?:R\b|レース)|(?:出走表詳細|オッズ表詳細|レース結果|払戻)/iu.test(l));
+      const oneRace=new Set(raceLines.flatMap(l=>[...l.matchAll(raceMatcher)].map(m=>Number(m[1]))));
+      if(oneDate.size===1&&oneVenue.size===1&&oneRace.size===1)complete.add([...oneDate][0]+" "+[...oneVenue][0]+" "+[...oneRace][0]+"R");
+    }
+  }
+  if(complete.size!==1)throw Error(complete.size?"複数のレースを検出しました。1レース分の表を貼り付けてください。":"開催日・競輪場・レース番号が載った範囲も含めて貼り付けてください。");
+  const id=[...complete][0], [date,venue,race]=id.split(" ");
+  if(explicit.size&&![...explicit].includes(Number(race.slice(0,-1))))throw Error("開催見出しとレース番号が一致しません。");
+  if(!Number.isFinite(Date.parse(date))||new Date(date).toISOString().slice(0,10)!==date)throw Error("開催日を読み取れませんでした。開催情報を含めて貼り付けてください。");
+  return {id,date,venue,race};
+}
+const raceTimePattern=String.raw`([01]?[0-9]|2[0-3]):([0-5][0-9])`;
+const startLabel=String.raw`発走(?:予定)?(?:時刻)?`;
+const cutoffLabel=String.raw`(?:発売|投票)?締切(?:予定)?(?:時刻)?`;
+function isRaceTimingHeading(row,race){
+  const date=row.match(dateMatcher), venue=row.match(venueMatcher), numbers=[...row.matchAll(raceMatcher)];
+  return date&&dateKey(date)===race.date&&venue&&canonicalVenue(venue[1])===race.venue&&
+    numbers.length===1&&Number(numbers[0][1])+"R"===race.race;
+}
+function readRaceTimes(raw,race){
+  const rows=raw.split("\n").map(l=>l.trim()).filter(Boolean);
+  const raceNumber=Number(race.race.slice(0,-1));
+  const scheduledRows=rows.filter(row=>/^(?:1[0-2]|0?[1-9])\s*R\s*[ASL]級/iu.test(row));
+  const rowHeading=new RegExp("^0?"+raceNumber+String.raw`\s*R\s*[ASL]級`,"iu");
+  const labelRow=new RegExp("^\\s*■?\\s*(?:"+startLabel+"|"+cutoffLabel+")","u");
+  const bareTime=new RegExp("^"+raceTimePattern+"$","u");
+  const scoped=rows.flatMap((row,i)=>{
+    if(rowHeading.test(row)||isRaceTimingHeading(row,race))return [row];
+    if(scheduledRows.length||!labelRow.test(row))return [];
+    return [bareTime.test(rows[i+1]??"")?row+" "+rows[i+1]:row];
+  });
+  const matches=label=>{
+    const pattern=new RegExp(label+String.raw`[ \t:]*(?:\(予定\)\s*)?`+raceTimePattern+String.raw`(?!\d)`,"gu");
+    const values=new Set(scoped.flatMap(row=>[...row.matchAll(pattern)].map(m=>m[1].padStart(2,"0")+":"+m[2])));
+    return {value:values.size===1?[...values][0]:null,conflict:values.size>1};
+  };
+  const start=matches(startLabel), cutoff=matches(cutoffLabel);
+  const iso=value=>value&&!Number.isNaN(Date.parse(race.date+"T"+value+":00+09:00"))?new Date(race.date+"T"+value+":00+09:00").toISOString():null;
+  if(start.conflict||cutoff.conflict||(cutoff.value&&start.value&&cutoff.value>start.value))
+    return {deadlineAt:null,startAt:null,timingEvidence:"conflict"};
+  return {startAt:iso(start.value),deadlineAt:iso(cutoff.value??start.value),timingEvidence:cutoff.value?"cutoff":start.value?"start":"unverified"};
+}
+function mergeRaceTimes(primary,supplement){
+  const startAt=primary.startAt??supplement.startAt;
+  const a=primary.timingEvidence==="cutoff"?primary.deadlineAt:null;
+  const b=supplement.timingEvidence==="cutoff"?supplement.deadlineAt:null;
+  const cutoff=a??b;
+  if(primary.timingEvidence==="conflict"||supplement.timingEvidence==="conflict"||
+    (a&&b&&a!==b)||(primary.startAt&&supplement.startAt&&primary.startAt!==supplement.startAt)||
+    (startAt&&cutoff&&cutoff>startAt))
+    return {deadlineAt:null,startAt:null,timingEvidence:"conflict"};
+  return {startAt,deadlineAt:cutoff??startAt,timingEvidence:cutoff?"cutoff":startAt?"start":"unverified"};
+}
+function raceMetadata(text,race,now,hasResult=false,supplement=""){
+  const raw=normal(text);
+  const gradeMatcher=/(?:^|[^A-Z0-9])((?:[FG](?:III|II|I|[123])|GP))(?![A-Z0-9])/giu;
+  const relevant=raw.split("\n").filter(row=>isRaceTimingHeading(row,race));
+  const tags=new Set(relevant.flatMap(row=>[...row.matchAll(gradeMatcher)].map(m=>m[1].toUpperCase().replace(/[123]$/,d=>["","I","II","III"][+d]))));
+  const grade=tags.size===1?[...tags][0]:"不明";
+  const timing=mergeRaceTimes(readRaceTimes(raw,race),readRaceTimes(normal(supplement),race));
+  const deadline=timing.deadlineAt?Date.parse(timing.deadlineAt):null;
+  const replay=hasResult||race.date<todayJst(now)||(deadline!==null&&now>=deadline);
+  return {grade,mode:replay?"replay":"live",beforeDeadline:!replay&&deadline!==null&&now<deadline,...timing};
+}
+const legacyTimingCache=new WeakMap();
+function officialEvaluationTiming(r){
+  const result=r.settlement;
+  if(!result)return {};
+  if(result.officialDeadlineAt&&result.officialStartAt)return result;
+  const cached=legacyTimingCache.get(result);
+  if(cached&&cached.id===r.id)return cached;
+  let archived;
+  if(typeof result.raw==="string"&&result.raw.includes("KEIRIN.JP")){
+    try{
+      const identity=raceIdentity(result.raw);
+      if(identity.id===r.id)archived=identity;
+    }catch{}
+  }
+  const timing={id:r.id,officialDeadlineAt:result.officialDeadlineAt??archived?.officialDeadlineAt,
+    officialStartAt:result.officialStartAt??archived?.officialStartAt};
+  legacyTimingCache.set(result,timing);
+  return timing;
+}
+function officialEvaluationCutoff(r){return officialEvaluationTiming(r).officialDeadlineAt??null;}
+function storedStart(r){return officialEvaluationTiming(r).officialStartAt??r.startAt;}
+function confirmedCutoff(r){
+  const official=officialEvaluationCutoff(r);
+  if(Number.isFinite(Date.parse(official)))return official;
+  if(r.timingEvidence==="cutoff")return r.deadlineAt;
+  if(r.timingEvidence||typeof r.input?.raw!=="string")return null;
+  const [date,venue,race]=r.id.split(" "), timing=readRaceTimes(normal(r.input.raw),{date,venue,race});
+  return timing.timingEvidence==="cutoff"?timing.deadlineAt:null;
+}
+function cutoffStatus(r){
+  const cutoff=Date.parse(confirmedCutoff(r)), created=Date.parse(r.createdAt);
+  if(!Number.isFinite(cutoff)||!Number.isFinite(created))return "unknown";
+  if(created>=cutoff)return "after";
+  return r.mode==="live"?"before":"review";
+}
+const confirmedForward=r=>cutoffStatus(r)==="before";
+const cutoffLabels={before:"締切前に予想作成",after:"締切時刻以降に予想作成",unknown:"締切との前後関係を未確認",
+  review:"締切前の実績に含めない検証記録"};
+function cutoffGroups(rows){
+  const groups={before:[],after:[],unknown:[],review:[]};
+  for(const r of rows)groups[cutoffStatus(r)].push(r);
+  return groups;
+}
+const betKind=/3\s*連\s*(?:勝\s*)?複(?:式)?|三連複|三連勝複式|3連勝[ \t|\n-]*複/gu;
+function trifectaSections(raw){
+  return [...raw.matchAll(betKind)].map(marker=>raw.slice(marker.index+marker[0].length)
+    .split(/(?:(?:^|\n)[ \t|]*単(?:[ \t|]|$)|3\s*連\s*(?:勝\s*)?単|2\s*(?:車|枠)\s*(?:連\s*)?[単複]|ワイド|払戻一覧)/u)[0]);
+}
+function readRiders(entry){
+  const riders=new Map();
+  let duplicate=false;
+  const scores=/^\d{2,3}\.\d{1,2}$/;
+  const age=/^\d{2}歳?$/;
+  const pct=value=>value&&/^\d{1,3}(?:\.\d+)?%?$/.test(value)&&Number(value.replace("%",""))<=100?Number(value.replace("%","")):null;
+  for(const line of entry.split("\n")){
+    const row=line.trim().split(/[\t |]+/).filter(Boolean);
+    const nameAt=row.findIndex((x,i)=>!(i===0&&x==="注")&&/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(x));
+    if(nameAt<1||nameAt>4)continue;
+    const numbers=row.slice(0,nameAt).filter(x=>/^[1-9]$/.test(x));
+    if(!numbers.length||numbers.length>2)continue;
+    const id=+numbers.at(-1);
+    const gearAt=row.findIndex((x,i)=>i>nameAt&&/^[1-5]\.\d{2}$/.test(x)&&/^(?:逃|両|追)$/.test(row[i-1]));
+    const scoreAt=gearAt>=0&&row[gearAt+1]==="0.00"?gearAt+1:row.findIndex((x,i)=>i>nameAt&&scores.test(x)&&+x>=35&&+x<=135);
+    if(scoreAt<0)continue;
+    const previous=row.slice(nameAt,scoreAt);
+    if(!previous.some(x=>age.test(x))&&!previous.some(x=>/^[ASL][123]$/.test(x))&&previous.length>3)continue;
+    const following=row.slice(scoreAt+1);
+    const hasStats=following.length>=7&&following.slice(0,4).every(x=>/^\d+$/.test(x));
+    const win=hasStats?pct(following[4]):null, place=hasStats?pct(following[6]):null;
+    const namedB=line.match(/(?:^|\s)B\s*[:=]\s*(\d+)(?=\s|$)/);
+    const trailingB=hasStats&&following.length>=13&&following.slice(7,13).every(x=>/^\d+$/.test(x))?+following[12]:null;
+    const rider={id,name:row.slice(nameAt,Math.max(nameAt+1,row.findIndex((x,j)=>j>nameAt&&age.test(x)&&j<scoreAt))).join(" "),
+      className:previous.find(x=>/^[ASL][123]$/.test(x))??null,style:previous.find(x=>/^(?:逃|両|追)$/.test(x))??null,
+      starts:hasStats?following.slice(0,4).map(Number):null,score:+row[scoreAt]||null,win:win!==null&&place!==null&&place<win?null:win,place,b:namedB?+namedB[1]:trailingB};
+    if(riders.has(id)&&JSON.stringify(riders.get(id))!==JSON.stringify(rider))duplicate=true;
+    riders.set(id,rider);
+  }
+  return {riders:[...riders.values()],duplicate};
+}
+function readLines(entry,ids){
+  const rows=entry.split("\n");
+  const lineAt=rows.findIndex(l=>/(?:周回予想|ライン予想|並び予想)/u.test(l));
+  if(lineAt<0)return [];
+  const same=rows[lineAt].replace(/^.*?(?:周回予想|ライン予想|並び予想)[\s:|]*/u,"");
+  const tail=rows.slice(lineAt+1).find(l=>l.trim())??"";
+  const multi=rows.slice(lineAt+1).filter((_,i,all)=>all.slice(0,i+1).every(l=>!l.trim()||/^[1-9\s=←→–−/・|,.-]+$/u.test(l))).filter(l=>l.trim()).slice(0,9);
+  const raw=(same||multi.join(" / ")||tail).trim();
+  if(!/^[1-9\s=←→–−/・|,.-]+$/u.test(raw))return [];
+  const groups=raw.split(/\s*[/・|,]\s*|\t\t+| {2,}/u).filter(Boolean);
+  if(groups.length===1&&!/[-=←→–−]/u.test(raw))return [];
+  if(groups.some(g=>!g.trim().match(/^[1-9](?:[\s=←→–−.-]+[1-9])*$/u)))return [];
+  const lines=groups.map(g=>(g.match(/[1-9]/g)??[]).map(Number));
+  const flat=lines.flat();
+  if(flat.length!==ids.length||new Set(flat).size!==ids.length||flat.some(x=>!ids.includes(x)))return [];
+  return lines;
+}
+function matrixRows(section){
+  const header=/^\s*発売票数\s*:\s*[\d,]+\s*票[ \t]*$/mu.exec(section);
+  if(!header)return [];
+  return section.slice(header.index+header[0].length).split("\n").map(row=>row.trim()).filter(Boolean);
+}
+function readMatrixOdds(section,riders){
+  const rows=matrixRows(section);
+  if(!rows.length)return [];
+  const names=new Map(riders.map(r=>[r.id,r.name.replace(/\s/gu,"")]));
+  const ids=[...names.keys()].sort((a,b)=>a-b), parsed=[];
+  const heading=(row,id)=>{
+    const match=/^([1-9])\s+(.+)$/u.exec(row??"");
+    return !!match&&+match[1]===id&&match[2].replace(/\s/gu,"")===names.get(id);
+  };
+  const price=/^(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?$/u;
+  let cursor=0;
+  for(let a=0;a<ids.length-2;a++){
+    if(!heading(rows[cursor++],ids[a]))return [];
+    for(let b=a+1;b<ids.length-1;b++){
+      if(!heading(rows[cursor++],ids[b]))return [];
+      for(let c=b+1;c<ids.length;c++){
+        const row=/^([1-9])(?:[ \t]+(.+))?$/u.exec(rows[cursor++]??"");
+        if(!row||+row[1]!==ids[c])return [];
+        const rawValue=row[2]??rows[cursor++];
+        if(/^(?:[-–—]+|発売なし|発売無し)$/u.test(rawValue??""))continue;
+        if(!price.test(rawValue??""))return [];
+        const value=Number(rawValue.replaceAll(",",""));
+        if(!Number.isFinite(value)||value<1)return [];
+        parsed.push([[ids[a],ids[b],ids[c]],value]);
+      }
+    }
+  }
+  return parsed;
+}
+const emptyOdds=section=>/オッズ(?:なし|未発表)|表示するデータがありません|発売前/.test(section);
+const rowOdds=section=>section.matchAll(pattern("[ \\t|:\\n]+(\\d[\\d,]*(?:\\.\\d+)?)(?![\\d.,-]|[ \\t]*円)"));
+function readInput(entry,oddsText,race){
+  const {riders,duplicate}=readRiders(entry);
+  const ids=riders.map(r=>r.id).sort((a,b)=>a-b);
+  if(duplicate||ids.length<BUY.minRiders||ids.length>BUY.maxRiders)throw Error("5〜9車の車番と競走得点を確認できません。チャリロトの出走表全体を貼り付けてください。");
+  const lines=readLines(entry,ids);
+  const odds={}, sections=trifectaSections(oddsText);
+  for(const source of sections){
+    const rows=[...rowOdds(source)].map(m=>[m.slice(1,4).map(Number),Number(m[4].replaceAll(",",""))]);
+    for(const [nums,value] of [...rows,...readMatrixOdds(source,riders)]){
+      if(new Set(nums).size!==3||nums.some(x=>!ids.includes(x))||value<1||!Number.isFinite(value))continue;
+      const key=combo(nums);
+      if(key in odds&&odds[key]!==value)throw Error("同じ組番に異なるオッズがあります。チャリロトの出走表と3連複オッズ表をまとめて貼り付けてください。");
+      odds[key]=value;
+    }
+  }
+  if(!Object.keys(odds).length&&!sections.some(emptyOdds))throw Error("3連複欄は見つかりましたが、組番と倍率を照合できません。チャリロトの出走表と3連複オッズ表をまとめて貼り付けてください。");
+  const wind=entry.match(/風速[ \t:：]*(\d+(?:\.\d+)?)[ \t]*m(?:\/(?:s|秒))?(?=[\s|、。]|$)/i);
+  const weather=entry.match(/天候[ \t:：]*(?:\n[ \t]*)?(晴(?:れ)?|曇(?:り)?|雨|雪|霧)/u)?.[1]??"";
+  return {raw:entry===oddsText?entry:entry+"\n\n"+oddsText,ids,riders,lines,odds,venue:race.venue,weather,wind:wind?+wind[1]:null,track:getTrack(race.venue),distance:Number(entry.match(/(?:^|\D)(1[2-9]\d\d|2[0-9]\d\d|3000)\s*m\b/u)?.[1])||null};
+}
+const cities={
+  "函館":[41.77,140.73],"青森":[40.82,140.74],"いわき平":[37.05,140.89],"弥彦":[37.69,138.83],
+  "前橋":[36.39,139.06],"取手":[35.91,140.05],"宇都宮":[36.56,139.88],"大宮":[35.91,139.63],
+  "西武園":[35.77,139.44],"京王閣":[35.64,139.54],"立川":[35.71,139.41],"松戸":[35.78,139.90],
+  "千葉":[35.61,140.13],"TIPSTARドーム千葉":[35.62,140.12],"川崎":[35.53,139.71],"平塚":[35.33,139.35],
+  "小田原":[35.26,139.15],"伊東温泉":[34.97,139.10],"静岡":[34.98,138.40],"名古屋":[35.17,136.87],
+  "岐阜":[35.41,136.77],"大垣":[35.36,136.62],"豊橋":[34.76,137.39],"富山":[36.75,137.24],
+  "松阪":[34.58,136.53],"四日市":[34.96,136.64],"福井":[36.06,136.21],"奈良":[34.70,135.78],
+  "京都向日町":[34.94,135.71],"和歌山":[34.23,135.17],"岸和田":[34.46,135.38],"玉野":[34.49,133.95],
+  "広島":[34.35,132.46],"防府":[34.05,131.57],"高松":[34.35,134.06],"小松島":[34.00,134.59],
+  "高知":[33.56,133.56],"松山":[33.81,132.76],"小倉":[33.88,130.88],"久留米":[33.32,130.52],
+  "武雄":[33.19,130.02],"佐世保":[33.16,129.72],"別府":[33.31,131.49],"熊本":[32.80,130.73]
+};
+const bankMeters={"前橋":335,"宇都宮":500,"大宮":500,"松戸":333,"千葉":null,"TIPSTARドーム千葉":null,
+  "小田原":333,"伊東温泉":333,"富山":333,"奈良":333,"防府":333,"高知":500};
+const venueDetails={
+  "松山":{straightMeters:58.6,source:"https://www.keirin.jp/pc/dfw/portal/guest/column/tenbo/2012/20130107_zennihon.html"},
+  "小倉":{straightMeters:56.9,source:"https://www.keirin-mobile.jp/Android/docomo/Content/velodrome/velodrome_info.php?vc=81"},
+  "TIPSTARドーム千葉":{bankMeters:250,source:"https://maruchiba.jp/spot/detail_10109.html"}
+};
+const bankSource="https://keirin.jp/pc/dfw/portal/guest/data/bankrecord/bankrecord.html";
+function getTrack(venue){
+  const coordinates=cities[venue]??null;
+  return {venue,coordinates,bankMeters:Object.hasOwn(bankMeters,venue)?bankMeters[venue]:coordinates?400:null,
+    indoors:["前橋","小倉","TIPSTARドーム千葉"].includes(venue),...venueDetails[venue]};
+}
+function hasLinePair(lines,key){
+  const ids=key.split("-").map(Number);
+  return lines.some(line=>line.filter(id=>ids.includes(id)).length>=2);
+}
+function venueRaceKind(input){
+  if(!input.riders?.length||!input.riders.every(r=>typeof r?.className==="string"&&r.className))return null;
+  return input.riders.every(r=>r.className.startsWith("L"))?"girls":"open";
+}
+function venueEvidence(input,grade,history,params){
+  const raceKind=venueRaceKind(input);
+  const sameConditions=history.filter(r=>
+    r.grade===grade&&grade!=="不明"&&r.input.ids.length===input.ids.length&&raceKind!==null&&venueRaceKind(r.input)===raceKind);
+  const local=r=>(r.input.venue??r.id.split(" ")[1])===input.venue;
+  const rows=recentEvidence(sameConditions.filter(local),params.venueHistoryWindow);
+  const validLine=r=>r.settlement.winners.length===1&&r.input.lines.some(line=>line.length>=2);
+  const peers=recentEvidence(sameConditions.filter(r=>!local(r)&&validLine(r)),params.venueHistoryWindow);
+  const peerPairs=peers.filter(r=>hasLinePair(r.input.lines,r.settlement.winners[0].key)).length;
+  const methods={escape:0,sprint:0,pass:0,mark:0};
+  const keys={"逃げ":"escape","捲り":"sprint","捲くり":"sprint","差し":"pass","マーク":"mark"};
+  let lineTotal=0, linePairs=0, methodTotal=0;
+  for(const r of rows){
+    if(r.settlement.winners.length!==1)continue;
+    const first=Object.values(r.settlement.finish??{}).filter(v=>v.rank===1);
+    const method=first.length===1&&Object.hasOwn(keys,first[0].method)?keys[first[0].method]:null;
+    if(method){methods[method]++;methodTotal++;}
+    if(validLine(r)){
+      lineTotal++;
+      if(hasLinePair(r.input.lines,r.settlement.winners[0].key))linePairs++;
+    }
+  }
+  return {n:rows.length,minimum:params.venueHistoryMinimum,methods,methodTotal,lineTotal,linePairs,
+    peerTotal:peers.length,peerPairs};
+}
+function venueAdjustment(input,evidence,params){
+  if(!input.lines.some(line=>line.length>=2)||evidence.lineTotal<evidence.minimum||evidence.peerTotal<evidence.minimum)return 0;
+  const difference=evidence.linePairs/evidence.lineTotal-evidence.peerPairs/evidence.peerTotal;
+  return clamp(params.venueScoreWeight*difference*evidence.lineTotal/(evidence.lineTotal+params.venueShrinkage),
+    -params.venueScoreCap,params.venueScoreCap);
+}
+function venueRankings(rankings,regime,lines,adjustment){
+  if(!adjustment)return rankings;
+  return rankings.map((rows,i)=>i!==regime?rows:rows.map((row,position)=>({...row,position,
+    score:row.score+(hasLinePair(lines,row.key)?adjustment:0)
+  })).sort((a,b)=>b.score-a.score||a.position-b.position));
+}
+const weatherCache=new Map();
+async function enrichWeather(record){
+  const {track}=record.input;
+  if(record.mode!=="live"||!record.startAt||!track?.coordinates||track.indoors||record.input.weather&&record.input.wind!==null)return;
+  const [latitude,longitude]=track.coordinates;
+  const hour=new Date(Date.parse(record.startAt)+9*3600000).toISOString().slice(0,13)+":00";
+  const cacheKey=track.venue+" "+hour;
+  let observation=weatherCache.get(cacheKey);
+  if(!observation||Date.now()-Date.parse(observation.fetchedAt)>1800000){
+    const query=new URLSearchParams({latitude,longitude,timezone:"Asia/Tokyo",start_hour:hour,end_hour:hour,
+      hourly:"weather_code,wind_speed_10m,wind_direction_10m,precipitation",wind_speed_unit:"ms"});
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),activeConfig().params.forecastTimeoutMs);
+    try{
+      const response=await fetch("https://api.open-meteo.com/v1/forecast?"+query,{signal:controller.signal,cache:"no-store"});
+      if(!response.ok)return;
+      const hourly=(await response.json()).hourly;
+      const index=hourly?.time?.indexOf(hour)??-1;
+      if(index<0)return;
+      observation={source:"Open-Meteo",location:"開催地付近",fetchedAt:new Date().toISOString(),hour,
+        weatherCode:hourly.weather_code?.[index]??null,windMs:hourly.wind_speed_10m?.[index]??null,
+        windDirection:hourly.wind_direction_10m?.[index]??null,rainMm:hourly.precipitation?.[index]??null};
+      if([observation.weatherCode,observation.windMs,observation.rainMm].every(v=>v===null))return;
+      if(weatherCache.size>=64)weatherCache.delete(weatherCache.keys().next().value);
+      weatherCache.set(cacheKey,observation);
+    }catch{return}finally{clearTimeout(timer)}
+  }
+  await withCurrentRecords(async()=>{
+    const current=db.records[record.id];
+    if(!current||current.createdAt!==record.createdAt||current.externalWeather||current.settlement)return;
+    await put({...current,externalWeather:{...observation,role:"reference"}});
+    if($("prediction").querySelector("h3")?.textContent===record.id)showPrediction(db.records[record.id]);
+  });
+}
+const featureNames=["競走得点","得点下限","勝率","3連対率","3連対の下限","先行力（B）","ライン連携","ライン先頭","番手連携","3連複オッズ","オッズ中位","成績の信頼度"];
+const families=[
+ ["得点平均",       [1,.25,0,0,0,0,0,0,0,0,0,0]],
+ ["得点下限",       [.25,1,0,0,0,0,0,0,0,0,0,0]],
+ ["勝率",           [.25,0,1,.15,0,0,0,0,0,0,0,0]],
+ ["3連対の安定",    [.15,0,0,.65,1,0,0,0,0,0,0,.2]],
+ ["先行力",         [.2,0,0,.15,0,1,.2,.2,0,0,0,0]],
+ ["同ライン",       [.2,0,0,.2,0,0,1,0,.2,0,0,0]],
+ ["先頭からの連携", [.2,0,.1,.1,0,.35,.45,1,0,0,0,0]],
+ ["番手からの連携", [.2,0,0,.25,0,0,.45,0,1,0,0,0]],
+ ["市場の支持",     [.2,0,0,0,0,0,.2,0,0,1,0,0]],
+ ["市場と得点",     [.65,.25,0,0,0,0,0,0,0,.65,0,0]],
+ ["混戦と中位",     [.25,0,.1,.4,.2,.2,.2,0,0,0,.65,0]],
+ ["総合",           [.6,.25,.25,.45,.25,.15,.55,.18,.18,.4,0,.15]]
+];
+const regimes=[
+ [1.2,1.25,1,1,1,.75,1.2,1.2,1.1,1.5,.35,1],
+ [1,1,1,1,1,1,1,1,1,1,1,1],
+ [.8,.8,1,1.15,1.2,1.35,.9,1.1,1.1,.45,1.5,1]
+];
+function allEngines(params){
+  return regimes.flatMap((r,regime)=>families.map(([name,w],i)=>({
+    id:regime*ENGINE_SIZE+i+1,name,regime,
+    w:w.map((v,j)=>v*r[j]*(j>=6&&j<=8?params.minLineWeight:1))
+  })));
+}
+const averages=xs=>xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:0;
+function features(input){
+  const {ids,riders,lines,odds}=input;
+  const byId=new Map(riders.map(r=>[r.id,r]));
+  const points=riders.map(r=>r.score).filter(Number.isFinite), lo=Math.min(...points), hi=Math.max(...points);
+  const maxB=Math.max(1,...riders.map(r=>r.b??0));
+  const market=Object.values(odds).map(Math.log), minO=Math.min(...market), maxO=Math.max(...market);
+  const starts=count=>clamp(count/20);
+  const list=[];
+  for(let a=0;a<ids.length-2;a++)for(let b=a+1;b<ids.length-1;b++)for(let c=b+1;c<ids.length;c++){
+    const numbers=[ids[a],ids[b],ids[c]], key=combo(numbers), rs=numbers.map(id=>byId.get(id));
+    const strengths=rs.every(r=>Number.isFinite(r.score))?rs.map(r=>hi===lo?.5:(r.score-lo)/(hi-lo)):null;
+    const win=rs.every(r=>Number.isFinite(r.win))?averages(rs.map(r=>r.win/100)):null;
+    const place=rs.every(r=>Number.isFinite(r.place))?rs.map(r=>r.place/100):null;
+    const matching=lines.map(l=>l.map((id,i)=>numbers.includes(id)?i:-1).filter(i=>i>=0));
+    const line=score=>matching.length?Math.max(...matching.map(g=>g.length<2?0:score(g))):null;
+    const oddsScore=key in odds?(maxO===minO?.5:1-(Math.log(odds[key])-minO)/(maxO-minO)):null;
+    const value=[strengths?averages(strengths):null,strengths?Math.min(...strengths):null,win,place?averages(place):null,place?Math.min(...place):null,
+      rs.every(r=>Number.isFinite(r.b))?averages(rs.map(r=>r.b/maxB)):null,line(g=>(g.length-1)/2),line(g=>g.includes(0)?(g.length-1)/2:0),
+      line(g=>g.includes(1)&&(g.includes(0)||g.includes(2))?1:0),oddsScore,oddsScore===null?null:1-Math.abs(2*oddsScore-1),
+      rs.every(r=>Array.isArray(r.starts)&&r.starts.length&&r.starts.every(Number.isFinite))?averages(rs.map(r=>starts(r.starts.reduce((a,b)=>a+b,0)))):null];
+    list.push({key,value,odds:odds[key]??null});
+  }
+  return list;
+}
+function engineRanking(list,engine){
+  const ranked=list.map(item=>{
+    let weighted=0,total=0;
+    item.value.forEach((v,i)=>{if(v!==null){weighted+=v*engine.w[i];total+=engine.w[i]}});
+    return {key:item.key,score:total?weighted/total:null};
+  }).sort((a,b)=>(b.score??-1)-(a.score??-1)||a.key.localeCompare(b.key));
+  const informative=ranked[0]?.score!==null&&ranked.some(r=>r.score!==null&&Math.abs(r.score-ranked[0].score)>1e-10);
+  return {ranked,informative};
+}
+function automaticPointPolicy(ranking,policy=POINT_POLICY){
+  // Scores are normalized rank aggregates, so this measures separation rather than hit probability.
+  const firstGap=Number((ranking[0].score-ranking[1].score).toFixed(10));
+  const secondGap=Number((ranking[1].score-ranking[2].score).toFixed(10));
+  return {version:policy.version,id:policy.id,count:countForGaps({firstGap,secondGap},policy),
+    firstGap,secondGap,firstThreshold:policy.firstGap,secondThreshold:policy.secondGap};
+}
+function countForGaps(gaps,policy){
+  return gaps.firstGap>=policy.firstGap?1:gaps.secondGap>=policy.secondGap?2:BUY.max;
+}
+function wilsonLower(hits,n,z=EXPECTED.z){
+  const p=hits/n, adjustment=z*z/n;
+  return Math.max(0,(p+adjustment/2-z*Math.sqrt(p*(1-p)/n+adjustment/(4*n)))/(1+adjustment));
+}
+function raceOrderTime(record){
+  const start=Date.parse(storedStart(record));
+  if(Number.isFinite(start))return start;
+  const endOfDay=Date.parse((record.id??"").slice(0,10)+"T23:59:59+09:00");
+  return Number.isFinite(endOfDay)?endOfDay:0;
+}
+const calendarOrder=new Intl.Collator("ja",{numeric:true});
+function recentEvidence(records,limit){
+  return records.map(r=>({r,time:raceOrderTime(r)})).sort((a,b)=>a.time-b.time||
+    calendarOrder.compare(a.r.id??"",b.r.id??"")).slice(-limit).map(x=>x.r);
+}
+function pointHistory(rows,input,grade,regime){
+  return grade==="不明"?[]:rows.filter(r=>eligibleForLearning(r)&&comparableWithOdds(r)&&r.grade===grade&&
+    r.input.ids.length===input.ids.length&&r.segmentRegime===regime&&validPointTop(r.baselineTop)&&
+    !r.settlement.voided);
+}
+function estimateExpectedPoints(input,top,rows,params=PARAMS){
+  const bands=expectedBands(params);
+  const band=odds=>bands.findIndex(limit=>odds<limit);
+  const estimates=top.map((key,rank)=>{
+    const odds=input.odds[key];
+    if(!Number.isFinite(odds)||odds<1)return {key,odds:null,n:0};
+    const samples=recentEvidence(rows.filter(r=>{
+      const prior=r.input.odds?.[r.baselineTop[rank]];
+      return Number.isFinite(prior)&&prior>=1&&band(prior)===band(odds);
+    }),params.expectedWindow);
+    const n=samples.length;
+    if(n<params.expectedMinimum)return {key,odds,n};
+    const hits=samples.filter(r=>r.settlement.winners.some(w=>w.key===r.baselineTop[rank])).length;
+    const p=hits/n, lower=wilsonLower(hits,n,params.expectedZ);
+    return {key,odds,n,p,lower,netYen:BUY.yen*(p*odds-1),conservativeYen:BUY.yen*(lower*odds-1)};
+  });
+  const ready=estimates.slice(1).every(v=>Number.isFinite(v.conservativeYen));
+  let count=BUY.min;
+  if(ready){
+    for(const v of estimates.slice(1)){
+      if(v.conservativeYen<params.expectedNetMinimum)break;
+      count++;
+    }
+  }
+  return {estimates,ready,count:ready?count:null,minimum:params.expectedMinimum,signature:expectedSignature(params)};
+}
+function pointResult(r,keys,count){
+  const {winners,refundIds=[],voided}=r.settlement;
+  let returned=0, refund=0, hit=false;
+  for(const key of keys.slice(0,count)){
+    if(voided||key.split("-").some(x=>refundIds.includes(+x))){refund+=BUY.yen;continue;}
+    const payout=winners.find(w=>w.key===key)?.payout??0;
+    returned+=payout;
+    hit||=payout>0;
+  }
+  return {stake:count*BUY.yen,returned:returned+refund,hit,eligible:refund<count*BUY.yen};
+}
+function pointTotals(rows,select){
+  const totals={stake:0,returned:0,hits:0,eligible:0};
+  for(const r of rows){
+    const [keys,count]=select(r), v=pointResult(r,keys,count);
+    totals.stake+=v.stake;
+    totals.returned+=v.returned;
+    totals.hits+=Number(v.hit);
+    totals.eligible+=Number(v.eligible);
+  }
+  return {...totals,rate:totals.stake?totals.returned/totals.stake:0};
+}
+function comparePeriod(period,selectBase,selectCandidate){
+  const assess=rows=>{
+    const baseline=pointTotals(rows,selectBase), candidate=pointTotals(rows,selectCandidate);
+    return {hitDelta:candidate.hits-baseline.hits,returnDelta:candidate.rate-baseline.rate,
+      netDelta:(candidate.returned-candidate.stake)-(baseline.returned-baseline.stake)};
+  };
+  let greatest=0, influential=-1;
+  period.forEach((r,i)=>{
+    const base=pointResult(r,...selectBase(r)), candidate=pointResult(r,...selectCandidate(r));
+    const advantage=(candidate.returned-candidate.stake)-(base.returned-base.stake);
+    if(advantage>greatest){greatest=advantage;influential=i;}
+  });
+  const full=assess(period);
+  const trimmed=influential<0?full:assess(period.filter((_,i)=>i!==influential));
+  return {...full,outlierCheck:trimmed.hitDelta>=0&&trimmed.returnDelta>=-1e-10&&trimmed.netDelta>=0};
+}
+function reviewPointPolicy(history,input,grade,regime,enabled,params=PARAMS){
+  const standard={...POINT_POLICY,firstGap:params.pointFirstGap,secondGap:params.pointSecondGap};
+  const signature=expectedSignature(params), legacySignature=expectedSignature(PARAMS);
+  const matching=enabled?pointHistory(history,input,grade,regime):[];
+  const rows=recentEvidence(matching.filter(r=>r.pointPolicy?.version===POINT_POLICY.version),params.pointWindow);
+  const gaps=[
+    [params.compactFirstGap,params.compactSecondGap],[params.wideFirstGap,params.wideSecondGap]
+  ];
+  const variants=[
+    ...POINT_VARIANTS.map((variant,i)=>{
+      const policy={...variant,firstGap:gaps[i][0],secondGap:gaps[i][1]};
+      return {policy,sample:rows,count:r=>countForGaps(r.pointPolicy,policy)};
+    }),
+    {policy:{...standard,id:EXPECTED_POLICY.id,label:EXPECTED_POLICY.label},sample:recentEvidence(matching.filter(r=>r.expectedPoints?.ready&&
+      (r.expectedPoints.signature??legacySignature)===signature&&Number.isInteger(r.expectedPoints.count)&&
+      r.expectedPoints.count>=BUY.min&&r.expectedPoints.count<=BUY.max),params.pointWindow),count:r=>r.expectedPoints.count}
+  ];
+  const decisions=variants.map(({policy,sample,count})=>{
+    const n=sample.length;
+    if(n<params.pointMinimum)return {policy,n,evidence:[],pass:false,score:0};
+    const midpoint=Math.floor(n/2), periods=[sample.slice(0,midpoint),sample.slice(midpoint)];
+    const evidence=periods.map(period=>({
+      n:period.length,
+      changed:period.filter(r=>count(r)!==countForGaps(r.pointPolicy,standard)).length,
+      ...comparePeriod(period,r=>[r.baselineTop,countForGaps(r.pointPolicy,standard)],r=>[r.baselineTop,count(r)])
+    }));
+    const pass=evidence.every(v=>v.changed>=params.pointMinChanged&&v.hitDelta>=0&&
+      v.returnDelta>=params.pointMinReturnGain-1e-10&&v.netDelta>=0&&v.outlierCheck);
+    return {policy,n,evidence,pass,score:Math.min(...evidence.map(v=>v.returnDelta))};
+  });
+  const best=decisions.filter(v=>v.pass).sort((a,b)=>b.score-a.score)[0], n=rows.length;
+  const status=best?"adopted":!enabled?"inactive":n<params.pointMinimum?"waiting":"standard";
+  return {n:best?.n??n,minimum:params.pointMinimum,standard,selected:best?.policy??standard,decisions,status};
+}
+function validPointTop(keys){return Array.isArray(keys)&&keys.length===BUY.max&&new Set(keys).size===BUY.max;}
+function pointRate(value){return (value*100).toFixed(1)+"%";}
+const marketOrderCache=new WeakMap();
+function marketTickets(input,count){
+  if(!marketOrderCache.has(input)){
+    const n=input.ids.length, combinations=n*(n-1)*(n-2)/6;
+    const odds=Object.entries(input.odds??{});
+    const ids=new Set(input.ids);
+    const complete=odds.length===combinations&&odds.every(([key,value])=>{
+      const numbers=key.split("-").map(Number);
+      return validOdds(value)&&numbers.length===3&&numbers[0]<numbers[1]&&numbers[1]<numbers[2]&&
+        numbers.every(id=>ids.has(id))&&numbers.join("-")===key;
+    });
+    marketOrderCache.set(input,complete?odds.sort((a,b)=>a[1]-b[1]||a[0].localeCompare(b[0])).map(([key])=>key):null);
+  }
+  return marketOrderCache.get(input)?.slice(0,count)??null;
+}
+function spendingHistory(history,params){
+  const rows=recentEvidence(history.filter(r=>eligibleForLearning(r)&&marketTickets(r.input,1)),params.expectedWindow);
+  const mid=Math.floor(rows.length/2);
+  const planned=r=>{
+    const keys=r.spending?.proposedKeys??r.tickets.map(t=>t.key);
+    return [keys,keys.length];
+  };
+  const net=period=>{
+    const total=pointTotals(period,planned);
+    return total.returned-total.stake;
+  };
+  const firstNet=net(rows.slice(0,mid)),secondNet=net(rows.slice(mid));
+  return {n:rows.length,firstNet,secondNet,active:rows.length>=params.expectedMinimum&&firstNet<0&&secondNet<0};
+}
+function reviewAdditionalTickets(input,grade,regime,keys,history,period,params){
+  if(!period.active||keys.length===BUY.min)return {count:keys.length,checks:[]};
+  const order=marketTickets(input,Infinity), kind=venueRaceKind(input);
+  const bands=expectedBands(params),band=odds=>bands.findIndex(limit=>odds<limit);
+  const matching=history.filter(r=>eligibleForLearning(r)&&grade!=="不明"&&r.grade===grade&&kind&&
+    venueRaceKind(r.input)===kind&&r.input.ids.length===input.ids.length&&(r.segmentRegime??r.regime)===regime);
+  const checks=[];
+  for(let i=1;i<keys.length;i++){
+    const key=keys[i],odds=input.odds?.[key],rank=order?.indexOf(key)??-1;
+    if(rank<0){checks.push({key,status:"odds",n:0});break;}
+    const priorKey=r=>marketTickets(r.input,rank+1)?.[rank];
+    const sample=recentEvidence(matching.filter(r=>{
+      const prior=priorKey(r);
+      return prior&&band(r.input.odds[prior])===band(odds);
+    }),params.expectedWindow);
+    const detail={key,rank:rank+1,odds,n:sample.length,minimum:params.expectedMinimum};
+    if(sample.length<params.expectedMinimum){checks.push({...detail,status:"sample"});break;}
+    const past=pointTotals(sample,r=>[[priorKey(r)],1]);
+    const net=BUY.yen*(wilsonLower(past.hits,sample.length,params.expectedZ)*odds-1);
+    const paidNet=past.returned-past.stake;
+    const pass=net>=params.expectedNetMinimum&&paidNet>=0;
+    checks.push({...detail,status:pass?"pass":"loss",net,paidNet,hits:past.hits});
+    if(!pass)break;
+  }
+  return {count:BUY.min+checks.filter(check=>check.status==="pass").length,checks};
+}
+function marketComparison(records,onlyForward=false){
+  const rows=records.filter(r=>r.settlement&&(!onlyForward||confirmedForward(r))&&marketTickets(r.input,r.tickets.length));
+  const actual=pointTotals(rows,r=>[r.tickets.map(t=>t.key),r.tickets.length]);
+  const market=pointTotals(rows,r=>[marketTickets(r.input,r.tickets.length),r.tickets.length]);
+  const paired={both:0,actualOnly:0,marketOnly:0,neither:0,refunded:0};
+  for(const r of rows){
+    const n=r.tickets.length;
+    const forecast=pointResult(r,r.tickets.map(t=>t.key),n), favorite=pointResult(r,marketTickets(r.input,n),n);
+    if(!forecast.eligible||!favorite.eligible)paired.refunded++;
+    else if(forecast.hit&&favorite.hit)paired.both++;
+    else if(forecast.hit)paired.actualOnly++;
+    else if(favorite.hit)paired.marketOnly++;
+    else paired.neither++;
+  }
+  return {n:rows.length,actual,market,paired};
+}
+function marketScore(result){
+  const net=result.returned-result.stake;
+  return (result.eligible?result.hits+"/"+result.eligible+"的中":"的中率対象なし")+" · 回収率 "+
+    pointRate(result.rate)+" · 収支 "+net.toLocaleString("ja-JP")+"円";
+}
+function renderMarketComparison(done){
+  const panel=$("marketComparison"), all=marketComparison(done), forward=marketComparison(done,true);
+  if(!all.n){
+    panel.replaceChildren(create("p","全組番の保存オッズと結果がそろったレースを待っています。","muted"));
+    return;
+  }
+  panel.replaceChildren(create("p","保存オッズが全組そろう同じ "+all.n+" レース・同じ点数で比較"),
+    create("p","保存した予想　"+marketScore(all.actual)),
+    create("p","オッズ人気順　"+marketScore(all.market)),
+    create("p","両方的中 "+all.paired.both+"件 · 予想だけ的中 "+all.paired.actualOnly+"件 · 人気順だけ的中 "+all.paired.marketOnly+
+      "件 · 両方不的中 "+all.paired.neither+"件"+(all.paired.refunded?" · いずれか全点返還 "+all.paired.refunded+"件":"")),
+    create("p",forward.n?"締切前の作成を確認した "+forward.n+" レース　保存した予想 "+marketScore(forward.actual)+" ／ 人気順 "+marketScore(forward.market):
+      "締切前の作成を確認できた比較対象は0件です。上の成績は過去検証・締切後・時刻未確認を含みます。","muted"));
+  const meetings=new Map();
+  for(const r of done){
+    if(!marketTickets(r.input,r.tickets.length))continue;
+    const venue=r.id.split(" ")[1];
+    if(!meetings.has(venue))meetings.set(venue,[]);
+    meetings.get(venue).push(r);
+  }
+  const details=create("details","");
+  details.append(create("summary","開催場別の比較"));
+  for(const [venue,rows] of [...meetings].sort(([a],[b])=>calendarOrder.compare(a,b))){
+    const totals=marketComparison(rows);
+    details.append(create("p",venue+" "+totals.n+"件　予想 "+totals.actual.hits+"件的中・"+pointRate(totals.actual.rate)+
+      " ／ 人気順 "+totals.market.hits+"件的中・"+pointRate(totals.market.rate)));
+  }
+  panel.append(details);
+}
+function renderPointComparison(rows){
+  const target=$("pointComparison"), eligible=rows.filter(r=>validPointTop(r.comparisonTop));
+  if(!eligible.length){target.replaceChildren(create("p","オッズを使った上位3候補を保存し、結果を照合すると比較を表示します。","muted"));return;}
+  const table=create("table","","point-table"), head=create("thead",""), headers=create("tr","");
+  for(const label of ["点数方式","的中率","回収率","収支"]){
+    const th=create("th",label); th.scope="col"; headers.append(th);
+  }
+  head.append(headers);table.append(head);
+  const body=create("tbody","");
+  for(const n of [1,2,3,null]){
+    const totals=pointTotals(eligible,r=>[r.comparisonTop,n??r.tickets.length]);
+    const row=create("tr",""), label=create("th",n===null?"自動選択":n+"点固定");
+    label.scope="row";
+    row.append(label,create("td",totals.eligible?pointRate(totals.hits/totals.eligible):"集計なし"),
+      create("td",pointRate(totals.rate)),create("td",(totals.returned-totals.stake).toLocaleString("ja-JP")+"円"));
+    body.append(row);
+  }
+  table.append(body);
+  target.replaceChildren(create("p","同じ "+eligible.length+" レースで比較。提示額による購入想定。","muted"),table);
+}
+function renderSpendingByRank(done){
+  const target=$("metrics");
+  if(!done.length)return;
+  const details=create("details","");
+  details.append(create("summary","何点目で収支が変わったか"));
+  for(let i=0;i<BUY.max;i++){
+    const rows=done.filter(r=>r.tickets.length>i);
+    if(!rows.length)continue;
+    const totals=pointTotals(rows,r=>[[r.tickets[i].key],1]);
+    const yen=n=>n.toLocaleString("ja-JP")+"円";
+    details.append(create("p",(i+1)+"点目　"+rows.length+"点 · 購入想定 "+yen(totals.stake)+" · 払戻・返還 "+yen(totals.returned)+
+      " · 収支 "+yen(totals.returned-totals.stake)));
+  }
+  target.append(details);
+}
+function raceSignals(input,params){
+  const points=input.riders.map(r=>r.score).filter(Number.isFinite);
+  const scoreSignal=points.length>=2?1-clamp(rangeSpread(points)/params.raceSpread):null;
+  const n=input.ids.length, combinations=n*(n-1)*(n-2)/6;
+  const odds=Object.values(input.odds), knownOdds=odds.length/combinations;
+  const marketSignal=knownOdds>=params.marketCoverage?
+    clamp((Math.min(...odds)-params.favoriteOddsStart)/params.favoriteOddsScale):null;
+  const volatility=averages([scoreSignal,input.lines.length?clamp((input.lines.length-2)/3):null,marketSignal].filter(v=>v!==null));
+  const regime=volatility<params.hardThreshold?0:volatility>params.upsetThreshold?2:1;
+  return {knownOdds,volatility,regime};
+}
+const validOdds=value=>Number.isFinite(value)&&value>=1;
+const hasSavedOdds=input=>Object.values(input.odds??{}).some(validOdds);
+function comparableWithOdds(r){
+  return hasSavedOdds(r.input)&&(r.comparisonUsesOdds===true||(r.mode==="live"&&r.comparisonUsesOdds===undefined));
+}
+const historicalEngineCache=new WeakMap();
+function learningEngineTop(record,params){
+  if(!usableEngineInput(record.input))return comparableWithOdds(record)?record.engineTop??[]:[];
+  const saved=historicalEngineCache.get(record.input);
+  if(saved?.lineWeight===params.minLineWeight)return saved.top;
+  const rows=features(record.input);
+  const top=allEngines(params).map(engine=>{
+    const {ranked,informative}=engineRanking(rows,engine);
+    return informative?ranked[0].key:null;
+  });
+  historicalEngineCache.set(record.input,{lineWeight:params.minLineWeight,top});
+  return top;
+}
+function usableEngineInput(input){
+  return Array.isArray(input.riders)&&input.riders.length===input.ids.length&&input.ids.every(id=>input.riders.some(r=>r?.id===id&&(r.score===null||Number.isFinite(r.score))))&&
+    Array.isArray(input.lines)&&input.lines.every(Array.isArray)&&input.odds&&typeof input.odds==="object"&&!Array.isArray(input.odds);
+}
+function recommend(input,records,grade,count,allowLearning,params=PARAMS,reviewPoints=false,pointParams=params){
+  const list=features(input), engines=allEngines(params);
+  const {knownOdds,volatility,regime}=raceSignals(input,params);
+  const marketAvailable=hasSavedOdds(input);
+  const sameField=allowLearning&&marketAvailable&&grade!=="不明"?records.filter(r=>
+    eligibleForLearning(r)&&r.grade!=="不明"&&r.input.ids.length===input.ids.length&&
+    (usableEngineInput(r.input)||comparableWithOdds(r)&&Array.isArray(r.engineTop))):[];
+  const regimeFor=r=>usableEngineInput(r.input)?raceSignals(r.input,params).regime:r.regime;
+  const exact=recentEvidence(sameField.filter(r=>r.grade===grade&&regimeFor(r)===regime),params.historyWindow);
+  const exactSet=new Set(exact);
+  const related=exact.length<params.trainingMinimum?recentEvidence(sameField.filter(r=>!exactSet.has(r)),
+    params.historyWindow-exact.length):[];
+  const training=[...exact,...related].map(r=>({
+    top:learningEngineTop(r,params),winners:new Set(r.settlement.winners.map(w=>w.key)),
+    weight:(r.grade===grade?1:params.relatedGradeFactor)*(regimeFor(r)===regime?1:params.relatedRegimeFactor)
+  }));
+  const weights=engines.map(e=>{
+    const baseIndex=e.regime*ENGINE_SIZE+ENGINE_SIZE-1;
+    const observed=training.filter(r=>r.top[e.id-1]&&r.top[baseIndex]);
+    if(observed.length<params.trainingMinimum)return 1;
+    const evidence=observed.reduce((sum,r)=>sum+r.weight,0);
+    const gain=observed.reduce((sum,r)=>sum+r.weight*(Number(r.winners.has(r.top[e.id-1]))-Number(r.winners.has(r.top[baseIndex]))),0);
+    return clamp(1+params.weightSensitivity*gain/(evidence+params.shrinkage),params.weightMin,params.weightMax);
+  });
+  const rankings=engines.map(e=>engineRanking(list,e));
+  const engineTop=rankings.map(r=>r.informative?r.ranked[0].key:null);
+  const rankingsByDivision=regimes.map((_,k)=>{
+    const totals=new Map(list.map(item=>[item.key,0]));
+    const block=rankings.slice(k*ENGINE_SIZE,(k+1)*ENGINE_SIZE);
+    let totalWeight=0;
+    block.forEach(({ranked,informative},i)=>{
+      if(!informative)return;
+      const w=weights[k*ENGINE_SIZE+i];
+      totalWeight+=w;
+      let rank=0;
+      ranked.forEach((p,j)=>{
+        if(p.score===null)return;
+        if(j&&Math.abs(p.score-ranked[j-1].score)>1e-10)rank=j;
+        totals.set(p.key,totals.get(p.key)+w*(1-rank/(ranked.length-1)));
+      });
+    });
+    return list.map(item=>({...item,score:totalWeight?totals.get(item.key)/totalWeight:0})).sort((a,b)=>b.score-a.score||b.value[0]-a.value[0]||a.key.localeCompare(b.key));
+  });
+  const comparisonTop=rankingsByDivision[regime].slice(0,BUY.max).map(r=>r.key);
+  const pointAudit=count===null?reviewPointPolicy(records,input,grade,regime,reviewPoints&&marketAvailable,pointParams):null;
+  const expectedPoints=reviewPoints&&pointAudit&&marketAvailable?
+    estimateExpectedPoints(input,comparisonTop,pointHistory(records,input,grade,regime),pointParams):null;
+  const useExpected=pointAudit?.selected.id===EXPECTED_POLICY.id&&expectedPoints?.ready;
+  if(pointAudit?.selected.id===EXPECTED_POLICY.id&&!useExpected){
+    pointAudit.selected=pointAudit.standard;
+    pointAudit.status="expected-unavailable";
+  }
+  const pointPolicy=pointAudit?automaticPointPolicy(rankingsByDivision[regime],pointAudit.selected):null;
+  if(useExpected)pointPolicy.count=expectedPoints.count;
+  const pointCount=pointPolicy?.count??count;
+  return {volatility,regime,engineTop,weights,knownOdds,pointPolicy,pointAudit,comparisonTop,expectedPoints,trainingSize:training.length,
+    trainingScope:{exact:exact.length,related:related.length},rankingsByDivision,
+    ...rankSelections(rankingsByDivision,regime,pointCount),featureCoverage:featureNames.map((name,i)=>({name,rate:list.filter(c=>c.value[i]!==null).length/list.length}))};
+}
+function rankSelections(rankingsByDivision,regime,pointCount){
+  const used=new Set(), byDivision=regimes.map(()=>[]);
+  for(const k of [regime,(regime+1)%3,(regime+2)%3]){
+    for(const row of rankingsByDivision[k]){
+      if(used.has(row.key))continue;
+      used.add(row.key);byDivision[k].push(row);
+      if(byDivision[k].length===pointCount)break;
+    }
+  }
+  const tickets=byDivision[regime].map(p=>({
+    ...p,
+    strength:p.value.map((v,i)=>v!==null&&v>=.55?featureNames[i]:null).filter(Boolean),
+    risk:p.value.map((v,i)=>v===null?featureNames[i]+"未取得":v<.4?featureNames[i]+"の指標が低い":null).filter(Boolean)
+  }));
+  return {divisionPicks:byDivision.map(xs=>xs.map(x=>x.key)),tickets};
+}
+function rangeSpread(xs){return Math.max(...xs)-Math.min(...xs)}
+function resultFinish(raw,ids){
+  const rows=raw.split("\n"), finish={};
+  const header=rows.findIndex(row=>/(?:^|[\s|])着(?:順)?[\s|].*車番.*選手名/u.test(row));
+  if(header<0)return finish;
+  const cells=row=>row.split(row.includes("|")?/ *\| */u:/[\t ]+/u).map(x=>x.trim());
+  const columns=cells(rows[header].trim()), carAt=columns.indexOf("車番");
+  if(carAt<1||carAt>2)return finish;
+  const body=rows.slice(header+1).map(row=>row.trim()).filter(row=>row&&!/^[-| ]+$/.test(row));
+  const finishStatus=/^(?:[1-9](?:着|同着)?|欠(?:場)?|失(?:格)?|落(?:車|棄)?|棄権|未完走)$/u;
+  for(let i=0;i<body.length;i++){
+    let row=body[i], items=cells(row), status=items[0];
+    if(!finishStatus.test(status))break;
+    if(items.length===1&&body[i+1]){
+      row+="\t"+body[++i];
+      items=cells(row);
+    }
+    const id=Number(items[carAt]);
+    if(!ids.includes(id))continue;
+    const rank=/^[1-9]/u.test(status)?Number(status[0]):null;
+    const method=row.match(/逃げ|捲(?:く)?り|差し|マーク/u)?.[0]??null;
+    finish[id]={rank,status,method};
+  }
+  return finish;
+}
+function parseResult(text,ids){
+  const raw=normal(text);
+  const payouts=new Map(), parts=trifectaSections(raw);
+  const voided=/レース(?:は|が)?[ \t]*(?:中止|不成立)|(?:競走|開催)(?:は|が)?[ \t]*(?:中止|不成立)|全(?:車券|組番)(?:を|の)?[ \t]*返還/u.test(raw)||parts.some(x=>/^[\s|:：]*(?:不成立|全返還)/u.test(x));
+  const refunds=raw.split("\n").map(line=>line.match(/返還(?:車番|対象車番)[ \t|]*(?::[ \t]*)?([1-9](?:[ \t]*[,、・/][ \t]*[1-9]|[ \t]+[1-9])*)[ \t|]*$/u)).filter(Boolean);
+  const refundIds=[...new Set(refunds.flatMap(m=>m[1].match(/[1-9]/g).map(Number)))].sort((a,b)=>a-b);
+  if(refundIds.some(x=>!ids.includes(x)))throw Error("返還車番と出走表が一致しません。");
+  if(!voided&&!refundIds.length&&/返還(?:車番|対象車番)[^\n]*[1-9]|(?:欠場|失格)による返還/u.test(raw))throw Error("返還車番を確定できません。公式の返還欄を含めて貼り付けてください。");
+  for(const part of parts.map(section=>section.slice(0,1200))){
+    for(const m of part.matchAll(pattern("[ \\t\\n:|]+(\\d[\\d,]*)[ \\t]*円"))){
+      const nums=m.slice(1,4).map(Number);
+      if(new Set(nums).size!==3||nums.some(x=>!ids.includes(x)||refundIds.includes(x)))throw Error("払戻欄の車番と出走車番・返還車番が一致しません。");
+      const key=combo(nums), payout=+m[4].replaceAll(",","");
+      if(!Number.isSafeInteger(payout)||payout<BUY.yen||payout>100000000)throw Error("払戻金を確認してください。");
+      if(payouts.has(key)&&payouts.get(key)!==payout)throw Error("同じ組番に異なる払戻金が含まれます。");
+      payouts.set(key,payout);
+    }
+  }
+  if(voided&&payouts.size)throw Error("中止・不成立と払戻の表示が混在しています。対象レースの結果を確認してください。");
+  if(!voided&&!payouts.size)throw Error("3連複の組番と払戻金を確認できません。開催情報と公式払戻欄を含めて貼り付けてください。");
+  const winners=[...payouts].map(([key,payout])=>({key,payout})).sort((a,b)=>a.key.localeCompare(b.key));
+  return {winners,refundIds,voided,finish:resultFinish(raw,ids)};
+}
+async function persist(next,{backup=true}={}){
+  await writeStored(next);
+  db=next;
+  renderSources();
+  refresh();
+  if(backup)queueBackup();
+}
+function put(record){return persist({...db,records:{...db.records,[record.id]:record}})}
+const records=()=>Object.values(db.records).sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
+function create(tag,value,css){
+  const el=document.createElement(tag);
+  el.textContent=value;
+  if(css)el.className=css;
+  return el;
+}
+function renderVenueEvidence(record){
+  const {input}=record;
+  const venue=input.venue??record.id.split(" ")[1];
+  const track={...getTrack(venue),...input.track,...venueDetails[venue]};
+  const panel=create("div","","audit-card");
+  panel.append(create("strong","開催地・バンク　"+venue));
+  const bank=[track.bankMeters?"周長 "+track.bankMeters+"m":null,
+    track.straightMeters?"みなし直線 "+track.straightMeters+"m":null,track.indoors?"屋内":null].filter(Boolean);
+  if(bank.length){
+    panel.append(create("p",bank.join(" · ")));
+    const link=create("a","バンク情報の出典");
+    link.href=venueDetails[venue]?.source??bankSource;link.target="_blank";link.rel="noopener noreferrer";
+    panel.append(link);
+  }
+  if(input.distance)panel.append(create("p","競走距離 "+input.distance+"m","muted"));
+  const conditions=[input.weather?input.weather:null,Number.isFinite(input.wind)?"風速 "+input.wind+"m/s":null].filter(Boolean);
+  if(conditions.length)panel.append(create("p","貼付データの天候・風　"+conditions.join(" · ")));
+  const wx=record.externalWeather;
+  const forecast=wx?[Number.isFinite(wx.windMs)?"風速 "+wx.windMs+"m/s":null,
+    Number.isFinite(wx.rainMm)?"降水量 "+wx.rainMm+"mm":null].filter(Boolean):[];
+  if(forecast.length)panel.append(create("p","開催地付近の予報（Open-Meteo）　"+forecast.join(" · "),"muted"));
+  if(!conditions.length&&!forecast.length)panel.append(create("p",track.indoors?"屋内のため周辺予報は省略。":"天候・風速の記録なし。","muted"));
+  const stat=record.venueEvidence;
+  if(stat){
+    panel.append(create("p","予想時に参照できた同じ競輪場・グレード・車立の照合 "+stat.n+"件"));
+    if(stat.methodTotal>=stat.minimum)panel.append(create("p","1着の決まり手（"+stat.methodTotal+"件）　逃げ "+stat.methods.escape+" · 捲り "+stat.methods.sprint+" · 差し "+stat.methods.pass+" · マーク "+stat.methods.mark));
+    if(stat.lineTotal>=stat.minimum)panel.append(create("p","同じラインから2車以上が入った的中組番　"+stat.linePairs+"/"+stat.lineTotal+"件"));
+    if(stat.methodTotal<stat.minimum&&stat.lineTotal<stat.minimum)
+      panel.append(create("p","傾向の表示は保留。判読できた決まり手 "+stat.methodTotal+"件・ライン "+stat.lineTotal+"件（各"+stat.minimum+"件から表示）。","muted"));
+  }else panel.append(create("p","この予想には当時の開催地別集計が保存されていません。","muted"));
+  const trial=record.venueTrial;
+  if(trial){
+    if(stat)panel.append(create("p","同じ競輪場のライン "+stat.lineTotal+"件 · 他場の同条件 "+stat.peerTotal+"件"));
+    const status=!trial.delta?"ライン傾向の補正なし":trial.applied?"ライン傾向による補正を採用":trial.review.status==="hold"?
+      "成績の採用基準に未達":"開催地を反映した買い目を比較中";
+    const review=trial.review;
+    panel.append(create("p",status+" · "+(review.scope==="all"?"全時刻の比較 ":"保存当時の締切前の比較 ")+review.n+"/"+review.minimum+"件"));
+    if(review.marketCheck)panel.append(create("p","同じ点数の人気順との比較 "+review.marketCheck.n+"/"+review.marketCheck.minimum+
+      "件 · "+marketVerdict(review.marketCheck),"muted"));
+    if(trial.delta)panel.append(create("p","補正した候補　"+trial.alternative.join("、")+" · 評価補正 "+trial.delta.toFixed(3),"muted"));
+  }
+  panel.append(create("p","バンクの形状・天候は買い目を点検するための参考情報です。","muted"));
+  return panel;
+}
+function showPrediction(record){
+  const out=$("prediction");
+  const shownId=out.querySelector("h3")?.textContent;
+  const expanded=shownId===record.id&&out.querySelector("details")?.open;
+  const division=create("p","","raceDivision");
+  division.append(create("span","レース区分 "+(divisions[record.regime]??"未判定")),
+    create("small",record.input.ids.length+"車 · "+record.grade,"muted"));
+  out.replaceChildren(create("h3",record.id),division,
+    create("p",record.tickets.length+"点 · 合計 "+(record.tickets.length*BUY.yen)+"円","num"));
+  for(const t of record.tickets){
+    const box=create("div","","ticket ticketSummary");
+    box.append(create("strong",t.key),create("span",BUY.yen+"円"+(t.odds==null?"":" · "+t.odds+"倍")));
+    out.append(box);
+  }
+  const spending=record.spending;
+  if(spending?.period.active&&spending.proposedKeys.length>record.tickets.length){
+    const stop=spending.attempts.flatMap(a=>a.checks).find(c=>c.status!=="pass");
+    const why=stop?.status==="sample"?"候補に対応するオッズの比較が "+stop.n+"/"+stop.minimum+"件":
+      stop?.status==="loss"?"追加候補の推定または過去収支が基準未満":"全組番のオッズを確認できず";
+    out.append(create("p","追加点を抑えました　"+spending.proposedKeys.length+"点案 → "+record.tickets.length+"点 · "+why,"num"));
+  }
+  $("jumpToPrediction").hidden=false;
+  $("history").value=record.id;
+  const reasonsBox=create("details","");
+  reasonsBox.open=!!expanded;
+  reasonsBox.append(create("summary","買い目・点数の根拠と予想情報"));
+  if(record.pointPolicy){
+    const reasons=["1位候補の評価が2位より離れています。","上位2候補のうち、2位の評価が3位より離れています。","上位候補の評価差が小さく、通常の基準では3点が候補です。"];
+    const reason=record.pointPolicy.id===EXPECTED_POLICY.id?"2点目・3点目の追加を、保存したオッズと保守的な的中率推定で判定しました。":reasons[(spending?.proposedKeys.length??record.tickets.length)-1];
+    reasonsBox.append(create("p","点数の根拠　"+reason,"muted"));
+    if(record.pointAudit){
+      const a=record.pointAudit;
+      const caption=a.status==="waiting"?"比較データ "+a.n+"/"+(a.minimum??POINT_REVIEW.minimum)+"件":
+        a.status==="inactive"?"オッズ付きの記録がそろうまで標準基準を使います。":a.status==="expected-unavailable"?"このレースは期待値を出すためのデータが不足しています。":"比較対象 "+a.n+"件";
+      reasonsBox.append(create("p","使用した点数基準　"+a.selected.label+" · "+caption,"muted"));
+    }
+  }
+  if(spending?.period.active){
+    const p=spending.period;
+    reasonsBox.append(create("p","通常の点数案の収支　前半 "+p.firstNet.toLocaleString("ja-JP")+"円 · 後半 "+p.secondNet.toLocaleString("ja-JP")+"円（過去"+p.n+"レース）。追加点は保存オッズと実際の払戻で再点検しました。","muted"));
+    for(const attempt of spending.attempts){
+      for(const c of attempt.checks){
+        const message=c.status==="odds"?"全組番のオッズ不足":c.status==="sample"?"比較 "+c.n+"/"+c.minimum+"件":
+          "比較 "+c.n+"件 · 100円あたりの保守推定 "+c.net.toFixed(0)+"円 · 比較対象の累計収支 "+c.paidNet.toLocaleString("ja-JP")+"円";
+        reasonsBox.append(create("p",c.key+"　"+(c.status==="pass"?"追加条件を満たす":"追加を保留")+" · "+message,"muted"));
+      }
+    }
+  }
+  reasonsBox.append(create("p","オッズ取得 "+Math.round(record.knownOdds*100)+"% · 学習対象 "+record.trainingSize+"件 · "+(record.adaptive?"学習重み":"固定重み"),"muted"));
+  if(!hasSavedOdds(record.input))reasonsBox.append(create("p","オッズが未取得のため、出走表の指標で予想しています。","muted"));
+  if(record.mode==="replay")reasonsBox.append(create("p","過去レース検証","muted"));
+  else if(!confirmedForward(record))reasonsBox.append(create("p","発売締切前の作成を確認できません。","muted"));
+  const cutoff=confirmedCutoff(record), start=storedStart(record);
+  const time=value=>new Date(value).toLocaleTimeString("ja-JP",{timeZone:"Asia/Tokyo",hour:"2-digit",minute:"2-digit"});
+  const timing=[cutoff?"発売締切 "+time(cutoff):null,start?"発走予定 "+time(start):null].filter(Boolean);
+  if(timing.length)reasonsBox.append(create("p",timing.join(" · ")+" · "+cutoffLabels[cutoffStatus(record)],"muted"));
+  if(record.timingEvidence==="conflict"&&!cutoff)reasonsBox.append(create("p","貼り付けた時刻が一致せず、締切前実績への計上を保留しました。","muted"));
+  if(record.input.lines.length)reasonsBox.append(create("p","周回予想　"+record.input.lines.map(line=>line.join("–")).join(" / "),"muted"));
+  if(!record.input.lines.length)reasonsBox.append(create("p","ラインを取得できなかったため、ライン指標を省略しました。","muted"));
+  reasonsBox.append(renderVenueEvidence(record));
+  for(const t of record.tickets){
+    const box=create("div","","ticket");
+    box.append(create("strong",t.key),create("p","根拠　"+(t.strength.join("、")||"複数エンジンの総合順位")),create("p","懸念　"+(t.risk.join("、")||"取得済み指標から特定できず")));
+    if(record.venueEvidence?.lineTotal>=record.venueEvidence?.minimum&&record.input.lines.some(line=>line.length>=2))
+      box.append(create("p","開催地の履歴と照らしたライン構成　"+(hasLinePair(record.input.lines,t.key)?"同じラインの選手2車以上":"同じラインの選手は最大1車"),"muted"));
+    reasonsBox.append(box);
+  }
+  out.append(reasonsBox);
+  if(record.expectedPoints){
+    const details=create("details",""), estimates=record.expectedPoints.estimates;
+    details.append(create("summary","基準候補の推定期待値"),create("p","1点100円あたりの期待収支。貼付時点のオッズで計算。","muted"));
+    for(const v of estimates){
+      const label=v.netYen===undefined?"同条件 "+v.n+"/"+(record.expectedPoints.minimum??EXPECTED.minimum)+"件（推定待ち）":
+        "期待収支 "+v.netYen.toFixed(0)+"円 · 保守推定 "+v.conservativeYen.toFixed(0)+"円 · "+v.n+"件";
+      details.append(create("p",v.key+"　"+label));
+    }
+    out.append(details);
+  }
+  const details=create("details","");
+  details.append(create("summary","区分別候補"),...record.divisionPicks.map((x,i)=>create("p",divisions[i]+"　"+x.join(" / "))));
+  out.append(details);
+}
+function revealPrediction(){
+  $("entry").blur();
+  const heading=$("predictionHeading");
+  heading.focus({preventScroll:true});
+  $("predictionPanel").scrollIntoView({block:"start"});
+}
+$("jumpToPrediction").onclick=event=>{
+  event.preventDefault();
+  revealPrediction();
+};
+function showReview(r){
+  const out=$("review");
+  out.replaceChildren();
+  if(!r?.settlement)return;
+  const s=r.settlement;
+  const judged=s.voided?"中止・不成立":s.hits?"的中":s.analysis.every(x=>x.refund)?"全点返還":"不的中";
+  const net=s.payout+(s.refundYen??0)-s.stake;
+  out.append(create("h3",r.id),create("p",judged+" · "+s.winners.map(w=>w.key).join(" / "),"num"),
+    create("strong","このレースの想定収支 "+(net>0?"+":"")+net.toLocaleString("ja-JP")+"円"),
+    create("p","購入想定 "+s.stake+"円 · 払戻 "+s.payout+"円 · 返還 "+(s.refundYen??0)+"円"),
+    create("p",cutoffLabels[cutoffStatus(r)],"muted"));
+  const favorite=marketTickets(r.input,r.tickets.length);
+  if(favorite){
+    const value=pointResult(r,favorite,favorite.length);
+    out.append(create("p","同じ点数のオッズ人気順　"+favorite.join("、")+" · "+(value.hit?"的中":value.eligible?"不的中":"全点返還")+
+      " · 収支 "+(value.returned-value.stake).toLocaleString("ja-JP")+"円","muted"));
+  }else out.append(create("p","全組番のオッズがそろわず、同じ点数の人気順との比較は保留です。","muted"));
+  for(const t of s.analysis){
+    const box=create("div","","ticket");
+    box.append(create("strong",t.key+"　"+(t.refund?"返還":t.hit?"的中":"不的中")),create("p","勝因・支持材料　"+t.positive),create("p","敗因・弱点　"+t.negative));
+    out.append(box);
+  }
+}
+function performanceTotals(rs){
+  let eligible=0,hit=0,stake=0,payout=0,refund=0,profitableHits=0,evenHits=0,netFromHits=0;
+  for(const {settlement:s} of rs){
+    const returned=s.refundYen??0;
+    if(s.winners.length&&s.stake>returned){
+      eligible++;
+      if(s.hits>0){
+        hit++;
+        const net=s.payout+returned-s.stake;
+        netFromHits+=net;
+        profitableHits+=Number(net>0);
+        evenHits+=Number(net===0);
+      }
+    }
+    stake+=s.stake;payout+=s.payout;refund+=returned;
+  }
+  return {eligible,hit,stake,payout,refund,net:payout+refund-stake,profitableHits,evenHits,losingHits:hit-profitableHits-evenHits,netFromHits};
+}
+function performanceSummary({eligible,hit,stake,payout,refund}){
+  return "的中 "+hit+"/"+eligible+(eligible?"（"+pointRate(hit/eligible)+"）":"")+
+    " · 回収率 "+(stake?pointRate((payout+refund)/stake):"集計前");
+}
+function performanceAmounts({stake,payout,refund,net}){
+  const yen=n=>n.toLocaleString("ja-JP")+"円";
+  return ["購入想定 "+yen(stake),"払戻 "+yen(payout),"返還 "+yen(refund),"収支 "+yen(net)].join(" · ");
+}
+let chosenBalanceDate="";
+function renderDailyBalance(rows){
+  const picker=$("balanceDate"),panel=$("balanceDay"),trend=$("balanceTrend");
+  const groups=new Map();
+  for(const r of rows){
+    const day=r.id.slice(0,10);
+    if(!groups.has(day))groups.set(day,[]);
+    groups.get(day).push(r);
+  }
+  const days=[...groups.keys()].sort().reverse();
+  const totals=new Map(days.map(day=>{
+    const all=groups.get(day),done=all.filter(r=>r.settlement);
+    return [day,{...performanceTotals(done),settled:done.length,pending:all.length-done.length}];
+  }));
+  $("balancePicker").hidden=!days.length;
+  picker.replaceChildren(...days.map(day=>{const option=create("option",day);option.value=day;return option}));
+  if(!days.length){
+    chosenBalanceDate="";panel.replaceChildren();picker.onchange=null;
+    trend.textContent="結果を照合すると、開催日ごとの的中と収支が表示されます。";
+    return;
+  }
+  const settledDays=days.filter(day=>totals.get(day).settled);
+  if(settledDays.length<2){
+    trend.textContent=settledDays.length?"照合済みは1開催日分です。複数日にわたる推移は次の開催日の照合後に表示します。":"結果の照合を待っています。";
+  }else{
+    let losses=0;
+    for(const day of settledDays){if(totals.get(day).net>=0)break;losses++;}
+    const streak=losses?"直近"+losses+"開催日が赤字です。":"直近の開催日は"+(totals.get(settledDays[0]).net===0?"収支ゼロ":"黒字")+"です。";
+    trend.textContent="照合済みデータのある"+settledDays.length+"開催日を集計。"+streak+"（照合済み分の収支）";
+  }
+  if(!totals.has(chosenBalanceDate))chosenBalanceDate="";
+  picker.value=chosenBalanceDate||days[0];
+  function show(){
+    const day=picker.value,s=totals.get(day);
+    if(!s.settled){panel.replaceChildren(create("strong",day+"　結果待ち"),create("p","未照合 "+s.pending+"件 · 収支未確定"));return;}
+    const signed=n=>(n>0?"+":"")+n.toLocaleString("ja-JP")+"円";
+    panel.replaceChildren(create("strong",day+"　想定収支 "+signed(s.net)),
+      create("p","照合済み "+s.settled+"件 · 未照合 "+s.pending+"件 · "+performanceSummary(s)),
+      create("p","購入想定 "+s.stake.toLocaleString("ja-JP")+"円 · 払戻 "+s.payout.toLocaleString("ja-JP")+"円 · 返還 "+s.refund.toLocaleString("ja-JP")+"円"),
+      create("p","的中レース計 "+signed(s.netFromHits)+" ／ その他の照合済みレース計 "+signed(s.net-s.netFromHits),"muted"));
+    const dayRecords=groups.get(day);
+    const statusCounts={before:0,after:0,unknown:0,review:0};
+    for(const record of dayRecords)statusCounts[cutoffStatus(record)]++;
+    panel.append(create("p","予想時刻の確認　締切前 "+statusCounts.before+"件 · 締切後 "+statusCounts.after+"件 · 時刻未確認 "+statusCounts.unknown+"件 · 事後検証 "+statusCounts.review+"件","muted"));
+    const details=create("details"),summary=create("summary","レース別の購入額・払戻・収支を表示");
+    const table=create("table","","point-table");
+    const header=create("tr");
+    for(const heading of ["レース","状態","購入","払戻・返還","収支"])header.append(create("th",heading));
+    const thead=create("thead");thead.append(header);table.append(thead);
+    const tbody=create("tbody");
+    for(const record of dayRecords){
+      const row=create("tr"),settlement=record.settlement;
+      const result=settlement?{
+        stake:settlement.stake,pay:((settlement.payout??0)+(settlement.refundYen??0)),
+        net:(settlement.payout??0)+(settlement.refundYen??0)-settlement.stake
+      }:null;
+      const values=[record.id.slice(11),!settlement?"結果待ち":settlement.hits>0?"的中":"不的中",
+        result?result.stake.toLocaleString("ja-JP")+"円":"—",
+        result?result.pay.toLocaleString("ja-JP")+"円":"—",
+        result?signed(result.net):"未確定"];
+      for(const value of values)row.append(create("td",value));
+      tbody.append(row);
+    }
+    table.append(tbody);details.append(summary,table);panel.append(details);
+  }
+  picker.onchange=()=>{chosenBalanceDate=picker.value;show()};
+  show();
+}
+function learningHoldReason(r){
+  if(r.version!==VERSION)return "旧版の予想形式";
+  if(!r.settlement)return "結果未照合";
+  if(r.settlement.voided||!r.settlement.winners.length)return "中止・不成立";
+  if(r.settlement.corrected)return "公式結果の訂正";
+  if(r.settlement.refundIds?.length)return "返還あり";
+  if(!hasSavedOdds(r.input))return "保存オッズなし";
+  return null;
+}
+const eligibleForLearning=r=>learningHoldReason(r)===null;
+function showLearningStatus(done,comparisons=done,pending=false){
+  const target=$("learningStatus");
+  if(!done.length){
+    target.replaceChildren(create("p","結果を照合すると、自動で学習データに反映します。"));
+    return;
+  }
+  const last=done.reduce((latest,r)=>r.settlement.recordedAt>latest.settlement.recordedAt?r:latest);
+  const eligible=done.filter(eligibleForLearning);
+  const config=activeConfig(), regime=last.segmentRegime??last.regime;
+  const groupSize=eligible.filter(r=>r.grade===last.grade&&r.input.ids.length===last.input.ids.length&&
+    (r.segmentRegime??r.regime)===regime).length;
+  const report=validationReport(comparisons,last.grade,last.input,regime,last.tickets.length,config);
+  const readyRows=comparisons.filter(r=>modelComparisonReady(r,config));
+  const reason=learningHoldReason(last);
+  const caption=reason?"照合済み。学習評価の対象外です（"+reason+"）。":"学習データに反映しました。";
+  const comparison={
+    adopted:"学習重みの採用基準を満たしています。",
+    sample:"採用比較のデータを集めています。",
+    hits:"的中数の差が採用基準に届かず、固定モデルを維持します。",
+    period:"期間ごとの的中数または回収率が基準に届かず、固定モデルを維持します。",
+    outlier:"1レースの影響を除くと成績が悪化するため、固定モデルを維持します。",
+    local:"同条件での検証件数または成績が基準に届かず、固定モデルを維持します。",
+    market:"オッズ人気順と比べて成績が悪化したため、固定モデルを維持します。"
+  }[report.decision];
+  target.replaceChildren(
+    create("p","最新の照合　"+last.id+" · "+caption),
+    create("p","学習データ "+eligible.length+"件 · 同じグレード・車立・区分 "+groupSize+"件"),
+    ...(!pending?[create("p","全条件で採用判定に使える比較 "+readyRows.length+"件（旧版から再計算 "+
+      readyRows.filter(r=>r.rebuiltModel).length+"件）","muted")]:[]),
+    create("p",pending?"旧版の比較を当時の入力とオッズから再計算しています。":
+      "学習候補の比較 "+report.n+"/"+config.params.validationMinimum+"件 · "+comparison,"muted"),
+    ...(!pending&&report.n?[create("p","比較の内訳　予想時に保存 "+(report.n-report.rebuiltN)+"件 · 過去の入力から再計算 "+report.rebuiltN+"件","muted")]:[]),
+    ...(report.n?[create("p","比較回収率　標準 "+pointRate(report.baselineReturn)+" · 学習候補 "+pointRate(report.candidateReturn),"muted")]:[]),
+    create("p","次の予想で、そのレースに使える記録から重みと採否を自動で見直します。","muted"));
+}
+function forecastModelReason(record,minimum){
+  const a=record.modelAudit;
+  if(record.adaptive)return "比較の採用基準を満たしたため、学習した重みを使いました。";
+  if(!hasSavedOdds(record.input))return "このレースのオッズを取得できず、出走表の指標を固定モデルで評価しました。";
+  if(record.grade==="不明")return "グレードを確認できず、同じ条件で比較できなかったためです。";
+  if(a.n<minimum)return "同じ条件で比較できるレースが、採用に必要な件数に達していません。";
+  if(a.decision==="hits")return "比較したレースで、的中数の差が採用基準に届かなかったためです。";
+  if(a.decision==="period")return "比較期間ごとの的中数または回収率が、採用基準に届かなかったためです。";
+  if(a.decision==="outlier")return "候補に最も有利な1レースを外すと、成績が悪化したためです。";
+  if(a.decision==="local")return "近い条件の記録も比較しましたが、同じ条件の件数または成績が採用基準に届かなかったためです。";
+  if(a.decision==="market")return "オッズ人気順との比較で成績が悪化し、採用条件を満たさなかったためです。";
+  if(a.adopt&&record.pointPolicy?.id===EXPECTED_POLICY.id)return "採用した期待値方式の組番を使うため、固定モデルで予想しました。";
+  if(a.adopt&&record.appRelease&&record.trainingSize<(record.candidateParams?.trainingMinimum??PARAMS.trainingMinimum))
+    return "比較基準は満たしましたが、今回のレースに使える学習データが必要件数に達していません。";
+  if(a.adopt&&!record.appRelease&&record.beforeDeadline!==true)return "この予想を保存した当時の設定では、締切前の作成が確認できた場合に学習重みを適用していました。";
+  return "保存時の検証結果に基づき、固定モデルで予想しました。";
+}
+function standardTickets(record){
+  const policy=record.pointPolicy;
+  if(policy?.version!==POINT_POLICY.version)return null;
+  if(validPointTop(record.baselineTop)&&Number.isFinite(policy.firstGap)&&Number.isFinite(policy.secondGap))
+    return record.baselineTop.slice(0,countForGaps(policy,record.pointAudit?.standard??POINT_POLICY));
+  return policy.id===POINT_POLICY.id&&validComparison(record.baseline,record.tickets.length)?record.baseline:null;
+}
+function learningEffect(record){
+  const actual=record.tickets.map(t=>t.key), standard=standardTickets(record);
+  if(!standard)return {actual,standard,summary:"標準基準との比較に必要な記録がありません。"};
+  const added=actual.filter(key=>!standard.includes(key)), removed=standard.filter(key=>!actual.includes(key));
+  const reordered=!added.length&&!removed.length&&actual.some((key,i)=>key!==standard[i]);
+  const changes=[];
+  if(actual.length!==standard.length)changes.push("点数 "+standard.length+"点 → "+actual.length+"点");
+  if(added.length)changes.push("追加 "+added.join("、"));
+  if(removed.length)changes.push("除外 "+removed.join("、"));
+  if(reordered)changes.push("提示順を変更");
+  return {actual,standard,summary:changes.join(" · ")||"標準基準と同じ買い目・点数でした。",changed:changes.length>0};
+}
+function renderLearningHistory(rows){
+  const select=$("learningRace"), saved=select.value;
+  const latest=create("option","最新の予想");
+  latest.value="";
+  select.replaceChildren(latest,...[...rows].reverse().map(record=>{
+    const option=create("option",record.id);
+    option.value=record.id;
+    return option;
+  }));
+  select.disabled=!rows.length;
+  select.value=saved&&Object.hasOwn(db.records,saved)?saved:"";
+  const comparable=rows.filter(r=>r.modelAudit).map(learningEffect).filter(effect=>effect.standard);
+  $("learningHistorySummary").textContent=rows.length?
+    "保存済み "+rows.length+"件 · 学習重みの使用 "+rows.filter(r=>r.adaptive===true).length+"件"+
+    (comparable.length?" · 標準から買い目・点数・提示順が変わった予想 "+comparable.filter(effect=>effect.changed).length+"/"+comparable.length+"件":""):"";
+  showModelAudit(select.value?db.records[select.value]:rows.at(-1));
+  schedulePastLearning(rows);
+}
+$("learningRace").onchange=()=>{
+  showModelAudit($("learningRace").value?db.records[$("learningRace").value]:records().at(-1));
+  showPastLearning();
+};
+$("jumpToLearning").onclick=()=>{$("learningRecord").open=true;};
+function showLearningEffect(record){
+  const {actual,standard,summary}=learningEffect(record);
+  const box=create("div","","audit-card");
+  box.append(create("strong","予想にどう反映されたか"),create("p",summary),
+    create("p","実際に提示　"+actual.length+"点 · "+actual.join("、")));
+  const policy=record.pointAudit?.selected?.label??(record.pointPolicy?.id===POINT_POLICY.id?POINT_POLICY.label:null);
+  if(policy)box.append(create("p","使用した点数基準　"+policy,"muted"));
+  if(!standard)return box;
+  box.append(create("p","標準基準なら　"+standard.length+"点 · "+standard.join("、"),"muted"));
+  if(record.settlement){
+    const outcome=keys=>{
+      const value=pointResult(record,keys,keys.length);
+      return (value.hit?"的中":value.eligible?"不的中":"全点返還")+" · 収支 "+(value.returned-value.stake).toLocaleString("ja-JP")+"円";
+    };
+    box.append(create("p","結果照合（全点を購入した想定）　実際の提示 "+outcome(actual)+" ／ 標準基準 "+outcome(standard),"muted"));
+  }
+  return box;
+}
+function showModelAudit(record){
+  const target=$("audit");
+  if(!record){
+    target.replaceChildren(create("p","予想を保存すると、使ったモデルとその理由が表示されます。","muted"));
+    return;
+  }
+  if(!record.modelAudit){
+    target.replaceChildren(create("p",record.id),create("p","この版で保存した予想には学習判断の詳細がありません。","muted"),showLearningEffect(record));
+    return;
+  }
+  const a=record.modelAudit;
+  const minimum=record.candidateParams?.validationMinimum??PARAMS.validationMinimum;
+  const condition=[divisions[record.segmentRegime??record.regime]??"区分不明",record.grade??"グレード不明",
+    record.input.ids.length+"車",record.tickets.length+"点"].join(" · ");
+  const stamp=new Date(record.createdAt).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
+  const decision=create("div","","audit-card");
+  decision.append(create("strong",record.adaptive?"学習したモデルを使用":"固定モデルを使用"),
+    create("p",forecastModelReason(record,minimum)));
+  target.replaceChildren(create("p",record.id+" の予想時点"+(stamp?"（"+stamp+"）":""),"muted"),decision,
+    create("p","比較条件　"+condition,"muted"),
+    ...(Number.isInteger(record.trainingSize)?[create("p","学習候補を計算するために参照したレース "+record.trainingSize+"件")]:[]),
+    ...(record.trainingScope?[create("p","参照の内訳　同条件 "+record.trainingScope.exact+"件 · 同じ車立の補助データ "+record.trainingScope.related+"件","muted")]:[]),
+    create("p","比較できたレース "+a.n+"件 ／ 採用判定に必要な最低 "+minimum+"件"),
+    ...(Number.isInteger(a.rebuiltN)&&a.n?[create("p","予想時に保存した比較 "+(a.n-a.rebuiltN)+"件 · 過去の入力から再計算した比較 "+a.rebuiltN+"件","muted")]:[]),
+    ...(a.relatedN?[create("p","採用比較の内訳　同条件 "+a.exactN+"件 · 近い条件 "+a.relatedN+"件","muted")]:[]),
+    showLearningEffect(record));
+  if(validComparison(record.baseline,record.tickets.length)&&validComparison(record.challenger,record.tickets.length)){
+    const details=create("details","");
+    details.append(create("summary","同じ点数でのモデル比較"),
+      create("p","固定モデル　"+record.baseline.join("、")),
+      create("p","学習候補"+(record.adaptive?"（採用）":"（今回の重みは未採用）")+"　"+record.challenger.join("、")));
+    const weights=families.flatMap(([name],i)=>{
+      const value=record.weights?.[record.regime*ENGINE_SIZE+i];
+      return Number.isFinite(value)&&Math.abs(value-1)>1e-10?[name+" "+value.toFixed(3)+"倍"]:[];
+    });
+    if(record.adaptive&&record.weights?.length===families.length*divisions.length)
+      details.append(create("p",weights.length?"使用した重みの変更　"+weights.join("、"):"保存記録上、この区分の重みはすべて標準の1倍です。","muted"));
+    target.append(details);
+  }
+  if(a.n>0){
+    const evidence=create("details","");
+    evidence.append(create("summary","モデル比較の内訳"),
+      create("p","学習候補だけが的中 "+a.gain+"件 · 固定モデルだけが的中 "+a.loss+"件"));
+    if(Number.isFinite(a.baselineReturn)&&Number.isFinite(a.candidateReturn))evidence.append(
+      create("p","回収率　学習候補 "+pointRate(a.candidateReturn)+" · 固定モデル "+pointRate(a.baselineReturn)));
+    if(a.marketCheck)evidence.append(create("p","人気順との比較 "+a.marketCheck.n+"件 ／ 必要 "+a.marketCheck.minimum+"件 · "+marketVerdict(a.marketCheck)));
+    target.append(evidence);
+  }
+  const pointReview=record.pointAudit, used=record.pointPolicy?.id;
+  if(pointReview?.status!=="inactive"&&pointReview?.decisions?.length){
+    const details=create("details","");
+    details.append(create("summary","点数基準の判断"),
+      create("p","今回使用した基準　"+(pointReview.selected?.label??POINT_POLICY.label)));
+    for(const option of pointReview.decisions){
+      const verdict=option.policy.id===used?"使用":option.pass?"比較基準を満たした候補":
+        option.n<(pointReview.minimum??POINT_REVIEW.minimum)?"比較件数待ち":"比較基準に未達";
+      details.append(create("p",option.policy.label+"　"+option.n+"件 · "+verdict));
+    }
+    target.append(details);
+  }
+  const inputDetail=create("details","");
+  const partial=record.featureCoverage.filter(x=>x.rate<1);
+  const low=a.noUniqueHit.map(id=>families[(id-1)%ENGINE_SIZE]?.[0]).filter(Boolean);
+  inputDetail.append(create("summary","入力データとエンジンの点検"),
+    create("p",partial.length?"一部または全部が未取得の指標　"+partial.map(x=>x.name+"（取得 "+pointRate(x.rate)+"）").join("、"):
+      "保存済みの対象指標はすべて取得しています。"),
+    create("p",!a.n?"エンジンの寄与は比較件数がそろってから表示します。":
+      "単独的中を基準に追加点検するエンジン "+low.length+"件"));
+  target.append(inputDetail);
+}
+function refresh(){
+  const rs=records();
+  const done=rs.filter(r=>r.settlement), timing=cutoffGroups(done);
+  const replay=done.filter(r=>r.mode==="replay");
+  const all=performanceTotals(done);
+  const comparison=create("details","");
+  comparison.append(create("summary","記録時刻別の参考内訳"),
+    create("p","締切前確認 "+timing.before.length+"件 · 締切時刻以降 "+timing.after.length+"件 · 時刻未確認 "+timing.unknown.length+"件"+
+      (timing.review.length?" · 前の時刻を持つ検証扱い "+timing.review.length+"件":""),"muted"),
+    create("p","締切前確認　"+performanceSummary(performanceTotals(timing.before)),"muted"),
+    create("p","予想の保存方式が過去検証 "+replay.length+"件（上の時刻区分に含まれます）","muted"));
+  $("metrics").replaceChildren(
+    create("p","照合済み全レース　"+done.length+"件 · 未照合 "+(rs.length-done.length)+"件"),
+    create("p",performanceSummary(all)),
+    ...(done.length?[create("p",performanceAmounts(all),"muted")]:[]),
+    ...(all.hit?[create("p","的中した "+all.hit+"レースの収支　黒字 "+all.profitableHits+"件 · 収支ゼロ "+all.evenHits+"件 · 赤字 "+all.losingHits+"件")]:[]),comparison);
+  renderSpendingByRank(done);
+  renderDailyBalance(rs);
+  const pointRecords=done.filter(r=>eligibleForLearning(r)&&comparableWithOdds(r));
+  const recent=rs.slice(-100), comparable=pointRecords.filter(r=>validPointTop(r.comparisonTop)).length;
+  const lines=recent.filter(r=>r.input.lines.length).length;
+  const timely=recent.filter(confirmedForward).length;
+  const drafts=Object.values(db.drafts??{});
+  $("systemCheck").replaceChildren(
+    create("p","直近 "+recent.length+" 件　ライン取得 "+lines+"件 · 発走前確認 "+timely+"件"),
+    create("p","結果未照合 "+(rs.length-done.length)+"件 · 貼り付け途中 "+drafts.length+"件"),
+    create("p","点数比較に使える照合済みレース "+comparable+"件"),
+    create("p","保存オッズのある照合済み記録は、過去検証・締切後・時刻未確認も同じ学習評価に含めます。","muted"));
+  renderPointComparison(pointRecords);
+  renderMarketComparison(done);
+  const history=$("history"), selected=history.value;
+  const options=[...rs].reverse().map(r=>{
+    const option=create("option",r.id+(r.settlement?" ・ 照合済み":""));
+    option.value=r.id;return option;
+  });
+  const empty=create("option","レースを選択");empty.value="";
+  history.replaceChildren(empty,...options);
+  history.value=selected&&db.records[selected]?selected:"";
+  const groups=new Map();
+  for(const r of done){
+    const key=[divisions[r.regime],r.grade??"不明",r.input.ids.length+"車",r.tickets.length+"点"].join(" · ");
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(r);
+  }
+  const rows=[...groups].sort(([a],[b])=>calendarOrder.compare(a,b)).map(([key,items])=>{
+    const row=create("div","","ticket");
+    const totals=performanceTotals(items);
+    row.append(create("strong",key),create("p",items.length+"レース · "+performanceSummary(totals)),
+      create("p",performanceAmounts(totals),"muted"));
+    return row;
+  });
+  $("segments").replaceChildren(create("p",done.length?"照合済み "+done.length+"レース · 提示額による購入想定":
+    "照合済みのレースはまだありません。結果表を貼り付けて照合すると、ここに成績が表示されます。","muted"),...rows);
+  renderLearningHistory(rs);
+  updateLearningAssessment(done,pastLearning);
+}
+$("history").onchange=()=>{
+  const row=db.records[$("history").value];
+  if(row){showPrediction(row);showReview(row);revealPrediction();}
+};
+function validComparison(keys,count){
+  return Array.isArray(keys)&&keys.length===count&&new Set(keys).size===count&&keys.every(key=>typeof key==="string");
+}
+function pairedProbability(gain,loss){
+  const n=gain+loss;
+  let term=2**(-n), probability=term;
+  for(let i=1;i<=loss;i++){term*=((n-i+1)/i);probability+=term;}
+  return Math.min(1,probability);
+}
+function marketAdoptionCheck(rows,count,selectCandidate,minimum){
+  const complete=rows.filter(r=>marketTickets(r.input,count));
+  if(complete.length<minimum)return {n:complete.length,minimum,status:"waiting"};
+  const mid=Math.floor(complete.length/2);
+  const periods=[complete.slice(0,mid),complete.slice(mid)].map(period=>
+    comparePeriod(period,r=>[marketTickets(r.input,count),count],selectCandidate));
+  const pass=periods.every(p=>p.hitDelta>=0&&p.netDelta>=0&&p.outlierCheck);
+  return {n:complete.length,minimum,status:pass?"pass":"fail"};
+}
+function marketVerdict(check){
+  return {waiting:"比較件数待ち",pass:"基準を満たした",fail:"基準に未達"}[check.status];
+}
+function modelComparisonReady(r,config){
+  const {params,revision}=config;
+  const count=r.tickets.length;
+  return eligibleForLearning(r)&&comparableWithOdds(r)&&r.grade!=="不明"&&
+    (!config.trainingProtocol||r.trainingProtocol===config.trainingProtocol)&&
+    r.pointPolicy?.version===POINT_POLICY.version&&r.candidateRevision===revision&&
+    (!r.rebuiltModel||replaySettingsMatch(r,params))&&r.trainingSize>=params.trainingMinimum&&
+    validComparison(r.challenger,count)&&validComparison(r.baseline,count)&&Array.isArray(r.engineTop);
+}
+function validationReport(history,grade,input,regime,count,config){
+  const {params}=config;
+  const exactMatch=r=>r.grade===grade&&(r.segmentRegime??r.regime)===regime;
+  const suitable=grade==="不明"?[]:history.filter(r=>r.input.ids.length===input.ids.length&&r.tickets.length===count&&modelComparisonReady(r,config));
+  const exact=recentEvidence(suitable.filter(exactMatch),params.validationWindow);
+  const related=config.trainingProtocol&&exact.length<params.validationMinimum?
+    recentEvidence(suitable.filter(r=>!exactMatch(r)&&(r.grade===grade||(r.segmentRegime??r.regime)===regime)),params.validationWindow-exact.length):[];
+  const rows=recentEvidence([...exact,...related],params.validationWindow);
+  const selectBase=r=>[r.baseline,count],selectCandidate=r=>[r.challenger,count];
+  const local=comparePeriod(exact,selectBase,selectCandidate);
+  const localSafe=!related.length||exact.length>=params.localValidationMinimum&&local.hitDelta>=0&&local.netDelta>=0&&local.outlierCheck;
+  let gain=0, loss=0;
+  const unique=new Set(), present=new Set();
+  for(const r of rows){
+    const winner=key=>r.settlement.winners.some(w=>w.key===key);
+    const baseHit=r.baseline.some(winner), changeHit=r.challenger.some(winner);
+    if(changeHit&&!baseHit)gain++;
+    if(baseHit&&!changeHit)loss++;
+    const engineHits=r.engineTop.map((key,i)=>winner(key)?i+1:null).filter(Boolean);
+    r.engineTop.forEach((key,i)=>{if(key)present.add(i+1)});
+    if(engineHits.length===1)unique.add(engineHits[0]);
+  }
+  // Exact one-sided paired sign test, evaluated on discordant race forecasts.
+  const probability=pairedProbability(gain,loss);
+  const baseline=pointTotals(rows,r=>[r.baseline,count]);
+  const candidate=pointTotals(rows,r=>[r.challenger,count]);
+  const mid=Math.floor(rows.length/2);
+  const returnByPeriod=[rows.slice(0,mid),rows.slice(mid)].map(period=>
+    comparePeriod(period,r=>[r.baseline,count],r=>[r.challenger,count]));
+  const preservesResults=returnByPeriod.every(p=>p.returnDelta>=(params.validationReturnMargin??0)-1e-10&&p.hitDelta>=0&&p.netDelta>=0);
+  const robust=returnByPeriod.every(p=>p.outlierCheck);
+  const marketCheck=marketAdoptionCheck(rows,count,selectCandidate,params.marketValidationMinimum??PARAMS.marketValidationMinimum);
+  const decision=rows.length<params.validationMinimum?"sample":gain-loss<params.validationHitMargin||probability>params.validationAlpha?"hits":
+    !preservesResults?"period":!robust?"outlier":!localSafe?"local":marketCheck.status==="fail"?"market":"adopted";
+  const adopt=decision==="adopted";
+  return {n:rows.length,rebuiltN:rows.filter(r=>r.rebuiltModel===true).length,exactN:exact.length,relatedN:related.length,gain,loss,probability:Math.min(1,probability),adopt,baselineReturn:baseline.rate,candidateReturn:candidate.rate,returnByPeriod,preservesResults,decision,marketCheck,
+    noUniqueHit:[...present].filter(i=>!unique.has(i)).sort((a,b)=>a-b)};
+}
+function availableLearningHistory(rows,race,startAt,createdAt){
+  const now=Date.parse(createdAt), start=Date.parse(startAt);
+  return rows.filter(r=>{
+    if(!eligibleForLearning(r)||!(Date.parse(r.createdAt)<now&&Date.parse(r.settlement.recordedAt)<now))return false;
+    const [date,venue,number]=r.id.split(" ");
+    if(date!==race.date)return date<race.date;
+    const priorStart=Date.parse(storedStart(r));
+    if(Number.isFinite(start)&&Number.isFinite(priorStart))return priorStart<start;
+    return venue===race.venue&&parseInt(number,10)<parseInt(race.race,10);
+  });
+}
+function venueTrialReview(history,input,grade,count,adaptive,config){
+  const {params,revision}=config, kind=venueRaceKind(input);
+  const rows=recentEvidence(history.filter(r=>eligibleForLearning(r)&&kind&&grade!=="不明"&&r.input.venue===input.venue&&r.grade===grade&&
+    venueRaceKind(r.input)===kind&&r.input.ids.length===input.ids.length&&r.tickets.length===count&&r.adaptive===adaptive&&
+    r.candidateRevision===revision&&(!r.rebuiltVenue||replaySettingsMatch(r,params))&&
+    Number.isFinite(r.venueTrial?.delta)&&r.venueTrial.delta!==0&&validComparison(r.venueTrial.fixed,count)&&
+    validComparison(r.venueTrial.alternative,count)),params.validationWindow);
+  const fixed=r=>[r.venueTrial.fixed,count], alternative=r=>[r.venueTrial.alternative,count];
+  const marketCheck=marketAdoptionCheck(rows,count,alternative,params.marketValidationMinimum);
+  const summary={n:rows.length,minimum:params.validationMinimum,scope:"all",rebuiltN:rows.filter(r=>r.rebuiltVenue).length,marketCheck};
+  if(rows.length<summary.minimum||marketCheck.status==="waiting")return {...summary,status:"waiting"};
+  const midpoint=Math.floor(rows.length/2);
+  const periods=[rows.slice(0,midpoint),rows.slice(midpoint)].map(r=>comparePeriod(r,fixed,alternative));
+  let gains=0, losses=0;
+  for(const r of rows){
+    const hit=key=>r.settlement.winners.some(w=>w.key===key);
+    const before=r.venueTrial.fixed.some(hit), after=r.venueTrial.alternative.some(hit);
+    gains+=Number(after&&!before);
+    losses+=Number(before&&!after);
+  }
+  const pass=marketCheck.status==="pass"&&gains-losses>=params.validationHitMargin&&pairedProbability(gains,losses)<=params.validationAlpha&&
+    periods.every(p=>p.hitDelta>=0&&p.returnDelta>=params.validationReturnMargin-1e-10&&p.netDelta>=0&&p.outlierCheck);
+  return {...summary,status:pass?"pass":"hold"};
+}
+function continuousReviewInputs(rows){
+  const byCondition=new Map();
+  for(const r of rows){
+    if(!eligibleForLearning(r)||r.grade==="不明")continue;
+    const regime=r.segmentRegime??r.regime, count=r.tickets.length;
+    const condition=[r.grade,r.input.ids.length,regime,count].join("/");
+    byCondition.set(condition,{record:r,regime,count});
+  }
+  return [...byCondition.values()];
+}
+let continuousReview={key:null};
+function scheduleContinuousReview(rows,comparisons=rows,signature=""){
+  const config=activeConfig();
+  const key=JSON.stringify([config.revision,signature]);
+  if(continuousReview.key===key)return;
+  const task={key}, target=$("continuousReview"), conditions=continuousReviewInputs(rows);
+  continuousReview=task;
+  const headline=create("p","照合済み "+rows.length+"件 · 学習対象 "+rows.filter(eligibleForLearning).length+"件");
+  const gaps=create("p","入力の点検　オッズ未取得 "+rows.filter(r=>!hasSavedOdds(r.input)).length+
+    "件 · ライン未取得 "+rows.filter(r=>!r.input.lines.length).length+
+    "件 · 発走予定時刻未取得 "+rows.filter(r=>!storedStart(r)).length+"件","muted");
+  if(!conditions.length){
+    target.replaceChildren(headline,gaps,create("p","比較できる照合済みレースを待っています。","muted"));
+    return;
+  }
+  target.replaceChildren(headline,gaps,create("p","条件ごとの採否を再点検しています。","muted"));
+  const venues=new Map();
+  for(const r of comparisons.filter(eligibleForLearning)){
+    const kind=venueRaceKind(r.input);
+    if(r.grade!=="不明"&&kind)venues.set([r.input.venue,r.grade,kind,r.input.ids.length,r.tickets.length,r.adaptive].join("/"),r);
+  }
+  const venueConditions=[...venues.values()];
+  let cursor=0,models=0,points=0,venuePass=0;
+  const advance=()=>{
+    if(continuousReview!==task)return;
+    const end=Math.min(conditions.length+venueConditions.length,cursor+config.params.reviewBatch);
+    while(cursor<end){
+      if(cursor>=conditions.length){
+        const r=venueConditions[cursor-conditions.length];
+        cursor++;
+        const review=venueTrialReview(comparisons,r.input,r.grade,r.tickets.length,r.adaptive,config);
+        venuePass+=Number(review.status==="pass");
+        continue;
+      }
+      const {record:r,regime,count}=conditions[cursor++];
+      const model=validationReport(comparisons,r.grade,r.input,regime,count,config);
+      const point=reviewPointPolicy(rows,r.input,r.grade,regime,true,config.params);
+      models+=Number(model.adopt);
+      points+=Number(point.status==="adopted");
+    }
+    if(cursor<conditions.length+venueConditions.length){setTimeout(advance,0);return;}
+    target.replaceChildren(headline,gaps,
+      create("p","再点検 "+conditions.length+"条件 · 学習モデルの採用基準を満たした条件 "+models+"件 · 点数候補の採用基準を満たした条件 "+points+"件"),
+      create("p","開催地補正の採用基準を満たした条件 "+venuePass+"/"+venueConditions.length+"件"),
+      create("p","保持している照合履歴での点検です。次の予想では、その時点で使える記録から採否と標準への復帰を再判定します。","muted"));
+  };
+  setTimeout(advance,0);
+}
+function replayLearning(record,rows){
+  if(!eligibleForLearning(record)||!usableEngineInput(record.input))return null;
+  const [date,venue,race]=record.id.split(" ");
+  const start=storedStart(record);
+  const history=availableLearningHistory(rows,{date,venue,race},start,record.createdAt);
+  const values=record.candidateParams??{};
+  try{checkSettings(values);}catch{return null;}
+  const params={...PARAMS,...values};
+  const count=record.tickets.length;
+  const baseline=recommend(record.input,[],record.grade,count,false,PARAMS);
+  const candidate=recommend(record.input,history,record.grade,count,true,params);
+  const fixed=baseline.tickets.map(t=>t.key), learned=candidate.tickets.map(t=>t.key);
+  const originalPlan=record.spending?.proposedKeys??record.tickets.map(t=>t.key);
+  const period=spendingHistory(history,params);
+  const spending=reviewAdditionalTickets(record.input,record.grade,record.segmentRegime??record.regime,originalPlan,history,period,params);
+  const evidence=venueEvidence(record.input,record.grade,history,params);
+  const venueDelta=venueAdjustment(record.input,evidence,params);
+  const venuePicks=venueRankings(baseline.rankingsByDivision,baseline.regime,record.input.lines,venueDelta)[baseline.regime].slice(0,count).map(r=>r.key);
+  const offset=candidate.regime*ENGINE_SIZE;
+  return {record,fixed,learned,venue:venuePicks,venueDelta,evidence,scope:candidate.trainingScope,
+    fixedRegime:baseline.regime,engineTop:candidate.engineTop,spendingKeys:originalPlan.slice(0,spending.count),
+    spendingReduced:spending.count<originalPlan.length,spendingActive:period.active,
+    adjusted:candidate.weights.slice(offset,offset+ENGINE_SIZE).some(w=>w!==1),
+    changed:learned.some(key=>!fixed.includes(key))};
+}
+function replaySettingsMatch(record,params){
+  return Object.keys(PARAMS).every(key=>(record.candidateParams?.[key]??PARAMS[key])===(params[key]??PARAMS[key]));
+}
+function needsComparisonReplay(record){
+  return eligibleForLearning(record)&&typeof record.candidateRevision==="string"&&
+    (record.trainingProtocol==null||record.trainingProtocol<TRAINING_PROTOCOL||
+    (record.trainingProtocol===TRAINING_PROTOCOL&&!record.venueTrial&&record.adaptive===false));
+}
+function comparisonRecord(record,results){
+  const replay=results.get(record.id);
+  if(!replay||!needsComparisonReplay(record))return record;
+  const view={...record};
+  if(record.trainingProtocol!==TRAINING_PROTOCOL){
+    Object.assign(view,{trainingProtocol:TRAINING_PROTOCOL,rebuiltModel:true,comparisonUsesOdds:true,
+      baseline:replay.fixed,challenger:replay.learned,segmentRegime:replay.fixedRegime,engineTop:replay.engineTop,
+      trainingSize:replay.scope.exact+replay.scope.related});
+  }
+  if(!record.venueTrial&&record.adaptive===false){
+    view.venueTrial={delta:replay.venueDelta,fixed:replay.fixed,alternative:replay.venue};
+    view.rebuiltVenue=true;
+  }
+  return view;
+}
+function summarizePastLearning(entries){
+  const rows=[...entries].filter(Boolean), participants=rows.map(x=>x.record);
+  const compare=key=>{
+    const tickets=new Map(rows.map(x=>[x.record.id,x[key]]));
+    return pointTotals(participants,r=>[tickets.get(r.id),tickets.get(r.id).length]);
+  };
+  return {n:rows.length,referenced:rows.filter(x=>x.scope.exact+x.scope.related>0).length,
+    spendingReduced:rows.filter(x=>x.spendingReduced).length,spendingActive:rows.filter(x=>x.spendingActive).length,
+    spending:compare("spendingKeys"),
+    adjusted:rows.filter(x=>x.adjusted).length,changed:rows.filter(x=>x.changed).length,
+    venueAdjusted:rows.filter(x=>x.venueDelta!==0).length,
+    venueChanged:rows.filter(x=>x.venue.some(key=>!x.fixed.includes(key))).length,
+    base:compare("fixed"),candidate:compare("learned"),venue:compare("venue")};
+}
+let pastLearning={signature:null,results:new Map(),pending:false,summary:null};
+function updateLearningAssessment(rows,task){
+  const pending=task.pending&&rows.some(needsComparisonReplay);
+  const comparisons=pending?rows:rows.map(r=>comparisonRecord(r,task.results));
+  showLearningStatus(rows,comparisons,pending);
+  if(pending){
+    continuousReview={key:null};
+    $("continuousReview").replaceChildren(create("p","過去の入力から比較を再計算しています。","muted"));
+  }else scheduleContinuousReview(rows,comparisons,task.signature);
+}
+function schedulePastLearning(rows){
+  const settled=rows.filter(r=>r.settlement);
+  const signature=JSON.stringify(settled.map(r=>[r.id,r.createdAt,storedStart(r),r.settlement.recordedAt,
+    r.settlement.winners,r.settlement.finish,r.settlement.refundIds,r.settlement.voided,r.settlement.corrected]));
+  if(pastLearning.signature===signature)return pastLearning;
+  const task={signature,results:new Map(),pending:settled.length>0,summary:null};
+  pastLearning=task;
+  showPastLearning();
+  if(!task.pending)return task;
+  const batch=activeConfig().params.reviewBatch;
+  task.ready=(async()=>{
+    for(let cursor=0;cursor<settled.length;){
+      await new Promise(resolve=>setTimeout(resolve,0));
+      if(pastLearning!==task&&!task.forPrediction)return;
+      const limit=Math.min(cursor+batch,settled.length);
+      while(cursor<limit){
+        const record=settled[cursor++];
+        task.results.set(record.id,replayLearning(record,settled));
+      }
+    }
+    task.summary=summarizePastLearning(task.results.values());
+    task.pending=false;
+    if(pastLearning===task){
+      showPastLearning();
+      updateLearningAssessment(settled,task);
+    }
+  })();
+  return task;
+}
+function showPastLearning(){
+  const target=$("pastLearning");
+  const {summary,pending,results}=pastLearning;
+  if(!summary?.n){
+    target.replaceChildren(create("p",pending?"照合済みの過去レースを再計算しています。":"再計算できる照合済みレースはありません。"));
+    return;
+  }
+  const score=v=>v.hits+"/"+v.eligible+"的中 · 回収率 "+pointRate(v.rate)+" · 収支 "+(v.returned-v.stake).toLocaleString("ja-JP")+"円";
+  target.replaceChildren(create("p",summary.n+"レースを再計算 · データを参照 "+summary.referenced+"件 · 重みを変更 "+summary.adjusted+"件 · 買い目が変化 "+summary.changed+"件"),
+    create("p","固定モデル　"+score(summary.base)),
+    create("p","学習候補　"+score(summary.candidate)),
+    create("p","開催地を反映した候補　"+score(summary.venue)+" · 評価を調整 "+summary.venueAdjusted+"件 · 組番変更 "+summary.venueChanged+"件"),
+    create("p","保存時の候補順で追加点を再判定　"+score(summary.spending)+" · 購入想定 "+summary.spending.stake.toLocaleString("ja-JP")+
+      "円 · 払戻・返還 "+summary.spending.returned.toLocaleString("ja-JP")+"円 · 点数を抑えたレース "+summary.spendingReduced+"件"),
+    create("p","モデル間は当時の点数で比較し、追加点の試算では点数を再判定します。各予想より前に照合したレースから学習します。設定版・必要件数・比較条件を満たした記録は次の予想の採用判定に使います。","muted"));
+  const id=$("learningRace").value||records().at(-1)?.id, selected=results.get(id);
+  if(selected){
+    const outcome=keys=>{
+      const result=pointResult(selected.record,keys,keys.length);
+      return result.hit?"的中":result.eligible?"不的中":"全点返還";
+    };
+    const row=create("div","","audit-card");
+    row.append(create("strong",id+" · "+(selected.changed?"買い目に変更あり":"買い目の組番は同じ")),
+      create("p","同条件 "+selected.scope.exact+"件 · 補助 "+selected.scope.related+"件"),
+      create("p","固定モデル　"+selected.fixed.join("、")+" · "+outcome(selected.fixed)),
+      create("p","学習候補　"+selected.learned.join("、")+" · "+outcome(selected.learned)),
+      create("p","開催地を反映した候補　"+selected.venue.join("、")+" · "+outcome(selected.venue)),
+      create("p","判読できたライン　同じ競輪場 "+selected.evidence.lineTotal+"件 · 他場 "+selected.evidence.peerTotal+
+        "件 · 評価補正 "+selected.venueDelta.toFixed(3),"muted"));
+    target.append(row);
+  }
+}
+function activeConfig(){return {revision:db.config?.revision??"default",trainingProtocol:TRAINING_PROTOCOL,params:{...PARAMS,...db.config?.values}}}
+function withCurrentRecords(fn){
+  const update=async()=>{
+    await ready;
+    const saved=await readStored();
+    if(saved)db=saved;
+    return fn();
+  };
+  const run=queue.then(()=>navigator.locks?navigator.locks.request(KEY,update):update());
+  queue=run.catch(()=>{});
+  return run;
+}
+function action(status,fn){return async()=>{try{$(status).textContent="";await fn()}catch(e){$(status).textContent=e.message}}}
+function sources(){
+  const log=Object.values(db.sources??{}).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+  const captured={entry:new Set(),result:new Set()};
+  for(const item of log)captured[item.field].add(normal(item.raw).trim());
+  const previous=[];
+  for(const [race,draft] of Object.entries(db.drafts??{}).reverse()){
+    for(const [kind,raw] of Object.entries(draft)){
+      const field=kind==="result"?"result":"entry", value=normal(raw).trim();
+      if(captured[field].has(value))continue;
+      captured[field].add(value);
+      previous.push({id:"draft-"+race+"-"+kind,field,kind,raw,race,status:"waiting"});
+    }
+  }
+  return [...log,...previous];
+}
+function renderSources(){
+  const items=sources(), selection=$("sourceChoice"), selected=selection.value;
+  displayedSources=new Map(items.map(item=>[item.id,item]));
+  const placeholder=create("option","貼り付け履歴を選択");placeholder.value="";
+  selection.replaceChildren(placeholder,...items.map(item=>{
+    const kind=item.field==="result"?"結果表":item.kind==="odds"?"3連複オッズ表":item.kind==="timing"?"締切・発走時刻":"出走表・オッズ表";
+    const stamp=item.createdAt?new Date(item.createdAt).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"}):"下書き";
+    const option=create("option",stamp+" · "+kind+(item.race?" · "+item.race:"")+" · "+sourceStates[item.status]);
+    option.value=item.id;return option;
+  }));
+  selection.value=displayedSources.has(selected)?selected:items[0]?.id??"";
+  $("restoreSource").disabled=!items.length;
+  $("sourceRecoveryHeading").textContent="貼り付け履歴"+(items.length?"（"+items.length+"件）":"");
+}
+$("restoreSource").onclick=()=>{
+  const item=displayedSources.get($("sourceChoice").value);
+  if(!item)return;
+  if(!restoreSourceToField(item)){
+    $("sourceRecoveryStatus").textContent="入力欄の文字をそのまま残しました。欄を空にすると履歴の原文を戻せます。";
+    return;
+  }
+  $("sourceRecoveryStatus").textContent="保存した原文を入力欄に戻しました。必要な場合は読み取りをやり直せます。";
+  $(item.field).focus();
+};
+function restoreSourceToField(item){
+  const field=$(item.field);
+  if(field.value&&field.value!==item.raw)return false;
+  field.value=item.raw;
+  return true;
+}
+async function processSource(field,raw,statusNode){
+  const existing=Object.values(db.sources??{}).find(item=>item.field===field&&item.raw===raw);
+  const item=existing??{id:crypto.randomUUID?.()??("clipboard-"+Date.now()+"-"+Math.random()),field,raw,createdAt:new Date().toISOString()};
+  const captured={...item,status:"saved"};
+  const save=async event=>{
+    const next={...db,sources:{...db.sources,[item.id]:event}};
+    await writeStored(next);
+    db=next;
+    queueBackup();
+  };
+  try{await save(captured)}
+  catch{throw Error("端末に原文を保存できませんでした。この画面を閉じる前に、入力欄の文字をコピーしてください。")}
+  renderSources();
+  $(statusNode).textContent="貼り付けた原文を保存しました。表を読み取っています。";
+  if(!captured.race){
+    try{captured.race=raceIdentity(raw).id}catch{}
+  }
+  let status;
+  try{status=await consumeInput(field,raw.trim())}
+  catch(error){
+    const message=error instanceof Error?error.message:String(error);
+    try{await save({...captured,status:"failed",error:message});renderSources()}catch{}
+    throw Error(message+" 貼り付け履歴から原文を開けます。");
+  }
+  try{await save({...captured,status:status??"waiting",error:undefined});renderSources()}
+  catch{$(statusNode).textContent+=" 原文は保存済みです。";return}
+  const input=$(field);
+  // Textareas normalize line endings, but any newer edit must survive this submission.
+  if(input.value===raw||input.value===raw.replace(/\r\n?/g,"\n"))input.value="";
+}
+function pasteOnly(id,status){
+  const field=$(id);
+  field.addEventListener("paste",event=>{
+    const value=event.clipboardData?.getData("text/plain");
+    if(!value)return;
+    event.preventDefault();
+    clearTimeout(timer);
+    field.value=value;
+    consume(value);
+  });
+  let timer;
+  field.addEventListener("input",event=>{
+    clearTimeout(timer);
+    if(!field.value.trim())return;
+    if(event.inputType==="insertFromPaste")consume(field.value);
+    else timer=setTimeout(()=>consume(field.value),275);
+  });
+  $(id==="entry"?"retryEntry":"retryResult").onclick=()=>{
+    clearTimeout(timer);
+    if(!field.value.trim()){
+      $(status).textContent=id==="entry"?"出走表と3連複オッズ表をまとめて貼り付けてください。":"結果表を貼り付けてください。";
+      field.focus();
+      return;
+    }
+    consume(field.value);
+  };
+  function consume(value){
+    const run=action(status,()=>{
+      $(status).textContent="貼り付けた原文を保存しています。";
+      return withCurrentRecords(()=>processSource(id,value,status));
+    });
+    void run();
+  }
+}
+async function putDraft(id,patch){
+  const drafts={...db.drafts,[id]:{...db.drafts?.[id],...patch}};
+  await persist({...db,drafts},{backup:true});
+  return drafts[id];
+}
+async function submitPrediction(race,draft){
+  const {id}=race;
+  if(db.records[id])return db.records[id];
+  const input=readInput(draft.entry,draft.odds,race);
+  const rows=records();
+  const tables=draft.entry+"\n"+draft.odds;
+  const task=schedulePastLearning(rows);
+  if(task.pending&&rows.some(needsComparisonReplay)){
+    task.forPrediction=true;
+    await task.ready;
+  }
+  const now=new Date();
+  const {grade,startAt}=raceMetadata(tables,race,now,!!draft.result,draft.timing);
+  const officialStart=draft.result?raceIdentity(draft.result).officialStartAt:null;
+  const history=availableLearningHistory(rows,race,startAt??officialStart,now.toISOString());
+  const comparisons=history.map(r=>comparisonRecord(r,task.results));
+  const config=activeConfig();
+  const baseline=recommend(input,history,grade,null,false,PARAMS,true,config.params);
+  const {pointPolicy,pointAudit}=baseline;
+  const candidate=recommend(input,history,grade,pointPolicy.count,true,config.params);
+  const siteEvidence=venueEvidence(input,grade,history,config.params), delta=venueAdjustment(input,siteEvidence,config.params);
+  const choose=count=>{
+    const modelAudit=validationReport(hasSavedOdds(input)?comparisons:[],grade,input,baseline.regime,count,config);
+    const adaptive=modelAudit.adopt&&candidate.trainingSize>=config.params.trainingMinimum&&pointPolicy.id!==EXPECTED_POLICY.id;
+    const model=adaptive?candidate:baseline;
+    const review=venueTrialReview(comparisons,input,grade,count,adaptive,config);
+    const reRanked=venueRankings(model.rankingsByDivision,model.regime,input.lines,delta);
+    const applied=hasSavedOdds(input)&&review.status==="pass"&&delta!==0&&pointPolicy.id!==EXPECTED_POLICY.id;
+    const ranked=applied?reRanked:model.rankingsByDivision;
+    return {modelAudit,adaptive,model,ranked,top:ranked[model.regime].slice(0,BUY.max).map(r=>r.key),
+      venueTrial:{delta,fixed:model.comparisonTop.slice(0,count),alternative:reRanked[model.regime].slice(0,count).map(r=>r.key),applied,review}};
+  };
+  const period=spendingHistory(history,config.params);
+  let count=pointPolicy.count, choice=choose(count);
+  const proposedKeys=choice.top.slice(0,count),attempts=[];
+  while(period.active&&count>BUY.min){
+    const result=reviewAdditionalTickets(input,grade,baseline.regime,choice.top.slice(0,count),history,period,config.params);
+    attempts.push({requested:count,modelComparisons:choice.modelAudit.n,rebuiltN:choice.modelAudit.rebuiltN,...result});
+    if(result.count===count)break;
+    count=result.count;
+    choice=choose(count);
+  }
+  const {modelAudit,adaptive,venueTrial}=choice;
+  const {rankingsByDivision,...pick}=choice.model;
+  const selection=rankSelections(choice.ranked,pick.regime,count);
+  const savedAt=new Date(), timing=raceMetadata(tables,race,savedAt,!!draft.result,draft.timing);
+  const record={id,createdAt:savedAt.toISOString(),version:VERSION,appRelease:RELEASE,trainingProtocol:TRAINING_PROTOCOL,input,...timing,adaptive,
+    ...pick,...selection,comparisonTop:choice.top,comparisonUsesOdds:hasSavedOdds(input),pointPolicy:{...pointPolicy,count},pointAudit,expectedPoints:baseline.expectedPoints,baselineTop:baseline.comparisonTop,segmentRegime:baseline.regime,candidateRevision:config.revision,candidateParams:config.params,modelAudit,
+    activeParams:adaptive?config.params:PARAMS,trainingSize:candidate.trainingSize,trainingScope:candidate.trainingScope,
+    venueEvidence:siteEvidence,venueTrial,spending:{period,proposedKeys,attempts},
+    ...(draft.timing?{timingSupplement:draft.timing}:{}),
+    baseline:baseline.comparisonTop.slice(0,count),challenger:candidate.comparisonTop.slice(0,count)};
+  const drafts={...db.drafts};
+  if(draft.result)drafts[id]={result:draft.result};else delete drafts[id];
+  await persist({...db,drafts,records:{...db.records,[id]:record}});
+  return record;
+}
+const correction=raw=>/(?:払戻金|結果)[ \t]*(?:を)?訂正|訂正[ \t]*(?:後|払戻)/u.test(raw);
+const settlementKey=result=>JSON.stringify({winners:result.winners,refundIds:result.refundIds??[],voided:result.voided??false});
+async function settleRecord(record,raw){
+  const parsed=parseResult(raw,record.input.ids), {winners,refundIds,voided,finish}=parsed;
+  const official=raceIdentity(raw);
+  if(official.id!==record.id)throw Error("結果表と予想のレースが一致しません。");
+  const officialTiming=official.officialDeadlineAt?{officialDeadlineAt:official.officialDeadlineAt,officialStartAt:official.officialStartAt}:{};
+  const previous=record.settlement;
+  const samePayout=!!previous&&settlementKey(previous)===settlementKey(parsed);
+  const timingAdded=!!official.officialDeadlineAt&&!previous?.officialDeadlineAt;
+  const finishAdded=Object.keys(finish).some(id=>!previous?.finish?.[id]);
+  if(samePayout&&!timingAdded&&!finishAdded)return {record,status:"同じ結果を照合済みです。"};
+  if(previous&&!samePayout&&!correction(raw))throw Error("保存済みの払戻と異なります。公式の訂正表示を含む結果表を貼り付けてください。");
+  const scheduled=official.officialStartAt??record.startAt;
+  if(scheduled&&Date.now()<Date.parse(scheduled)&&!voided)throw Error("発走予定時刻より前のため、結果の登録を保留しました。");
+  const knownFinish=samePayout?{...finish,...previous.finish}:finish;
+  const analysis=record.tickets.map(t=>{
+    const hit=winners.some(w=>w.key===t.key);
+    const refund=voided||t.key.split("-").map(Number).some(n=>refundIds.includes(n));
+    const overlap=winners.length?Math.max(...winners.map(w=>t.key.split("-").filter(x=>w.key.split("-").includes(x)).length)):null;
+    const evidence=refund?"公式結果に基づき返還":hit?"公式払戻の組番と一致":"的中組番と最大"+overlap+"車が一致";
+    const gaps=overlap!==null&&!hit&&!refund?winners.filter(w=>t.key.split("-").filter(x=>w.key.split("-").includes(x)).length===overlap).map(w=>w.key).join(" / "):"";
+    const actual=t.key.split("-").map(Number).filter(id=>knownFinish[id]).map(id=>{
+      const f=knownFinish[id];return id+"番 "+(f.rank?f.rank+"着":f.status)+(f.method?"・"+f.method:"");
+    });
+    return {key:t.key,hit,refund,positive:evidence+"。"+(actual.length?"公式着順は "+actual.join("、")+"。":"")+"予想時の支持材料は"+(t.strength.join("、")||"総合順位")+"。",
+      negative:(refund?"返還のため着順による評価は保留。":gaps?"比較した的中組番は "+gaps+"。":"")+
+        "予想時の懸念は"+(t.risk.join("、")||"記録指標から特定できず")+"。"};
+  });
+  const payout=record.tickets.reduce((sum,x)=>sum+(winners.find(w=>w.key===x.key)?.payout??0),0);
+  const timing=official.officialDeadlineAt?officialTiming:previous?.officialDeadlineAt?
+    {officialDeadlineAt:previous.officialDeadlineAt,officialStartAt:previous.officialStartAt}:{};
+  const settled={...record,settlement:{raw,...parsed,...timing,finish:knownFinish,analysis,stake:record.tickets.length*BUY.yen,payout,
+    refundYen:analysis.filter(x=>x.refund).length*BUY.yen,hits:analysis.filter(x=>x.hit).length,
+    recordedAt:samePayout?previous.recordedAt:new Date().toISOString(),corrected:samePayout?previous.corrected:!!previous,prior:previous??null}};
+  const drafts={...db.drafts};
+  delete drafts[record.id];
+  await persist({...db,drafts,records:{...db.records,[record.id]:settled}});
+  const reason=learningHoldReason(settled);
+  const status=samePayout?"払戻は照合済みです。公式の時刻や着順を補完しました。":
+    reason?"結果と各買い目の分析を保存しました。学習評価の対象外です（"+reason+"）。":"結果を照合し、学習データに反映しました。";
+  return {record:settled,status};
+}
+function readRacePacket(value){
+  let packet;
+  try{packet=JSON.parse(value)}catch{throw Error("取込用JSONを読み取れません。JSONの全体を選んでください。")}
+  if(packet?.schema===1&&packet.records)throw Error("これはバックアップです。「バックアップを復元する」でこのファイルを選んでください。");
+  if(packet?.format!=="keirin-ver2-input"||!Array.isArray(packet.tables)||!packet.tables.length||packet.tables.length>3||
+     !packet.tables.every(x=>x&&["entry","result"].includes(x.field)&&typeof x.text==="string"&&x.text.trim()))
+    throw Error("取込用JSONの形式が一致しません。");
+  const ids=new Set(packet.tables.map(x=>raceIdentity(x.text).id));
+  if(ids.size!==1)throw Error("取込用JSONには1レース分を入れてください。");
+  return {id:[...ids][0],tables:packet.tables};
+}
+async function consumeInput(id,value){
+  if(id!=="entry"||!value.startsWith("{"))return consumePaste(id,normal(value));
+  const packet=readRacePacket(value);
+  let status;
+  for(const table of [...packet.tables].sort((a,b)=>Number(b.field==="result")-Number(a.field==="result")))
+    status=await consumePaste(table.field,normal(table.text).trim());
+  return status;
+}
+const SHARE_INBOX="keirin-v2-share-inbox";
+const MAX_RACE_BYTES=1024*1024;
+function raceImportInfo(raw){
+  const text=raw.trim();
+  if(text.startsWith("{")){
+    const packet=readRacePacket(text);
+    const fields=new Set(packet.tables.map(t=>t.field));
+    const label=fields.size===2?"出走表・オッズ表と結果表":fields.has("result")?"結果表":"出走表・オッズ表";
+    return {id:packet.id,field:"entry",feedback:fields.has("entry")?"entryStatus":"resultStatus",label};
+  }
+  const value=normal(text), id=raceIdentity(value).id;
+  let result=/^\s*■\s*(?:払戻金|着順)/mu.test(value);
+  if(!result){
+    try{parseResult(value,[1,2,3,4,5,6,7,8,9]);result=true;}catch{}
+  }
+  return {id,field:result?"result":"entry",feedback:result?"resultStatus":"entryStatus",label:result?"結果表":"出走表・オッズ表・開催情報"};
+}
+async function importRaceText(raw){
+  const info=raceImportInfo(raw);
+  await withCurrentRecords(()=>processSource(info.field,raw,info.feedback));
+  return $(info.feedback).textContent||info.id+" を取り込みました。";
+}
+$("raceFile").onchange=action("receiveStatus",async()=>{
+  const file=$("raceFile").files?.[0];
+  if(!file)return;
+  try{
+    if(file.size>MAX_RACE_BYTES)throw Error("1レース分のJSONかテキストを選んでください。バックアップは「バックアップを復元する」から開けます。");
+    $("receiveStatus").textContent=await importRaceText(await file.text());
+  }finally{$("raceFile").value="";}
+});
+let sharedItem=null,readingShare=0,shareBusy=false;
+async function showReceivedRace(){
+  if(!window.caches||shareBusy)return;
+  const turn=++readingShare;
+  try{
+    if(!await caches.has(SHARE_INBOX))return;
+    const inbox=await caches.open(SHARE_INBOX), requests=await inbox.keys();
+    const request=requests.sort((a,b)=>a.url.localeCompare(b.url))[0];
+    if(!request){
+      if(turn===readingShare){sharedItem=null;$("receivedRace").hidden=true;}
+      return;
+    }
+    const response=await inbox.match(request);
+    if(!response)return;
+    const raw=await response.text();
+    if(turn!==readingShare||shareBusy)return;
+    let label="表の種類を確認できません。",valid=false;
+    try{
+      const info=raceImportInfo(raw);
+      label=info.id+" · "+info.label;valid=true;
+    }catch(e){label=e.message;}
+    sharedItem={inbox,request,raw};
+    $("receivedInfo").textContent="共有で受信 "+requests.length+"件　"+label;
+    $("receivedRace").hidden=false;$("receivePanel").open=true;
+    $("acceptReceived").disabled=!valid;
+  }catch(e){
+    if(turn===readingShare){
+      $("receivePanel").open=true;
+      $("receiveStatus").textContent="受信した表を開けませんでした。ファイル選択または貼り付けで取り込めます。";
+    }
+  }
+}
+async function finishReceived(accept){
+  if(!sharedItem||shareBusy)return;
+  const item=sharedItem;
+  shareBusy=true;++readingShare;
+  $("acceptReceived").disabled=true;$("dismissReceived").disabled=true;
+  try{
+    if(accept)$("receiveStatus").textContent=await importRaceText(item.raw);
+    else $("receiveStatus").textContent="この受信を取り消しました。";
+    await item.inbox.delete(item.request);
+    sharedItem=null;$("receivedRace").hidden=true;
+  }finally{
+    shareBusy=false;$("dismissReceived").disabled=false;
+    await showReceivedRace();
+  }
+}
+$("acceptReceived").onclick=action("receiveStatus",()=>finishReceived(true));
+$("dismissReceived").onclick=action("receiveStatus",()=>finishReceived(false));
+async function consumePaste(id,raw){
+  if(!raw)return;
+  const race=raceIdentity(raw);
+  if(id==="result"){
+    if(!db.records[race.id]){
+      const ids=[1,2,3,4,5,6,7,8,9];
+      const parsed=parseResult(raw,ids), prior=db.drafts?.[race.id]?.result;
+      if(prior&&settlementKey(parseResult(prior,ids))!==settlementKey(parsed)&&!correction(raw))throw Error("一時保存の払戻と異なります。公式の訂正表示を含む結果を貼り付けてください。");
+      await putDraft(race.id,{result:raw});
+      $("resultStatus").textContent=race.id+" の結果を一時保存しました。出走表と3連複オッズ表がそろうと照合します。";
+      return "waiting";
+    }
+    const settled=await settleRecord(db.records[race.id],raw);
+    showReview(settled.record);
+    $("resultStatus").textContent=race.id+"　"+settled.status;
+    return "complete";
+  }
+  if(db.records[race.id]){
+    const existing=db.records[race.id];
+    showPrediction(existing);
+    showReview(existing);
+    const pending=db.drafts?.[race.id]?.result;
+    if(pending&&!existing.settlement)await action("resultStatus",async()=>{
+      const completed=await settleRecord(existing,pending);
+      showReview(completed.record);
+      $("resultStatus").textContent=completed.status;
+    })();
+    $("entryStatus").textContent=race.id+" の保存済みの予想を表示しています。";
+    revealPrediction();
+    return "complete";
+  }
+  const isEntry=readRiders(raw).riders.length>=BUY.minRiders;
+  const sections=trifectaSections(raw);
+  const isOdds=sections.some(section=>!rowOdds(section).next().done||matrixRows(section).some(row=>/^[1-9]\s+\p{L}/u.test(row))||emptyOdds(section));
+  const timing=readRaceTimes(raw,race);
+  const isTiming=!isEntry&&!isOdds&&!/払戻金|■\s*着順/u.test(raw)&&["start","cutoff","conflict"].includes(timing.timingEvidence);
+  if(isTiming&&timing.timingEvidence==="conflict")throw Error("締切・発走時刻が一致しません。対象レースの時刻を確認してください。");
+  if(!isEntry&&!isOdds&&!isTiming)throw Error("出走表か3連複オッズ表を読み取れません。表全体を貼り付けてください。");
+  const draft=await putDraft(race.id,{...(isEntry?{entry:raw}:{}),...(isOdds?{odds:raw}:{}),...(isTiming?{timing:raw}:{})});
+  if(!draft.entry||!draft.odds){
+    $("entryStatus").textContent=race.id+"　"+(isTiming?"締切・発走時刻を一時保存しました。":"")+
+      (draft.entry?"3連複オッズ表":"出走表")+"の貼り付けをお待ちしています。";
+    return "waiting";
+  }
+  const record=await submitPrediction(race,draft);
+  showPrediction(record);
+  showReview(record);
+  $("entryStatus").textContent=record.id+" の予想を自動保存しました。3連複オッズ "+Object.keys(record.input.odds).length+"組を読み取りました。";
+  revealPrediction();
+  if(draft.result)await action("resultStatus",async()=>{
+    const settled=await settleRecord(record,draft.result);
+    showReview(settled.record);
+    $("resultStatus").textContent=race.id+"　"+settled.status;
+  })();
+  void enrichWeather(record).catch(()=>{});
+  return "complete";
+}
+pasteOnly("entry","entryStatus");
+pasteOnly("result","resultStatus");
+function renderConfigHistory(){
+  const target=$("configHistory");
+  if(!target)return;
+  const history=Array.isArray(db.configHistory)?db.configHistory:[];
+  target.replaceChildren();
+  if(!history.length){target.append(create("p","設定変更の履歴はまだありません。","muted"));return;}
+  for(const [index,item] of history.slice(-20).reverse().entries()){
+    const line=create("div","","audit-card");
+    const stamp=new Date(item.at).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"});
+    line.append(create("p",stamp+" · "+(item.reason||"設定変更")),
+      create("p","変更項目 "+(item.changedKeys?.length?item.changedKeys.join("、"):"初期設定への復元"),"muted"));
+    const btn=create("button","この設定へ戻す","secondary");
+    btn.type="button";
+    btn.onclick=action("settingsStatus",()=>withCurrentRecords(async()=>{
+      const previous=item.before||{};
+      checkSettings(previous);
+      await saveConfigRevision(previous,"履歴から復元");
+      showSettings();
+      $("settingsStatus").textContent="過去の設定を新しい候補版として復元しました。学習採用は再検証が必要です。";
+    }));
+    line.append(btn);target.append(line);
+  }
+}
+async function saveConfigRevision(values,reason){
+  const current=activeConfig().params;
+  const changedKeys=Object.keys(PARAMS).filter(k=>current[k]!==({...PARAMS,...values})[k]);
+  if(!changedKeys.length)return false;
+  const history=Array.isArray(db.configHistory)?db.configHistory:[];
+  const entry={at:new Date().toISOString(),reason,previousRevision:db.config?.revision??"default",
+    before:{...db.config?.values},changedKeys};
+  // Bounded storage protects the phone; the complete retained history is included in JSON backup.
+  await persist({...db,config:{revision:new Date().toISOString(),values},configHistory:[...history,entry].slice(-200)});
+  renderConfigHistory();
+  return true;
+}
+function showSettings(){
+  $("settings").replaceChildren(...Object.entries(fields).map(([key,[label,min,max,step]])=>{
+    const box=create("label",label), input=document.createElement("input");
+    Object.assign(input,{type:"number",id:"param-"+key,min,max,step,value:activeConfig().params[key]});
+    box.append(input);return box;
+  }));
+  renderConfigHistory();
+}
+function checkSettings(values){
+  for(const [key,value] of Object.entries(values)){
+    if(!Object.hasOwn(fields,key)||!Number.isFinite(value)||value<fields[key][1]||value>fields[key][2]||
+      (fields[key][3]===1&&!Number.isInteger(value)))throw Error("学習設定が範囲外です。");
+  }
+  const p={...PARAMS,...values};
+  if(p.hardThreshold>=p.upsetThreshold||p.historyWindow<p.trainingMinimum||p.validationWindow<p.validationMinimum)
+    throw Error("区分の境界と、学習・比較の件数設定を確認してください。");
+  if(p.localValidationMinimum>p.validationMinimum||p.marketValidationMinimum>p.validationWindow||p.pointWindow<p.pointMinimum||2*p.pointMinChanged>p.pointMinimum||p.expectedWindow<p.expectedMinimum)
+    throw Error("同条件・点数・期待値の比較件数の設定を確認してください。");
+  if(p.venueHistoryWindow<p.venueHistoryMinimum)throw Error("開催地の傾向に使う最大件数と最低件数を確認してください。");
+  if(p.compactFirstGap>p.pointFirstGap||p.pointFirstGap>p.wideFirstGap||p.compactSecondGap>p.pointSecondGap||p.pointSecondGap>p.wideSecondGap)
+    throw Error("点数基準の評価差は、少なめ・標準・多めの順に設定してください。");
+  const bands=expectedBands(p);
+  if(bands.some((value,i)=>i>0&&value<=bands[i-1]))throw Error("オッズ帯の境界は小さい順に設定してください。");
+}
+$("saveSettings").onclick=action("settingsStatus",()=>{
+  const values=Object.fromEntries(Object.keys(fields).map(k=>[k,$("param-"+k).valueAsNumber]));
+  checkSettings(values);
+  return withCurrentRecords(async()=>{
+    const {params}=activeConfig();
+    if(Object.entries(values).every(([key,value])=>params[key]===value)){
+      $("settingsStatus").textContent="検証条件は保存済みです。これまでの比較を引き継ぎます。";
+      return;
+    }
+    await saveConfigRevision(values,"手動変更");
+    $("settingsStatus").textContent="候補設定を保存しました。採用は、同じ設定版の学習比較で判定します。";
+  });
+});
+$("resetSettings").onclick=action("settingsStatus",()=>withCurrentRecords(async()=>{
+  await saveConfigRevision({},"初期値へ戻す");
+  showSettings();
+  $("settingsStatus").textContent="候補を初期設定に戻しました。";
+}));
+const backupName="keirin_v2_backup.json";
+const snapshot=()=>JSON.stringify(db,null,2);
+const makeFile=()=>new File([snapshot()],backupName,{type:"application/json"});
+function downloadBackup(){
+  const url=URL.createObjectURL(makeFile()), a=document.createElement("a");
+  a.href=url;a.download=backupName;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+// Read-only self-audit. Never rewrites stored races or silently deploys a model.
+function makeIntegrityAudit(){
+  const timestamp=new Date().toISOString();
+  const rows=Object.values(db.records||{});
+  const settled=rows.filter(r=>r.settlement);
+  const report={schema:"keirin-integrity-audit/1",generatedAt:timestamp,appRelease:RELEASE,
+    scope:"保存済み記録の形式・計算整合性のみ。予想精度・締切前予想・Drive接続の保証ではない。",
+    status:"pass",errors:[],recordCount:rows.length,settledCount:settled.length,
+    pendingCount:rows.length-settled.length,
+    ticketCount:rows.reduce((n,r)=>n+(Array.isArray(r.tickets)?r.tickets.length:0),0),
+    totalStake:settled.reduce((n,r)=>n+(r.settlement.stake||0),0),
+    totalReturned:settled.reduce((n,r)=>n+(r.settlement.payout||0)+(r.settlement.refundYen||0),0),
+    configurationRevision:db.config?.revision??"default"};
+  // Do not blend retrospective predictions into prospective performance.
+  const groups=cutoffGroups(rows);
+  report.timingCounts=Object.fromEntries(Object.entries(groups).map(([kind,items])=>[kind,items.length]));
+  const forwardSettled=groups.before.filter(r=>r.settlement);
+  const stake=forwardSettled.reduce((sum,r)=>sum+r.settlement.stake,0);
+  const returned=forwardSettled.reduce((sum,r)=>sum+r.settlement.payout+r.settlement.refundYen,0);
+  const hits=forwardSettled.filter(r=>r.settlement.payout>0).length;
+  report.forwardOnly={settledCount:forwardSettled.length,hitCount:hits,
+    hitRate:forwardSettled.length?hits/forwardSettled.length:null,
+    stake,returned,net:returned-stake,recoveryRate:stake?returned/stake:null};
+  report.prospectiveEvidenceNote="締切前分類は保存時刻と締切時刻に基づく。実機時計の正確性や原本の真正性は別途検証が必要。";
+  try{validateBackup(db);}catch(e){report.status="fail";report.errors.push(String(e.message||e));}
+  report.net=report.totalReturned-report.totalStake;
+  report.recoveryRate=report.totalStake?report.totalReturned/report.totalStake:null;
+  return report;
+}
+$("auditExport").onclick=action("backupStatus",()=>{
+  const report=makeIntegrityAudit();
+  const blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="keirin_integrity_audit.json";a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  $("backupStatus").textContent=(report.status==="pass"?"整合性検査に合格しました。":"整合性に問題があります。")+
+    " レース "+report.recordCount+"件、照合済み "+report.settledCount+"件。監査JSONの保存を開始しました。";
+});
+$("export").onclick=action("backupStatus",()=>{
+  downloadBackup();
+  $("backupStatus").textContent="端末へのダウンロードを開始しました。Driveへ移すには、Driveアプリで「＋」→「アップロード」を選びます。";
+});
+$("share").onclick=action("backupStatus",async()=>{
+  const files=[makeFile()];
+  if(!navigator.canShare?.({files})){
+    downloadBackup();
+    $("backupStatus").textContent="端末へのダウンロードを開始しました。Driveアプリの「＋」→「アップロード」でファイルを選べます。";
+    return;
+  }
+  try{await navigator.share({files,title:"競輪予想 Ver.2 バックアップ"});}
+  catch(e){if(e.name==="AbortError")return;throw Error("共有を開けませんでした。「JSONをダウンロード」からDriveへアップロードできます。");}
+  $("backupStatus").textContent="共有先で保存を確定し、Driveでファイルをご確認ください。";
+});
+function validateSettlement(r,validKey){
+  const s=r.settlement;
+  if(!Number.isFinite(Date.parse(s.recordedAt))||!Array.isArray(s.winners)||
+     !s.winners.every(w=>validKey(w?.key)&&Number.isSafeInteger(w.payout)&&w.payout>=BUY.yen)||
+     new Set(s.winners.map(w=>w.key)).size!==s.winners.length||
+     !Array.isArray(s.analysis)||s.analysis.length!==r.tickets.length)throw Error("不正な結果記録があります。");
+  const refundIds=s.refundIds??[];
+  if(!Array.isArray(refundIds)||new Set(refundIds).size!==refundIds.length||
+     !refundIds.every(id=>r.input.ids.includes(id))||
+     (s.voided?!!s.winners.length:!s.winners.length)||
+     s.winners.some(w=>w.key.split("-").some(x=>refundIds.includes(+x))))throw Error("払戻と返還の記録が一致しません。");
+  let hits=0,payout=0,refund=0;
+  for(const t of r.tickets){
+    const row=s.analysis.find(x=>x?.key===t.key);
+    const paid=s.winners.find(w=>w.key===t.key)?.payout??0;
+    const returned=!!s.voided||t.key.split("-").some(x=>refundIds.includes(+x));
+    if(!row||row.hit!==(paid>0)||!!row.refund!==returned||typeof row.positive!=="string"||typeof row.negative!=="string")
+      throw Error("買い目と照合記録が一致しません。");
+    hits+=Number(paid>0);payout+=paid;refund+=returned?BUY.yen:0;
+  }
+  if(s.hits!==hits||s.payout!==payout||(s.refundYen??0)!==refund||s.stake!==r.tickets.length*BUY.yen)
+    throw Error("払戻・返還・購入想定額が買い目と一致しません。");
+  if(typeof s.raw==="string"&&s.raw.trim()){
+    let restored;
+    try{restored=parseResult(s.raw,r.input.ids);}catch{}
+    if(restored&&settlementKey(restored)!==settlementKey(s))
+      throw Error(r.id+" の保存額と結果表の原文が一致しません。");
+    let identity;
+    try{identity=raceIdentity(s.raw);}catch{}
+    if(identity&&identity.id!==r.id)throw Error(r.id+" の記録に異なるレースの結果表が含まれます。");
+  }
+}
+function validateBackup(incoming){
+  if(incoming?.schema!==1||!incoming.records||Array.isArray(incoming.records)||typeof incoming.records!=="object")throw Error("バックアップ形式が一致しません。");
+  if(incoming.count!==undefined&&(!Number.isInteger(incoming.count)||incoming.count<BUY.min||incoming.count>BUY.max))throw Error("バックアップの点数設定が不正です。");
+  if(incoming.config!==undefined){
+    if(typeof incoming.config?.revision!=="string"||!incoming.config.values||Array.isArray(incoming.config.values)||typeof incoming.config.values!=="object")throw Error("バックアップの学習設定が不正です。");
+    checkSettings(incoming.config.values);
+  }
+  if(incoming.drafts!==undefined){
+    if(!incoming.drafts||Array.isArray(incoming.drafts)||typeof incoming.drafts!=="object")throw Error("下書きの形式が不正です。");
+    for(const [key,draft] of Object.entries(incoming.drafts)){
+      if(!draft||Array.isArray(draft)||typeof draft!=="object"||Object.entries(draft).some(([type,raw])=>!["entry","odds","result","timing"].includes(type)||typeof raw!=="string"||raceIdentity(raw).id!==key))
+        throw Error("異なるレースが混在した下書きがあります。");
+    }
+  }
+  if(incoming.sources!==undefined){
+    if(!incoming.sources||Array.isArray(incoming.sources)||typeof incoming.sources!=="object")throw Error("貼り付け履歴の形式が不正です。");
+    for(const [id,item] of Object.entries(incoming.sources)){
+      if(!item||id!==item.id||!["entry","result"].includes(item.field)||typeof item.raw!=="string"||
+        !Number.isFinite(Date.parse(item.createdAt))||!Object.hasOwn(sourceStates,item.status)||
+        (item.race!==undefined&&typeof item.race!=="string")||(item.error!==undefined&&typeof item.error!=="string"))
+        throw Error("貼り付け履歴に読み込めない記録があります。");
+    }
+  }
+  for(const [key,r] of Object.entries(incoming.records)){
+    if(key!==r?.id||!/^\d{4}-\d{2}-\d{2} \S+ \d{1,2}R$/.test(key)||!Number.isFinite(Date.parse(r.createdAt))||!supportedVersions.has(r.version)||!["live","replay"].includes(r.mode)||!Number.isInteger(r.regime)||!divisions[r.regime]||!Array.isArray(r.input?.ids)||r.input.ids.length<5||r.input.ids.length>9||new Set(r.input.ids).size!==r.input.ids.length||!r.input.ids.every(x=>Number.isInteger(x)&&x>=1&&x<=9)||!Array.isArray(r.input.lines)||!Array.isArray(r.tickets)||r.tickets.length<1||r.tickets.length>3||!Array.isArray(r.divisionPicks)||r.divisionPicks.length!==3||!r.divisionPicks.every(Array.isArray)||!r.tickets.every(t=>typeof t.key==="string"&&Array.isArray(t.risk)&&Array.isArray(t.strength)))throw Error("不正なレース記録があります。");
+    const validKey=value=>typeof value==="string"&&/^[1-9]-[1-9]-[1-9]$/.test(value)&&value.split("-").every(x=>r.input.ids.includes(+x))&&combo(value.split("-"))===value&&new Set(value.split("-")).size===3;
+    if(r.input.odds!==undefined&&(!r.input.odds||typeof r.input.odds!=="object"||Array.isArray(r.input.odds)||
+      Object.entries(r.input.odds).some(([key,value])=>!validKey(key)||!validOdds(value))))throw Error("保存済みのオッズ記録が不正です。");
+    if(!r.tickets.every(t=>validKey(t.key)&&t.risk.every(v=>typeof v==="string")&&t.strength.every(v=>typeof v==="string"))||
+       new Set(r.tickets.map(t=>t.key)).size!==r.tickets.length||!r.divisionPicks.flat().every(validKey))throw Error("保存済みの組番が不正です。");
+    if(r.spending!==undefined){
+      const g=r.spending,ks=g?.proposedKeys,p=g?.period;
+      const validCheck=c=>validKey(c?.key)&&["pass","loss","sample","odds"].includes(c.status)&&
+        (["sample","odds"].includes(c.status)||Number.isFinite(c.net)&&Number.isFinite(c.paidNet));
+      if(!Array.isArray(ks)||ks.length<r.tickets.length||ks.length>BUY.max||!ks.every(validKey)||new Set(ks).size!==ks.length||
+        !p||typeof p.active!=="boolean"||!Number.isInteger(p.n)||p.n<0||!Number.isFinite(p.firstNet)||!Number.isFinite(p.secondNet)||
+        !Array.isArray(g.attempts)||!g.attempts.every(a=>Array.isArray(a?.checks)&&a.checks.every(validCheck)))
+        throw Error("追加点の点検記録が不正です。");
+    }
+    if([r.comparisonTop,r.baselineTop].some(keys=>keys!==undefined&&(!validPointTop(keys)||!keys.every(validKey)))||
+       (r.comparisonTop&&r.tickets.some((t,i)=>t.key!==r.comparisonTop[i])))throw Error("点数比較の候補記録が不正です。");
+    if(r.modelAudit&&(!Array.isArray(r.modelAudit.noUniqueHit)||!Array.isArray(r.featureCoverage)||!r.featureCoverage.every(x=>x&&typeof x.name==="string"&&Number.isFinite(x.rate))))throw Error("学習記録が不正です。");
+    if(r.timingSupplement!==undefined&&(typeof r.timingSupplement!=="string"||raceIdentity(r.timingSupplement).id!==key))
+      throw Error("締切・発走時刻の記録が別のレースを示しています。");
+    if(r.settlement)validateSettlement(r,validKey);
+  }
+}
+function containsDraft(record,kind,text){
+  if(!record)return false;
+  if(kind==="result"){
+    for(let result=record.settlement;result;result=result.prior)if(result.raw===text)return true;
+    return false;
+  }
+  if(kind==="timing")return record.timingSupplement===text;
+  const raw=record.input.raw;
+  return typeof raw==="string"&&(raw===text||raw.startsWith(text+"\n\n")||raw.endsWith("\n\n"+text));
+}
+function mergeDrafts(local={},incoming={},records={}){
+  const result=Object.create(null);
+  for(const source of [local,incoming]){
+    for(const [id,draft] of Object.entries(source)){
+      for(const [kind,raw] of Object.entries(draft)){
+        if(containsDraft(records[id],kind,raw))continue;
+        const fields=result[id]??(result[id]={});
+        if(kind in fields&&fields[kind]!==raw)throw Error(id+" に異なる下書きがあります。復元を保留しました。");
+        fields[kind]=raw;
+      }
+    }
+  }
+  return result;
+}
+function missingBackupDrafts(remote,local){
+  return Object.entries(remote.drafts??{}).some(([id,draft])=>Object.entries(draft).some(([kind,raw])=>
+    local.drafts?.[id]?.[kind]!==raw&&!containsDraft(local.records[id],kind,raw)));
+}
+function sameSource(a,b){
+  return !!a&&a.field===b.field&&a.raw===b.raw&&a.createdAt===b.createdAt;
+}
+function mergeSources(local={},incoming={}){
+  for(const [id,item] of Object.entries(incoming)){
+    if(Object.hasOwn(local,id)&&!sameSource(local[id],item))throw Error("同じ識別子に異なる貼り付け履歴があります。復元を保留しました。");
+  }
+  return {...incoming,...local};
+}
+$("import").onchange=action("backupStatus",async()=>{
+  const file=$("import").files[0];if(!file)return;
+  try{
+    const incoming=JSON.parse(await file.text());
+    validateBackup(incoming);
+    await withCurrentRecords(async()=>{
+      const replace=Object.fromEntries(Object.entries(incoming.records).map(([key,r])=>{
+        const current=db.records[key];
+        if(!current||JSON.stringify(current)===JSON.stringify(r)||descends(r,current))return [key,r];
+        if(descends(current,r))return [key,current];
+        throw Error(key+" に異なる保存記録があります。復元を保留しました。");
+      }));
+      const records={...db.records,...replace};
+      const drafts=mergeDrafts(db.drafts,incoming.drafts,records);
+      const sources=mergeSources(db.sources,incoming.sources);
+      await persist({...db,config:db.config??incoming.config,drafts,records,sources});
+      showSettings();
+      $("backupStatus").textContent="バックアップを読み込みました。";
+    });
+  }finally{$("import").value=""}
+});
+let accessToken=null, expires=0, backupChain=Promise.resolve(), generation=0, oauthRequest=0;
+const driveUrl="https://www.googleapis.com/drive/v3";
+const folderName="競輪予想 Ver.2 バックアップ";
+const driveConfigKey=KEY+"-drive";
+const driveReceiptKey=KEY+"-drive-receipt";
+let lastDriveReceipt=null;
+try{lastDriveReceipt=JSON.parse(localStorage.getItem(driveReceiptKey)||"null")}catch{}
+function setDriveStatus(text){$("driveConnectionStatus").textContent=text;}
+function setDisconnectedDriveStatus(){
+  const pending=Object.keys(db.records).length||Object.keys(db.drafts??{}).length;
+  const prefix=pending?"予想・下書きは端末内に保存しています。":"";
+  setDriveStatus(prefix+(lastDriveReceipt?"Driveには未接続です。前回の保存後の変更は、再接続して保存してください。":
+    "Driveへの自動保存は未接続です。「Driveに共有」で手動保存できます。"));
+}
+function renderDriveReceipt(){
+  const target=$("driveReceipt");
+  target.replaceChildren();
+  if(!lastDriveReceipt||typeof lastDriveReceipt.fileId!=="string"||!/^[-\w]+$/.test(lastDriveReceipt.fileId)||!Number.isFinite(Date.parse(lastDriveReceipt.savedAt)))return;
+  const link=create("a","最後にDriveへ保存したファイル");
+  link.href="https://drive.google.com/file/d/"+encodeURIComponent(lastDriveReceipt.fileId)+"/view";
+  link.target="_blank";link.rel="noopener";
+  const stamp=new Date(lastDriveReceipt.savedAt).toLocaleString("ja-JP",{timeZone:"Asia/Tokyo"});
+  target.append(create("span",stamp+" · "),link);
+  const {races,settled,drafts,folderId}=lastDriveReceipt;
+  if([races,settled,drafts].every(n=>Number.isInteger(n)&&n>=0)){
+    target.append(create("br",""),create("span","保存時の予想 "+races+"件（照合済み "+settled+"件）・下書き "+drafts+"件"));
+  }
+  if(typeof folderId==="string"&&/^[-\w]+$/.test(folderId)){
+    const folder=create("a","保存先フォルダを開く");
+    folder.href="https://drive.google.com/drive/folders/"+encodeURIComponent(folderId);
+    folder.target="_blank";folder.rel="noopener";
+    target.append(create("br",""),folder);
+  }
+}
+let driveConfig={};
+try{driveConfig=JSON.parse(localStorage.getItem(driveConfigKey)||"{}")??{}}catch{}
+for(const id of ["client","project","pickerKey"])$(id).value=driveConfig[id]??"";
+function saveDriveConfig(patch){
+  const next={...driveConfig,...patch};
+  localStorage.setItem(driveConfigKey,JSON.stringify(next));
+  driveConfig=next;
+}
+function predicted(r){
+  const {settlement,externalWeather,...snapshot}=r;
+  return JSON.stringify(snapshot);
+}
+function descends(newer,older){
+  if(predicted(newer)!==predicted(older)||older.externalWeather&&JSON.stringify(newer.externalWeather)!==JSON.stringify(older.externalWeather))return false;
+  if(!older.settlement)return true;
+  for(let s=newer.settlement;s;s=s.prior)if(JSON.stringify(s)===JSON.stringify(older.settlement))return true;
+  return false;
+}
+async function drive(path,options={},token=accessToken){
+  const response=await fetch(path.startsWith("https:")?path:driveUrl+path,{...options,headers:{...options.headers,Authorization:"Bearer "+token}});
+  if(!response.ok)throw Error("Google Driveへの保存に失敗しました（"+response.status+"）。再接続するかJSONを保存してください。");
+  return response.json();
+}
+async function driveFind(q,token){
+  const query=new URLSearchParams({q:"trashed = false and "+q,fields:"nextPageToken,files(id,name)",pageSize:"100",spaces:"drive"});
+  const result=await drive("/files?"+query,{},token);
+  if(result.nextPageToken||result.files.length>1)throw Error("同名のバックアップ先が複数あります。Google Driveで対象を確認してください。");
+  return result.files[0];
+}
+async function backup(token,current){
+  let folder=driveConfig.folderId?await drive("/files/"+encodeURIComponent(driveConfig.folderId)+"?fields=id,name,mimeType,trashed",{},token):null;
+  if(folder&&(folder.trashed||folder.mimeType!=="application/vnd.google-apps.folder"))throw Error("指定したバックアップ先を確認してください。");
+  if(!folder)folder=await driveFind("name = '"+folderName+"' and mimeType = 'application/vnd.google-apps.folder' and 'root' in parents",token);
+  if(current!==generation)return;
+  const jsonHeaders={"Content-Type":"application/json"};
+  if(!folder)folder=await drive("/files",{method:"POST",headers:jsonHeaders,body:JSON.stringify({name:folderName,mimeType:"application/vnd.google-apps.folder"})},token);
+  if(current!==generation)return;
+  const existing=await driveFind("name = '"+backupName+"' and '"+folder.id+"' in parents",token);
+  if(current!==generation)return;
+  const upload="https://www.googleapis.com/upload/drive/v3/files";
+  let uploadedId=existing?.id, uploadedSnapshot;
+  if(existing){
+    const remote=await drive("/files/"+encodeURIComponent(existing.id)+"?alt=media",{},token);
+    validateBackup(remote);
+    const conflicts=Object.entries(remote.records).some(([k,r])=>!db.records[k]||!descends(db.records[k],r))||
+      missingBackupDrafts(remote,db)||
+      Object.entries(remote.sources??{}).some(([id,item])=>!sameSource(db.sources?.[id],item));
+    if(conflicts)throw Error("Drive側に未復元の記録があります。最新バックアップを復元してください。");
+    if(current!==generation)return;
+    uploadedSnapshot=snapshot();
+    await drive(upload+"/"+encodeURIComponent(existing.id)+"?uploadType=media",{method:"PATCH",headers:jsonHeaders,body:uploadedSnapshot},token);
+  }else{
+    uploadedSnapshot=snapshot();
+    const boundary="keirin_backup_"+crypto.randomUUID();
+    const payload="--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name:backupName,parents:[folder.id],mimeType:"application/json"})+"\r\n--"+boundary+"\r\nContent-Type: application/json\r\n\r\n"+uploadedSnapshot+"\r\n--"+boundary+"--";
+    const created=await drive(upload+"?uploadType=multipart",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+boundary},body:payload},token);
+    uploadedId=created.id;
+  }
+  // 保存成功と表示する前に、Drive上の保存内容を再取得して完全一致を確認する。
+  // ネットワーク障害や別端末による競合があれば、受領記録を更新しない。
+  if(!uploadedId)throw Error("Driveの保存先ファイルIDを確認できませんでした。");
+  const downloaded=await drive("/files/"+encodeURIComponent(uploadedId)+"?alt=media",{},token);
+  validateBackup(downloaded);
+  if(JSON.stringify(downloaded)!==JSON.stringify(JSON.parse(uploadedSnapshot)))
+    throw Error("Driveへの保存後の読み戻しが一致しません。バックアップを確認してください。");
+  if(current===generation){
+    if(uploadedId){
+      const sent=JSON.parse(uploadedSnapshot),rows=Object.values(sent.records);
+      lastDriveReceipt={fileId:uploadedId,folderId:folder.id,savedAt:new Date().toISOString(),
+        races:rows.length,settled:rows.filter(r=>r.settlement).length,drafts:Object.keys(sent.drafts??{}).length};
+      try{localStorage.setItem(driveReceiptKey,JSON.stringify(lastDriveReceipt))}catch{}
+      renderDriveReceipt();
+    }
+    setDriveStatus(uploadedSnapshot===snapshot()?"Google Driveへの保存と読み戻しを確認しました。":"Google Driveへの保存と読み戻しを確認しました。保存後に追加された変更があります。");
+  }
+}
+let backupTimer;
+function queueBackup(){
+  if(!accessToken){setDisconnectedDriveStatus();return;}
+  if(Date.now()>=expires){setDriveStatus("Driveの接続期限が切れました。「接続してバックアップ」で再接続してください。");return;}
+  setDriveStatus("Google Driveに保存しています。");
+  clearTimeout(backupTimer);
+  const current=generation, token=accessToken;
+  backupTimer=setTimeout(()=>{
+    backupChain=backupChain.catch(()=>{}).then(async()=>{
+      if(current!==generation)return;
+      if(Date.now()>=expires)throw Error("Google Driveの接続期限が切れました。再接続してください。");
+      await backup(token,current);
+    }).catch(e=>{if(current===generation)setDriveStatus(e.message||"Google Driveに保存できませんでした。");});
+  },activeConfig().params.backupDelayMs);
+}
+window.addEventListener("online",queueBackup);
+window.addEventListener("focus",()=>{
+  if(accessToken&&Date.now()>=expires)setDriveStatus("Driveの接続期限が切れました。「接続してバックアップ」で再接続してください。");
+});
+$("backupNow").onclick=()=>{
+  if(!accessToken||Date.now()>=expires){
+    $("backupStatus").textContent="先に「接続してバックアップ」を押してください。";
+    $("connect").focus();
+    return;
+  }
+  queueBackup();
+};
+function loadGoogle(){
+  if(window.google?.accounts?.oauth2)return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+    const script=document.createElement("script");script.src="https://accounts.google.com/gsi/client";
+    script.onload=resolve;script.onerror=()=>{script.remove();reject(Error("Google認証を読み込めません。"))};document.head.append(script);
+  });
+}
+let pickerLoad;
+function loadPicker(){
+  if(window.google?.picker)return Promise.resolve();
+  if(!pickerLoad)pickerLoad=new Promise((resolve,reject)=>{
+    const script=document.createElement("script");
+    script.src="https://apis.google.com/js/api.js";
+    script.onload=()=>gapi.load("picker",{callback:resolve,onerror:()=>reject(Error("フォルダ選択を読み込めません。"))});
+    script.onerror=()=>{script.remove();reject(Error("フォルダ選択を読み込めません。"))};
+    document.head.append(script);
+  }).catch(e=>{pickerLoad=null;throw e;});
+  return pickerLoad;
+}
+$("chooseFolder").onclick=action("backupStatus",async()=>{
+  if(!accessToken||Date.now()>=expires)throw Error("Google Driveに接続してからフォルダを選んでください。");
+  const project=$("project").value.trim(), apiKey=$("pickerKey").value.trim();
+  if(!/^\d+$/.test(project)||!/^[\w-]+$/.test(apiKey))throw Error("Picker用のプロジェクト番号とAPIキーを入力してください。");
+  await loadPicker();
+  const current=generation, picker=google.picker;
+  const view=new picker.DocsView(picker.ViewId.FOLDERS).setIncludeFolders(true).setSelectFolderEnabled(true)
+    .setMimeTypes("application/vnd.google-apps.folder");
+  new picker.PickerBuilder().setAppId(project).setDeveloperKey(apiKey).setOAuthToken(accessToken).setOrigin(location.origin)
+    .setLocale("ja").addView(view).setCallback(data=>{
+      if(current!==generation||data.action!==picker.Action.PICKED||!data.docs?.[0]?.id)return;
+      const selection=data.docs[0];
+      void action("backupStatus",()=>{
+        saveDriveConfig({folderId:selection.id,project,pickerKey:apiKey});
+        generation++;
+        $("backupStatus").textContent="バックアップ先を選択しました。";
+        queueBackup();
+      })();
+    }).build().setVisible(true);
+});
+$("connect").onclick=action("backupStatus",async()=>{
+  if(location.protocol!=="https:")throw Error("Google Driveへの自動保存は、OAuthに登録したHTTPS版から利用してください。");
+  const id=$("client").value.trim();
+  if(!/^[\w-]+\.apps\.googleusercontent\.com$/.test(id))throw Error("Google OAuthウェブクライアントIDを入力してください。");
+  if(!window.google?.accounts?.oauth2){
+    await loadGoogle();
+    $("backupStatus").textContent="認証の準備ができました。接続ボタンをもう一度押してください。";
+    return;
+  }
+  saveDriveConfig({client:id,...(driveConfig.client===id?{}:{folderId:null})});
+  const request=++oauthRequest;
+  google.accounts.oauth2.initTokenClient({client_id:id,scope:"https://www.googleapis.com/auth/drive.file",
+    callback:r=>{
+      if(request!==oauthRequest)return;
+      if(r.error){setDriveStatus("Google Driveへの接続を確認できませんでした。必要に応じて「Driveに共有」から保存できます。");return}
+      accessToken=r.access_token;expires=Date.now()+Number(r.expires_in)*1000;generation++;queueBackup();
+    },
+    error_callback:()=>{if(request===oauthRequest)setDriveStatus("Google認証を完了できませんでした。再接続してください。");}
+  }).requestAccessToken();
+});
+$("disconnect").onclick=()=>{
+  oauthRequest++;generation++;accessToken=null;expires=0;
+  setDisconnectedDriveStatus();
+  $("backupStatus").textContent="Google Driveとの接続を切断しました。";
+};
+function setupMobileApp(){
+  const help=$("installHelp"),button=$("installApp"),offline=$("offlineStatus"),heading=$("appSetupHeading");
+  if(location.protocol!=="https:"||!document.querySelector('link[rel="manifest"]')){
+    const site=create("a","ホーム画面に追加できる配信版を開く");
+    site.href="https://keirin-ver2-forecast.loftyaphid1.chatgpt.site";
+    help.replaceChildren(site);
+    offline.textContent="別のブラウザや配信元へ移るときは、先にバックアップを保存して、移動先で復元してください。";
+    return;
+  }
+  const mode=window.matchMedia?.("(display-mode: standalone)");
+  const manual="レース履歴が見えるブラウザで操作してください。AndroidのChromeでは「︙」→「ホーム画面に追加」→「インストール」と進みます。";
+  let offer=null,installed=!!mode?.matches;
+  const update=()=>{
+    button.hidden=installed||!offer;
+    heading.textContent=installed?"ホーム画面のアプリ":"ホーム画面に追加";
+    help.textContent=installed?"Galaxyでは「AI」フォルダーを開き、「＋」→「競輪予想」→「完了」で追加できます。":
+      offer?"ボタンを押し、端末の確認画面でインストールしてください。":manual;
+  };
+  window.addEventListener("beforeinstallprompt",event=>{
+    if(typeof event.prompt!=="function")return;
+    event.preventDefault();offer=event;update();
+  });
+  window.addEventListener("appinstalled",()=>{installed=true;offer=null;update()});
+  mode?.addEventListener?.("change",event=>{if(event.matches){installed=true;update()}});
+  button.onclick=async()=>{
+    if(!offer)return;
+    const invitation=offer;
+    offer=null;button.disabled=true;
+    try{
+      const result=await invitation.prompt();
+      const choice=await (invitation.userChoice??result);
+      if(!installed)help.textContent=choice?.outcome==="accepted"?"追加を受け付けました。端末のアプリ一覧で「競輪予想」を確認してください。":manual;
+    }catch{if(!installed)help.textContent=manual;}
+    finally{button.disabled=false;button.hidden=installed||!offer;}
+  };
+  update();
+  if(!("serviceWorker" in navigator)){offline.textContent="このブラウザでは通信中に利用できます。";return;}
+  const failure="オフライン起動の準備ができていません。通信できる状態でアプリを開き直してください。";
+  offline.textContent="オフライン起動の準備を確認しています。";
+  navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}).then(reg=>{
+    let serial=0;
+    async function state(){
+      const ticket=++serial;
+      let message="オフライン起動を準備しています。";
+      try{
+        if(reg.waiting)message="更新を用意しました。開いている競輪予想の画面を閉じ、もう一度開くと適用されます。";
+        else if(reg.active&&window.caches&&await caches.has("keirin-v"+RELEASE)){
+          const cache=await caches.open("keirin-v"+RELEASE);
+          if(await cache.match(new URL("./index.html",reg.scope).href))message="オフラインで起動できます。Drive保存と天気予報には通信が必要です。";
+        }else if(!reg.installing||reg.installing.state==="redundant")message=failure;
+      }catch{message=failure;}
+      if(ticket===serial)offline.textContent=message;
+    }
+    function watch(){
+      reg.installing?.addEventListener("statechange",state);
+      void state();
+    }
+    reg.addEventListener("updatefound",watch);
+    navigator.serviceWorker.addEventListener("controllerchange",state);
+    watch();
+  }).catch(()=>{offline.textContent=failure;});
+}
+function openReceivedShare(){
+  const messages={"#share-text":"表の本文を選んで共有してください。共有リンクだけではレースを読み取れません。",
+    "#share-large":"共有データが大きすぎます。1レース分を選んでください。",
+    "#share-one":"1回に共有できるファイルは1件です。レースごとに選んでください。",
+    "#share-format":"表の本文か、1レース分のJSON・テキストファイルを共有してください。",
+    "#share-storage":"受信内容を保存できませんでした。空き容量を確認し、再共有するか表を貼り付けてください。"};
+  const fragment=location.hash;
+  if(fragment==="#shared-race"||Object.hasOwn(messages,fragment)){
+    $("receivePanel").open=true;
+    if(messages[fragment])$("receiveStatus").textContent=messages[fragment];
+    $("receivePanel").scrollIntoView?.({block:"center"});
+    window.history?.replaceState(null,"",location.pathname+location.search);
+  }
+  void showReceivedRace();
+}
+setupMobileApp();
+window.addEventListener("pageshow",()=>{void ready.then(openReceivedShare)});
+void ready.then(()=>{
+  renderSources();refresh();showSettings();
+  $("releaseNumber").textContent="実装版 "+RELEASE;
+  renderDriveReceipt();setDisconnectedDriveStatus();
+  for(const field of ["entry","result"]){
+    const item=[...displayedSources.values()].find(item=>item.field===field);
+    if(item&&["saved","failed"].includes(item.status)&&restoreSourceToField(item)){
+      const statusNode=field==="entry"?"entryStatus":"resultStatus";
+      $(statusNode).textContent="前回の原文を入力欄に戻しました。"+(item.error?" "+item.error:"");
+    }
+  }
+  const latest=records().at(-1);
+  if(latest){showPrediction(latest);showReview(latest);}
+  openReceivedShare();
+});
+</script></html>
