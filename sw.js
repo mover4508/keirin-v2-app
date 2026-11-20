@@ -1,4 +1,4 @@
-const SHELL = "keirin-v2.4.12";
+const SHELL = "keirin-v2.4.13";
 const INBOX = "keirin-v2-share-inbox";
 const MAX_RACE_BYTES = 1024 * 1024;
 const base = self.registration.scope;
@@ -18,7 +18,7 @@ async function installShell() {
   }
   const html = await responses[0].clone().text();
   if (!html.includes('<meta name="application-name" content="競輪予想">') ||
-      !html.includes('const RELEASE="2.4.12"')) throw Error("アプリの版を確認できません。");
+      !html.includes('const RELEASE="2.4.13"')) throw Error("アプリの版を確認できません。");
   const manifest = await responses[1].clone().json();
   if (urlFor(manifest.start_url) !== index || urlFor(manifest.share_target?.action) !== sharePath) {
     throw Error("アプリの起動先と共有先を確認できません。");
