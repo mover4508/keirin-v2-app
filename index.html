@@ -2433,13 +2433,17 @@ function validateSettlement(r,validKey){
   if(s.hits!==hits||s.payout!==payout||(s.refundYen??0)!==refund||s.stake!==r.tickets.length*BUY.yen)
     throw Error("払戻・返還・購入想定額が買い目と一致しません。");
   if(typeof s.raw==="string"&&s.raw.trim()){
-    let restored;
-    try{restored=parseResult(s.raw,r.input.ids);}catch{}
-    if(restored&&settlementKey(restored)!==settlementKey(s))
+    // Fail closed: an unreadable saved official result is not verified evidence.
+    let restored,identity;
+    try{
+      restored=parseResult(s.raw,r.input.ids);
+      identity=raceIdentity(s.raw);
+    }catch{
+      throw Error(r.id+" の保存済み結果表の原文を再検証できません。");
+    }
+    if(settlementKey(restored)!==settlementKey(s))
       throw Error(r.id+" の保存額と結果表の原文が一致しません。");
-    let identity;
-    try{identity=raceIdentity(s.raw);}catch{}
-    if(identity&&identity.id!==r.id)throw Error(r.id+" の記録に異なるレースの結果表が含まれます。");
+    if(identity.id!==r.id)throw Error(r.id+" の記録に異なるレースの結果表が含まれます。");
   }
 }
 function validateBackup(incoming){
