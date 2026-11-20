@@ -30,7 +30,10 @@ export function evaluateTickets(riderIds,tickets,finishTrio,payoutYen){
   return {tickets:checked.tickets,winningTrio:winner,hits,hit:hits.some(Boolean),stakeYen:checked.stakeYen,returnsYen,profitYen:returnsYen-checked.stakeYen};
 }
 export function chronologicalSplit(rows,trainMin=30,validationMin=20){
-  if(!Number.isInteger(trainMin)||trainMin<1||!Number.isInteger(validationMin)||validationMin<1)throw new Error("invalid split size");
+  if(!Array.isArray(rows))throw new Error("invalid chronological rows");
+  if(!Number.isSafeInteger(trainMin)||trainMin<1||!Number.isSafeInteger(validationMin)||validationMin<1)throw new Error("invalid split size");
+  if(rows.some(row=>!row||typeof row!=="object"||Array.isArray(row)))
+    return {eligible:false,reason:"invalid_rows",train:[],validation:[]};
   const ordered=rows.map((row,index)=>({row,index})).sort((a,b)=>{
     const at=Date.parse(a.row.predictionTimestamp??""),bt=Date.parse(b.row.predictionTimestamp??"");
     return (Number.isFinite(at)?at:Infinity)-(Number.isFinite(bt)?bt:Infinity)||a.index-b.index;
