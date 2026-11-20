@@ -45,7 +45,7 @@
 <div class="row"><label>Picker用プロジェクト番号<input id="project" inputmode="numeric" autocomplete="off"></label><label>Picker用APIキー<input id="pickerKey" autocomplete="off"></label></div>
 <button id="chooseFolder" class="secondary" type="button">既存フォルダを選ぶ</button></details></details>
 <details><summary>バックアップを復元する</summary><label>JSONファイルを選ぶ<input id="import" type="file" accept=".json,application/json"></label></details>
-<p id="backupStatus" role="status"></p></section><p id="releaseNumber" class="muted"></p></main>
+<p id="backupStatus" role="status"></p></section><section><h2>安全性の自己点検</h2><p class="muted">保存データを変更せず、固定購入条件・36エンジン数・主要設定の矛盾を点検します。</p><button id="runSafetyAudit" type="button" class="secondary">自己点検を実行</button><p id="safetyAuditResult" role="status"></p></section><p id="releaseNumber" class="muted"></p></main>
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
@@ -2786,6 +2786,18 @@ function openReceivedShare(){
   }
   void showReceivedRace();
 }
+function runSafetySelfAudit(){
+  const out=$("safetyAuditResult");
+  if(!out)return;
+  const errors=[];
+  if(BUY.yen!==100||BUY.min!==1||BUY.max!==3||BUY.minRiders!==5||BUY.maxRiders!==9)errors.push("固定購入条件");
+  if(allEngines(PARAMS).length!==36)errors.push("36エンジン数");
+  if(!(PARAMS.hardThreshold<PARAMS.upsetThreshold))errors.push("レース区分境界");
+  if(!(PARAMS.validationWindow>=PARAMS.validationMinimum))errors.push("学習比較期間");
+  if(!(PARAMS.historyWindow>=PARAMS.trainingMinimum))errors.push("学習期間");
+  out.textContent=errors.length?"要確認："+errors.join("、"):"固定条件・36エンジン数・主要パラメータ整合性：確認済み。予想精度の保証ではありません。";
+}
+$("runSafetyAudit").addEventListener("click",runSafetySelfAudit);
 setupMobileApp();
 window.addEventListener("pageshow",()=>{void ready.then(openReceivedShare)});
 void ready.then(()=>{
