@@ -28,3 +28,9 @@ test("impossible adoption metrics are rejected explicitly",()=>{
  assert.equal(adoptionGate(base,candidate,{minimumValidation:0}).reason,"invalid_metrics");
  assert.equal(adoptionGate(base,candidate,{minimumChanged:Infinity}).reason,"invalid_metrics");
 });
+
+test("settlement evaluator rejects fractional, unsafe, or non-ten-yen payouts",()=>{
+ for(const payout of [740.5,741,Number.MAX_SAFE_INTEGER+1,-10,NaN,Infinity])
+  assert.throws(()=>evaluateTickets(ids,["1-2-3"],"1-2-3",payout),/invalid payout/);
+ assert.equal(evaluateTickets(ids,["1-2-3"],"1-2-3",740).returnsYen,740);
+});
