@@ -1982,6 +1982,7 @@ async function putDraft(id,patch){
 }
 async function submitPrediction(race,draft){
   const {id}=race;
+  // Never silently regenerate or relabel a previously settled race as a fresh prediction.
   if(db.records[id])return db.records[id];
   const input=readInput(draft.entry,draft.odds,race);
   const rows=records();
@@ -2219,7 +2220,9 @@ async function consumePaste(id,raw){
       showReview(completed.record);
       $("resultStatus").textContent=completed.status;
     })();
-    $("entryStatus").textContent=race.id+" の保存済みの予想を表示しています。";
+    $("entryStatus").textContent=race.id+(existing.settlement?
+      " は過去に結果照合済みの保存記録です。新規予想ではありません。今回結果表を貼り付けていなくても、以前の照合結果を表示しています。":
+      " の保存済みの予想です。結果表は未照合のため、判定は結果待ちです。");
     revealPrediction();
     return "complete";
   }
