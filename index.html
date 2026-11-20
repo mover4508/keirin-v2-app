@@ -580,9 +580,9 @@ const averages=xs=>xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:0;
 function features(input){
   const {ids,riders,lines,odds}=input;
   const byId=new Map(riders.map(r=>[r.id,r]));
-  const points=riders.map(r=>r.score).filter(Number.isFinite), lo=Math.min(...points), hi=Math.max(...points);
+  const points=riders.map(r=>r.score).filter(Number.isFinite), lo=points.length?Math.min(...points):null, hi=points.length?Math.max(...points):null;
   const maxB=Math.max(1,...riders.map(r=>r.b??0));
-  const market=Object.values(odds).map(Math.log), minO=Math.min(...market), maxO=Math.max(...market);
+  const market=Object.values(odds).filter(o=>Number.isFinite(o)&&o>0).map(Math.log), minO=market.length?Math.min(...market):null, maxO=market.length?Math.max(...market):null;
   const starts=count=>clamp(count/20);
   const list=[];
   for(let a=0;a<ids.length-2;a++)for(let b=a+1;b<ids.length-1;b++)for(let c=b+1;c<ids.length;c++){
@@ -592,13 +592,14 @@ function features(input){
     const place=rs.map(r=>Number.isFinite(r.place)?r.place/100:null);
     const matching=lines.map(l=>l.map((id,i)=>numbers.includes(id)?i:-1).filter(i=>i>=0));
     const line=score=>matching.length?Math.max(...matching.map(g=>g.length<2?0:score(g))):null;
-    const oddsScore=key in odds?(maxO===minO?.5:1-(Math.log(odds[key])-minO)/(maxO-minO)):null;
+    const rawOdds=odds[key];
+    const oddsScore=Number.isFinite(rawOdds)&&rawOdds>0&&minO!==null?(maxO===minO?.5:1-(Math.log(rawOdds)-minO)/(maxO-minO)):null;
     const availableStrengths=strengths.filter(Number.isFinite), availablePlaces=place.filter(Number.isFinite);
     const value=[availableStrengths.length?averages(availableStrengths):null,availableStrengths.length===3?Math.min(...availableStrengths):null,win,availablePlaces.length?averages(availablePlaces):null,availablePlaces.length===3?Math.min(...availablePlaces):null,
       rs.every(r=>Number.isFinite(r.b))?averages(rs.map(r=>r.b/maxB)):null,line(g=>(g.length-1)/2),line(g=>g.includes(0)?(g.length-1)/2:0),
       line(g=>g.includes(1)&&(g.includes(0)||g.includes(2))?1:0),oddsScore,oddsScore===null?null:1-Math.abs(2*oddsScore-1),
       rs.every(r=>Array.isArray(r.starts)&&r.starts.length&&r.starts.every(Number.isFinite))?averages(rs.map(r=>starts(r.starts.reduce((a,b)=>a+b,0)))):null];
-    list.push({key,value,odds:odds[key]??null});
+    list.push({key,value,odds:Number.isFinite(rawOdds)&&rawOdds>0?rawOdds:null});
   }
   return list;
 }
