@@ -1025,7 +1025,7 @@ function parseResult(text,ids){
       const nums=m.slice(1,4).map(Number);
       if(new Set(nums).size!==3||nums.some(x=>!ids.includes(x)||refundIds.includes(x)))throw Error("払戻欄の車番と出走車番・返還車番が一致しません。");
       const key=combo(nums), payout=+m[4].replaceAll(",","");
-      if(!Number.isSafeInteger(payout)||payout<BUY.yen||payout>100000000)throw Error("払戻金を確認してください。");
+      if(!Number.isSafeInteger(payout)||payout<BUY.yen||payout>100000000||payout%10!==0)throw Error("払戻金を確認してください。");
       if(payouts.has(key)&&payouts.get(key)!==payout)throw Error("同じ組番に異なる払戻金が含まれます。");
       payouts.set(key,payout);
     }
