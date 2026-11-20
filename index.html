@@ -2878,6 +2878,24 @@ function runSafetySelfAudit(){
 }
 $("runSafetyAudit").addEventListener("click",runSafetySelfAudit);
 // Independent, read-only audit of the versioned safety modules. This never writes predictions or settings.
+async function runMetaLoopSafetyAudit(){
+  const out=$("safetyAuditData");
+  if(!out)return;
+  try{
+    const {evaluateImprovementCycle}=await import("./src/meta-loop.mjs");
+    // A dry run checks bounded execution; no evidence of predictive improvement is claimed.
+    const dryRun=evaluateImprovementCycle({
+      baseline:{},candidates:[],iteration:0,limits:{maxCandidates:12,maxIterations:10}
+    });
+    const safe=dryRun.status==="evaluated"&&dryRun.requiresHumanOrGovernedRelease===true&&
+      dryRun.evaluations.length===0;
+    out.append(create("p",safe?
+      "メタループ安全監査：周期上限と自動採用禁止を確認。候補0件・精度改善の実証なし。":
+      "メタループ安全監査：想定外の結果です。自動採用を停止してください。","muted"));
+  }catch(error){
+    out.append(create("p","メタループ安全監査の読み込みに失敗："+(error?.message??""),"muted"));
+  }
+}
 async function runModuleSafetyAudit(){
   const out=$("safetyAuditData");
   if(!out)return;
@@ -2902,7 +2920,7 @@ async function runModuleSafetyAudit(){
       (error?.message??""),"muted"));
   }
 }
-$("runSafetyAudit").addEventListener("click",()=>{void runModuleSafetyAudit()});
+$("runSafetyAudit").addEventListener("click",()=>{void runModuleSafetyAudit();void runMetaLoopSafetyAudit()});
 setupMobileApp();
 window.addEventListener("pageshow",()=>{void ready.then(openReceivedShare)});
 void ready.then(()=>{
