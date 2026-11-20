@@ -1,0 +1,25 @@
+name: Discover public race indexes
+on:
+  schedule:
+    - cron: '10 0,3,6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/discover_races.py
+      - name: Commit discovery catalog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/race-catalog.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data: refresh race discovery catalog"
+            git push
+          fi
