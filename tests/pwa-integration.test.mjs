@@ -93,3 +93,11 @@ test("prospective ROI excludes inconsistent or negative financial records",()=>{
  assert.match(html,/r\.settlement\.refundYen<=r\.settlement\.stake/);
  assert.match(html,/r\.settlement\.payout===r\.tickets\.reduce/);
 });
+
+test("PWA safety audit invokes bounded meta-loop without adopting proposals",()=>{
+ assert.match(html,/async function runMetaLoopSafetyAudit\(\)/);
+ assert.match(html,/import\("\.\/src\/meta-loop\.mjs"\)/);
+ assert.match(html,/candidates:\[\],iteration:0,limits:\{maxCandidates:12,maxIterations:10\}/);
+ assert.match(html,/dryRun\.requiresHumanOrGovernedRelease===true/);
+ assert.match(html,/void runMetaLoopSafetyAudit\(\)/);
+});
