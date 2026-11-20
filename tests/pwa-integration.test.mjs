@@ -75,3 +75,14 @@ test("prospective ROI requires internally consistent financial records",()=>{
  assert.match(html,/Number\.isFinite\(r\.settlement\.refundYen\)/);
  assert.match(html,/r\.settlement\.stake===r\.tickets\.length\*BUY\.yen/);
 });
+
+test("independent parameter validation gates candidate settings persistence",()=>{
+ const start=html.indexOf('$("saveSettings").onclick=');
+ const end=html.indexOf('$("resetSettings").onclick=',start);
+ assert.ok(start>=0&&end>start);
+ const code=html.slice(start,end);
+ assert.match(code,/import\("\.\/src\/parameter-guard\.mjs"\)/);
+ assert.match(code,/validateParameters\(\{\.\.\.PARAMS,\.\.\.values\}\)/);
+ assert.match(code,/if\(!checked\.ok\)throw Error/);
+ assert.ok(code.indexOf("if(!checked.ok)")<code.indexOf("saveConfigRevision("));
+});
