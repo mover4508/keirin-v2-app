@@ -161,3 +161,10 @@ test("saved result originals must be reparseable for a passing integrity audit",
  assert.doesNotMatch(validation,/catch\s*\{\s*\}/);
  assert.match(validation,/if\(identity\.id!==r\.id\)/);
 });
+
+test("offline installation verifies PNG signatures only for icon responses",()=>{
+ const sw=readFileSync(new URL("../sw.js",import.meta.url),"utf8");
+ assert.match(sw,/const requests = \[index, \.\.\.assets, \.\.\.modules\]/);
+ assert.match(sw,/for \(const response of responses\.slice\(2, 4\)\)/);
+ assert.doesNotMatch(sw,/for \(const response of responses\.slice\(2\)\)/);
+});
