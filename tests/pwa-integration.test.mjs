@@ -176,3 +176,10 @@ test("official result parsing and backup validation agree on payout units and bo
  assert.match(parser,/payout>100000000/);
  assert.match(validator,/w\.payout<=100000000&&w\.payout%10===0/);
 });
+
+test("insufficient evidence does not forcibly reduce two or three auto-selected tickets",()=>{
+ const block=html.slice(html.indexOf("function reviewAdditionalTickets("),html.indexOf("function marketComparison("));
+ assert.match(block,/if\(rank<0\)\{checks\.push\(\{key,status:"odds",n:0\}\);return \{count:keys\.length,checks,reason:"insufficient_evidence"\};\}/);
+ assert.match(block,/if\(sample\.length<params\.expectedMinimum\)\{checks\.push\(\{\.\.\.detail,status:"sample"\}\);return \{count:keys\.length,checks,reason:"insufficient_evidence"\};\}/);
+ assert.match(block,/if\(!pass\)break;/);
+});
