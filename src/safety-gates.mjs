@@ -45,6 +45,14 @@ export function chronologicalSplit(rows,trainMin=30,validationMin=20){
 export function adoptionGate(baseline,candidate,{minimumValidation=50,minimumChanged=5}={}){
   const nums=[baseline?.sampleSize,candidate?.sampleSize,baseline?.hitRate,candidate?.hitRate,baseline?.roi,candidate?.roi,candidate?.changedTickets];
   if(nums.some(v=>!Number.isFinite(v)))return {adopt:false,reason:"missing_metrics"};
+  if(!Number.isSafeInteger(minimumValidation)||minimumValidation<1||
+     !Number.isSafeInteger(minimumChanged)||minimumChanged<1||
+     !Number.isSafeInteger(baseline.sampleSize)||baseline.sampleSize<0||
+     !Number.isSafeInteger(candidate.sampleSize)||candidate.sampleSize<0||
+     !Number.isSafeInteger(candidate.changedTickets)||candidate.changedTickets<0||
+     candidate.changedTickets>candidate.sampleSize||
+     baseline.hitRate<0||baseline.hitRate>1||candidate.hitRate<0||candidate.hitRate>1||
+     baseline.roi<0||candidate.roi<0)return {adopt:false,reason:"invalid_metrics"};
   if(baseline.sampleSize<minimumValidation||candidate.sampleSize<minimumValidation)return {adopt:false,reason:"insufficient_validation"};
   if(candidate.changedTickets<minimumChanged)return {adopt:false,reason:"insufficient_changes"};
   if(candidate.hitRate<baseline.hitRate||candidate.roi<baseline.roi)return {adopt:false,reason:"regression"};
