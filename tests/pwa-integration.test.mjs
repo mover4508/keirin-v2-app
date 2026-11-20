@@ -29,3 +29,9 @@ test("independent audit does not write local data",()=>{
  assert.ok(block);
  assert.doesNotMatch(block,/\bpersist\(|\bwriteStored\(|localStorage\.setItem\(|\bbackup\(/);
 });
+
+test("audit counts all default and editable parameters",()=>{
+ assert.match(html,/const configurable=Object\.keys\(fields\),defaults=Object\.keys\(PARAMS\)/);
+ assert.match(html,/defaults\.filter\(key=>!Object\.hasOwn\(fields,key\)\)/);
+ assert.match(html,/設定変数の監査/);
+});
