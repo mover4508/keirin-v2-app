@@ -61,3 +61,10 @@ test("prospective ROI includes refund amounts in returned stake",()=>{
  assert.match(html,/const forwardReturn=forwardPayout\+forwardRefund/);
  assert.match(html,/forwardReturn\/forwardStake/);
 });
+
+test("prospective validation warns when below configured minimum",()=>{
+ assert.match(html,/const minimumProspective=activeConfig\(\)\.params\.validationMinimum/);
+ assert.match(html,/forwardEligible\.length<minimumProspective/);
+ assert.match(html,/改善候補の採用判断にはデータ不足です/);
+ assert.match(html,/統計的判定の確認前に自動採用しません/);
+});
