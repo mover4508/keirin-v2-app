@@ -23,3 +23,12 @@ test('core input, prediction, review and backup panels exist',()=>{
 test('race discovery cannot be misrepresented as automatic prediction import',()=>{
  assert.match(html,/予想への自動入力は未対応/);
 });
+
+test('latest official finish details override older data on repeat settlement',()=>{
+ const match=html.match(/const knownFinish=([^;]+);/);
+ assert.ok(match,'settlement merge missing');
+ assert.match(match[1],/\.\.\.\(previous\.finish\?\?\{\}\),\.\.\.finish/);
+ const previous={1:{rank:2},2:{rank:3}};
+ const latest={1:{rank:1}};
+ assert.deepEqual({...previous,...latest},{1:{rank:1},2:{rank:3}});
+});
