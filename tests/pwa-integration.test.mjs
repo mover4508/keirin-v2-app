@@ -86,3 +86,10 @@ test("independent parameter validation gates candidate settings persistence",()=
  assert.match(code,/if\(!checked\.ok\)throw Error/);
  assert.ok(code.indexOf("if(!checked.ok)")<code.indexOf("saveConfigRevision("));
 });
+
+test("prospective ROI excludes inconsistent or negative financial records",()=>{
+ assert.match(html,/r\.settlement\.payout>=0/);
+ assert.match(html,/r\.settlement\.refundYen>=0/);
+ assert.match(html,/r\.settlement\.refundYen<=r\.settlement\.stake/);
+ assert.match(html,/r\.settlement\.payout===r\.tickets\.reduce/);
+});
