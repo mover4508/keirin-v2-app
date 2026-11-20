@@ -20,3 +20,11 @@ test("oversized finite budgets are capped",()=>{
  const x=evaluateImprovementCycle({baseline,candidates:[],iteration:1000,limits:{maxIterations:1000000}});
  assert.equal(x.status,"stopped");
 });
+
+test("malformed candidate and issue records are rejected without partial evaluation",()=>{
+ for(const item of [null,undefined,42,"invalid",[]]){
+  assert.throws(()=>evaluateImprovementCycle({baseline,candidates:[item]}),/invalid candidate/);
+  assert.throws(()=>categorizeImprovements([item]),/invalid issue/);
+ }
+ assert.throws(()=>evaluateImprovementCycle({baseline,candidates:[],iteration:Number.MAX_SAFE_INTEGER+1}),/invalid iteration/);
+});
