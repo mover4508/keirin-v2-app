@@ -2,7 +2,8 @@
    This module never reads local storage, network, or result data to form predictions. */
 export const FIXED_RULES = Object.freeze({betType:"trio",stakeYen:100,minTickets:1,maxTickets:3,minRiders:5,maxRiders:9,allowRaceSkip:false});
 export function normalizeTrio(ticket){
-  const parts=Array.isArray(ticket)?ticket:String(ticket).split(/[^0-9]+/).filter(Boolean);
+  if(!Array.isArray(ticket)&&(typeof ticket!=="string"||!/^[1-9](?:[\s,、/／\-－–ー=＝]+[1-9]){2}$/.test(ticket.trim())))return null;
+  const parts=Array.isArray(ticket)?ticket:ticket.trim().split(/[\s,、/／\-－–ー=＝]+/);
   if(parts.length!==3)return null;
   if(parts.some(n=>!(typeof n==="number"&&Number.isInteger(n)||typeof n==="string"&&/^[1-9]$/.test(n))))return null;
   const nums=parts.map(Number);
