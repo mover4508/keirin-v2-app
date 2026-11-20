@@ -35,3 +35,14 @@ test("audit counts all default and editable parameters",()=>{
  assert.match(html,/defaults\.filter\(key=>!Object\.hasOwn\(fields,key\)\)/);
  assert.match(html,/設定変数の監査/);
 });
+
+test("prediction validates ticket contract before persistence",()=>{
+ const begin=html.indexOf("async function submitPrediction(");
+ const end=html.indexOf("const correction=",begin);
+ const code=html.slice(begin,end);
+ assert.ok(begin>=0&&end>begin);
+ assert.match(code,/const riderIds=new Set\(input\.ids\.map\(Number\)\)/);
+ assert.match(code,/ticketKeys\.some\(key=>!canonical\(key\)\)/);
+ assert.match(code,/new Set\(ticketKeys\)\.size!==ticketKeys\.length/);
+ assert.ok(code.indexOf("throw Error(\"予想の組番")<code.indexOf("await persist("));
+});
