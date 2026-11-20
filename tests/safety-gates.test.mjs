@@ -45,3 +45,12 @@ test("chronological split rejects malformed rows before sorting",()=>{
   assert.equal(result.reason,"invalid_rows");
  }
 });
+
+test("missing or malformed rider lists fail closed without crashing",()=>{
+ for(const riders of [null,undefined,{},42,"1234567"]){
+  const result=validateTickets(riders,["1-2-3"]);
+  assert.equal(result.ok,false);
+  assert.ok(result.errors.includes("invalid_riders"));
+  assert.throws(()=>evaluateTickets(riders,["1-2-3"],"1-2-3",740),/invalid tickets/);
+ }
+});
