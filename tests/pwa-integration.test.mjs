@@ -143,3 +143,12 @@ test("all configurable PARAMS are represented in settings fields",()=>{
  assert.deepEqual(paramNames.filter(k=>!fieldNames.includes(k)),[],"unexposed parameters");
  assert.deepEqual(fieldNames.filter(k=>!paramNames.includes(k)),[],"orphaned settings fields");
 });
+
+test("integrity failure suppresses financial and prospective statistics",()=>{
+ const audit=html.slice(html.indexOf("function makeIntegrityAudit(){"),html.indexOf('$("auditExport").onclick'));
+ assert.match(audit,/validateBackup\(db\)/);
+ assert.match(audit,/if\(report\.status==="fail"\)/);
+ for(const name of ["totalStake","totalReturned","net","recoveryRate"])
+  assert.match(audit,new RegExp("report\\."+name+"=null"));
+ assert.match(audit,/report\.forwardOnly=\{status:"unavailable",reason:"record_integrity_failed"\}/);
+});
