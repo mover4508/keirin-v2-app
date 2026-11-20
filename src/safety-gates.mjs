@@ -60,6 +60,7 @@ export function adoptionGate(baseline,candidate,{minimumValidation=50,minimumCha
      candidate.changedTickets>candidate.sampleSize||
      baseline.hitRate<0||baseline.hitRate>1||candidate.hitRate<0||candidate.hitRate>1||
      baseline.roi<0||candidate.roi<0)return {adopt:false,reason:"invalid_metrics"};
+  if(baseline.sampleSize!==candidate.sampleSize)return {adopt:false,reason:"incomparable_validation_samples"};
   if(baseline.sampleSize<minimumValidation||candidate.sampleSize<minimumValidation)return {adopt:false,reason:"insufficient_validation"};
   if(candidate.changedTickets<minimumChanged)return {adopt:false,reason:"insufficient_changes"};
   if(candidate.hitRate<baseline.hitRate||candidate.roi<baseline.roi)return {adopt:false,reason:"regression"};
