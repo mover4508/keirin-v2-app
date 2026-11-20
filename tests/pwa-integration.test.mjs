@@ -132,3 +132,14 @@ test("prediction panel clearly distinguishes settled saved records from pending 
  assert.match(panel,/過去の保存予想であり、新たに予想した買い目ではありません/);
  assert.match(panel,/結果表が未照合です。的中・不的中は確定していません/);
 });
+
+test("all configurable PARAMS are represented in settings fields",()=>{
+ const defaults=html.match(/const PARAMS=Object\.freeze\(\{([\s\S]*?)\}\);/);
+ const controls=html.match(/const fields=\{([\s\S]*?)\n\};/);
+ assert.ok(defaults&&controls);
+ const paramNames=[...defaults[1].matchAll(/(?:^|[,\n])\s*([A-Za-z][A-Za-z0-9]*)\s*:/g)].map(m=>m[1]);
+ const fieldNames=[...controls[1].matchAll(/^\s*([A-Za-z][A-Za-z0-9]*)\s*:/gm)].map(m=>m[1]);
+ assert.ok(paramNames.length>=30,"parameter inventory should be complete");
+ assert.deepEqual(paramNames.filter(k=>!fieldNames.includes(k)),[],"unexposed parameters");
+ assert.deepEqual(fieldNames.filter(k=>!paramNames.includes(k)),[],"orphaned settings fields");
+});
