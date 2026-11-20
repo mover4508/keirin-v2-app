@@ -2373,6 +2373,15 @@ function makeIntegrityAudit(){
     stake,returned,net:returned-stake,recoveryRate:stake?returned/stake:null};
   report.prospectiveEvidenceNote="締切前分類は保存時刻と締切時刻に基づく。実機時計の正確性や原本の真正性は別途検証が必要。";
   try{validateBackup(db);}catch(e){report.status="fail";report.errors.push(String(e.message||e));}
+  if(report.status==="fail"){
+    // Invalid records must never produce a seemingly authoritative performance total.
+    report.totalStake=null;
+    report.totalReturned=null;
+    report.net=null;
+    report.recoveryRate=null;
+    report.forwardOnly={status:"unavailable",reason:"record_integrity_failed"};
+    return report;
+  }
   report.net=report.totalReturned-report.totalStake;
   report.recoveryRate=report.totalStake?report.totalReturned/report.totalStake:null;
   return report;
