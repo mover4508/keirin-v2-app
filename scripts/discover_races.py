@@ -38,7 +38,7 @@ def collect(day, venue, name):
     parser.feed(html)
     races = {}
     for label, href in parser.links:
-        m = re.search(r"(?:^|\\D)(1[0-2]|[1-9])\\s*R(?:\\D|$)", label, re.I)
+        m = re.search(r"(?:^|\D)(1[0-2]|[1-9])\s*R(?:\D|$)", label, re.I)
         if not m:
             continue
         number = int(m.group(1))
