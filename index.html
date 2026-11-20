@@ -622,7 +622,7 @@ function automaticPointPolicy(ranking,policy=POINT_POLICY){
   const valid=scores.length===3&&scores.every(Number.isFinite);
   const firstGap=valid?Number((scores[0]-scores[1]).toFixed(10)):0;
   const secondGap=valid?Number((scores[1]-scores[2]).toFixed(10)):0;
-  return {version:policy.version,id:policy.id,count:countForGaps({firstGap,secondGap},policy),
+  return {version:policy.version,id:policy.id,count:valid?countForGaps({firstGap,secondGap},policy):BUY.max,
     firstGap,secondGap,firstThreshold:policy.firstGap,secondThreshold:policy.secondGap};
 }
 function countForGaps(gaps,policy){
