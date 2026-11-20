@@ -34,3 +34,14 @@ test("settlement evaluator rejects fractional, unsafe, or non-ten-yen payouts",(
   assert.throws(()=>evaluateTickets(ids,["1-2-3"],"1-2-3",payout),/invalid payout/);
  assert.equal(evaluateTickets(ids,["1-2-3"],"1-2-3",740).returnsYen,740);
 });
+
+test("chronological split rejects malformed rows before sorting",()=>{
+ assert.throws(()=>chronologicalSplit(null,1,1),/invalid chronological rows/);
+ assert.throws(()=>chronologicalSplit({},1,1),/invalid chronological rows/);
+ assert.throws(()=>chronologicalSplit([],Number.MAX_SAFE_INTEGER+1,1),/invalid split size/);
+ for(const bad of [null,undefined,42,"invalid",[]]){
+  const result=chronologicalSplit([{predictionTimestamp:"2026-01-01T00:00:00Z",beforeDeadline:true},bad],1,1);
+  assert.equal(result.eligible,false);
+  assert.equal(result.reason,"invalid_rows");
+ }
+});
