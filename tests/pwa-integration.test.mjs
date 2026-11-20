@@ -125,3 +125,10 @@ test("offline PWA caches and serves safety modules",()=>{
  assert.match(sw,/modules\.includes\(url\.href\)/);
  assert.match(sw,/keirin-v2\.4\.12\.1/);
 });
+
+test("prediction panel clearly distinguishes settled saved records from pending predictions",()=>{
+ const panel=html.slice(html.indexOf("function showPrediction(record){"),html.indexOf("function showReview(r){"));
+ assert.match(panel,/if\(record\.settlement\)/);
+ assert.match(panel,/過去の保存予想であり、新たに予想した買い目ではありません/);
+ assert.match(panel,/結果表が未照合です。的中・不的中は確定していません/);
+});
