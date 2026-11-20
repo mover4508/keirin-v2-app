@@ -2840,6 +2840,10 @@ function runSafetySelfAudit(){
     "締切前確認済みの独立実績："+forwardHits+"/"+forwardEligible.length+"レース的中 · 投入 "+forwardStake+"円 · 払戻 "+forwardPayout+"円 · 返還 "+forwardRefund+"円 · 回収率 "+(forwardStake?Math.round(forwardReturn/forwardStake*1000)/10:0)+"%":
     "締切前確認済みの独立実績：集計可能なレースがありません。過去記録を前向き精度として表示しません。"));
 
+  const minimumProspective=activeConfig().params.validationMinimum;
+  data.append(create("p",forwardEligible.length<minimumProspective?
+    "前向き検証：最低 "+minimumProspective+"件に対し "+forwardEligible.length+"件。改善候補の採用判断にはデータ不足です。":
+    "前向き検証：最低 "+minimumProspective+"件を満たしました。ただし比較条件・独立性・統計的判定の確認前に自動採用しません。","muted"));
   data.append(create("p","再判定したレース区分：堅め "+divisionsCount[0]+"件 · 標準 "+divisionsCount[1]+"件 · 荒れ "+divisionsCount[2]+"件 · 判定不可 "+unknown.count+"件"));
   const byRiders=new Map(),byGrade=new Map();
   for(const r of settled){
