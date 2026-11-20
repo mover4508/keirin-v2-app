@@ -93,3 +93,10 @@ test("candidate and baseline must use comparable validation sample counts",()=>{
  assert.equal(adoptionGate(baseline,{...candidate,sampleSize:71}).reason,"incomparable_validation_samples");
  assert.equal(adoptionGate(baseline,{...candidate,sampleSize:70}).reason,"requires_prospective_confirmation");
 });
+
+test("chronological validation rejects duplicate race IDs",()=>{
+ const rows=Array.from({length:4},(_,i)=>({raceId:"race-"+i,predictionTimestamp:new Date(Date.UTC(2026,0,i+1)).toISOString(),beforeDeadline:true}));
+ assert.equal(chronologicalSplit(rows,2,2).eligible,true);
+ assert.equal(chronologicalSplit([{...rows[0],raceId:"race-2"},...rows.slice(1)],2,2).reason,"duplicate_race_ids");
+ assert.equal(chronologicalSplit([{...rows[0],raceId:""},...rows.slice(1)],2,2).reason,"invalid_race_ids");
+});
