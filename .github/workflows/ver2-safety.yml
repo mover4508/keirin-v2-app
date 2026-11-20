@@ -15,4 +15,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run safety regression tests
-        run: node --test tests/safety-gates.test.mjs
+        run: node --test tests/*.test.mjs
