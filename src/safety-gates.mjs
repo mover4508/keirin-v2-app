@@ -4,6 +4,7 @@ export const FIXED_RULES = Object.freeze({betType:"trio",stakeYen:100,minTickets
 export function normalizeTrio(ticket){
   const parts=Array.isArray(ticket)?ticket:String(ticket).split(/[^0-9]+/).filter(Boolean);
   if(parts.length!==3)return null;
+  if(parts.some(n=>!(typeof n==="number"&&Number.isInteger(n)||typeof n==="string"&&/^[1-9]$/.test(n))))return null;
   const nums=parts.map(Number);
   if(nums.some(n=>!Number.isInteger(n)||n<1||n>9)||new Set(nums).size!==3)return null;
   return nums.sort((a,b)=>a-b).join("-");
