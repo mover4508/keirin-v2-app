@@ -78,3 +78,10 @@ test("trio arrays reject implicit numeric coercion",()=>{
  assert.equal(normalizeTrio(["3",1,2]),"1-2-3");
  assert.equal(normalizeTrio([3,1,2]),"1-2-3");
 });
+
+test("trio strings must contain only three rider IDs and supported separators",()=>{
+ for(const invalid of ["abc1-2-3","1-2-3xyz","(1-2-3)","1-2-3-","01-2-3","1.2.3",null,undefined,123])
+  assert.equal(normalizeTrio(invalid),null,String(invalid));
+ for(const valid of ["1-2-3","1－2－3","1 2 3","1,2,3","1/2/3"])
+  assert.equal(normalizeTrio(valid),"1-2-3",valid);
+});
