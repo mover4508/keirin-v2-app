@@ -46,3 +46,11 @@ test("prediction validates ticket contract before persistence",()=>{
  assert.match(code,/new Set\(ticketKeys\)\.size!==ticketKeys\.length/);
  assert.ok(code.indexOf("throw Error(\"予想の組番")<code.indexOf("await persist("));
 });
+
+test("prospective metrics exclude retrospective and voided races",()=>{
+ assert.match(html,/const forwardEligible=forward\.filter\(r=>!r\.settlement\.voided/);
+ assert.match(html,/const forwardHits=forwardEligible\.filter/);
+ assert.match(html,/const forwardStake=forwardEligible\.reduce/);
+ assert.match(html,/const forwardPayout=forwardEligible\.reduce/);
+ assert.match(html,/過去記録を前向き精度として表示しません/);
+});
