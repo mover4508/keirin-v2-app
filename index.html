@@ -2818,6 +2818,12 @@ function runSafetySelfAudit(){
   }
   data.append(create("p","車立別："+[5,6,7,8,9].map(n=>n+"車 "+(byRiders.get(n)??0)+"件").join(" · ")));
   data.append(create("p","グレード別："+[...byGrade].sort((a,b)=>a[0].localeCompare(b[0],"ja")).map(([grade,count])=>grade+" "+count+"件").join(" · ")));
+  if(lastDriveReceipt?.savedAt){
+    const savedTime=Date.parse(lastDriveReceipt.savedAt);
+    const valid=Number.isFinite(savedTime)&&lastDriveReceipt.races>=0;
+    data.append(create("p",valid?"Drive保存の最終確認："+new Date(savedTime).toLocaleString("ja-JP")+" · 保存時 "+lastDriveReceipt.races+"件":"Drive保存の最終確認情報を検証できません。"));
+    if(valid&&lastDriveReceipt.races<all.length)data.append(create("p","注意：最終Drive保存後に追加された可能性がある記録があります。再接続してバックアップしてください。","muted"));
+  }else data.append(create("p","この端末ではDrive保存の読み戻し確認履歴がありません。Google Driveの保存状態を確認してください。","muted"));
   const missing=settled.length-forward.length;
   if(missing)data.append(create("p","注意：締切前確認がない結果 "+missing+"件は、前向き予測の精度実績として扱いません。","muted"));
   data.append(create("p","この集計は端末内の保存データを読み取った結果です。データは変更していません。","muted"));
