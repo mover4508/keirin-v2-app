@@ -45,7 +45,7 @@ export function chronologicalSplit(rows,trainMin=30,validationMin=20){
   if(ordered.length<trainMin+validationMin)return {eligible:false,reason:"insufficient_data",train:[],validation:[]};
   if(ordered.some(x=>!Number.isFinite(Date.parse(x.row.predictionTimestamp??""))||x.row.beforeDeadline!==true))return {eligible:false,reason:"unverified_pre_race",train:[],validation:[]};
   const raceIds=ordered.map(x=>x.row.raceId).filter(id=>id!==undefined&&id!==null);
-  if(raceIds.some(id=>typeof id!=="string"&&typeof id!=="number"||String(id).trim()===""))
+  if(raceIds.some(id=>!(typeof id==="string"&&id.trim()!==""||typeof id==="number"&&Number.isSafeInteger(id))))
     return {eligible:false,reason:"invalid_race_ids",train:[],validation:[]};
   if(new Set(raceIds.map(String)).size!==raceIds.length)
     return {eligible:false,reason:"duplicate_race_ids",train:[],validation:[]};
