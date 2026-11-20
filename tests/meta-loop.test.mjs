@@ -28,3 +28,18 @@ test("malformed candidate and issue records are rejected without partial evaluat
  }
  assert.throws(()=>evaluateImprovementCycle({baseline,candidates:[],iteration:Number.MAX_SAFE_INTEGER+1}),/invalid iteration/);
 });
+
+test("trio-only and fixed purchase rules cannot be altered by improvement proposals",()=>{
+ for(const fixedRules of [
+  {betType:"trifecta"},{stakeYen:200},{minTickets:0},{maxTickets:4},
+  {minRiders:4},{maxRiders:10},{unknownSetting:true}
+ ]){
+  const result=evaluateImprovementCycle({baseline,candidates:[{id:"unsafe",fixedRules,metrics:better}]});
+  assert.equal(result.evaluations[0].adopt,false);
+  assert.equal(result.evaluations[0].reason,"fixed_rules_violation");
+ }
+ const allowed=evaluateImprovementCycle({baseline,candidates:[{fixedRules:{betType:"trio",stakeYen:100},metrics:better}]});
+ assert.equal(allowed.evaluations[0].reason,"requires_prospective_confirmation");
+ for(const invalid of [null,[],42])
+  assert.throws(()=>evaluateImprovementCycle({baseline,candidates:[{fixedRules:invalid,metrics:better}]}),/invalid fixed rules proposal/);
+});
