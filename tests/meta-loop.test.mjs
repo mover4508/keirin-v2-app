@@ -8,3 +8,15 @@ test("iteration limit stops the loop",()=>{const x=evaluateImprovementCycle({bas
 test("candidate budget limits work",()=>{const x=evaluateImprovementCycle({baseline,candidates:Array.from({length:20},(_,i)=>({id:i,metrics:better})),limits:{maxCandidates:3}});assert.equal(x.evaluations.length,3);assert.equal(x.reason,"candidate_budget");});
 test("unknown category becomes repair proposal",()=>{const x=categorizeImprovements([{id:"x",category:"unknown",reason:"test"}]);assert.equal(x[0].category,"直す");assert.equal(x[0].status,"proposal_only");});
 test("no hidden side effect in original baseline",()=>{const b={...baseline};evaluateImprovementCycle({baseline:b,candidates:[{metrics:better}]});assert.deepEqual(b,baseline);});
+
+test("invalid meta-loop budgets cannot bypass termination guards",()=>{
+ for(const bad of [NaN,Infinity,-1,0,1.5,"unlimited"]){
+  assert.throws(()=>evaluateImprovementCycle({baseline,candidates:[],limits:{maxIterations:bad}}),/invalid budget/);
+  assert.throws(()=>evaluateImprovementCycle({baseline,candidates:[],limits:{maxCandidates:bad}}),/invalid budget/);
+ }
+ assert.throws(()=>evaluateImprovementCycle({baseline,candidates:[],limits:null}),/invalid limits/);
+});
+test("oversized finite budgets are capped",()=>{
+ const x=evaluateImprovementCycle({baseline,candidates:[],iteration:1000,limits:{maxIterations:1000000}});
+ assert.equal(x.status,"stopped");
+});
