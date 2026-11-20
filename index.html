@@ -777,14 +777,14 @@ function reviewAdditionalTickets(input,grade,regime,keys,history,period,params){
   const checks=[];
   for(let i=1;i<keys.length;i++){
     const key=keys[i],odds=input.odds?.[key],rank=order?.indexOf(key)??-1;
-    if(rank<0){checks.push({key,status:"odds",n:0});break;}
+    if(rank<0){checks.push({key,status:"odds",n:0});return {count:keys.length,checks,reason:"insufficient_evidence"};}
     const priorKey=r=>marketTickets(r.input,rank+1)?.[rank];
     const sample=recentEvidence(matching.filter(r=>{
       const prior=priorKey(r);
       return prior&&band(r.input.odds[prior])===band(odds);
     }),params.expectedWindow);
     const detail={key,rank:rank+1,odds,n:sample.length,minimum:params.expectedMinimum};
-    if(sample.length<params.expectedMinimum){checks.push({...detail,status:"sample"});break;}
+    if(sample.length<params.expectedMinimum){checks.push({...detail,status:"sample"});return {count:keys.length,checks,reason:"insufficient_evidence"};}
     const past=pointTotals(sample,r=>[[priorKey(r)],1]);
     const net=BUY.yen*(wilsonLower(past.hits,sample.length,params.expectedZ)*odds-1);
     const paidNet=past.returned-past.stake;
