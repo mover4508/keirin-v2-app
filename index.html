@@ -2829,7 +2829,11 @@ function runSafetySelfAudit(){
   // Prospective evidence must never be mixed with retrospective or unverified predictions.
   const forwardEligible=forward.filter(r=>!r.settlement.voided&&
     Array.isArray(r.settlement.winners)&&r.settlement.winners.length>0&&
-    Array.isArray(r.tickets)&&r.tickets.length>0);
+    Array.isArray(r.tickets)&&r.tickets.length>0&&
+    r.tickets.length>=BUY.min&&r.tickets.length<=BUY.max&&
+    r.tickets.every(t=>typeof t.key==="string"&&/^([1-9])-([1-9])-([1-9])$/.test(t.key))&&
+    Number.isFinite(r.settlement.payout)&&Number.isFinite(r.settlement.refundYen)&&
+    Number.isFinite(r.settlement.stake)&&r.settlement.stake===r.tickets.length*BUY.yen);
   const forwardHits=forwardEligible.filter(r=>r.tickets.some(t=>r.settlement.winners.some(w=>w.key===t.key))).length;
   const forwardStake=forwardEligible.reduce((sum,r)=>sum+r.tickets.length*BUY.yen,0);
   const forwardPayout=forwardEligible.reduce((sum,r)=>sum+r.tickets.reduce((s,t)=>
