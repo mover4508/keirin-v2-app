@@ -109,3 +109,10 @@ test("unsettled race is explicitly pending, never a loss",()=>{
  assert.ok(review.indexOf("if(!r.settlement)")<review.indexOf("const judged="));
  assert.match(html,/!settlement\?"結果待ち":settlement\.voided\?"中止・不成立"/);
 });
+
+test("previously settled same-race record is labeled as reused, not a new prediction",()=>{
+ assert.match(html,/existing\.settlement\?/);
+ assert.match(html,/過去に結果照合済みの保存記録です。新規予想ではありません/);
+ assert.match(html,/以前の照合結果を表示しています/);
+ assert.match(html,/結果表は未照合のため、判定は結果待ちです/);
+});
