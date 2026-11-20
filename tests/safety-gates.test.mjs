@@ -85,3 +85,11 @@ test("trio strings must contain only three rider IDs and supported separators",(
  for(const valid of ["1-2-3","1－2－3","1 2 3","1,2,3","1/2/3"])
   assert.equal(normalizeTrio(valid),"1-2-3",valid);
 });
+
+test("candidate and baseline must use comparable validation sample counts",()=>{
+ const baseline={sampleSize:70,hitRate:0.3,roi:0.6};
+ const candidate={sampleSize:69,hitRate:0.4,roi:0.8,changedTickets:8};
+ assert.equal(adoptionGate(baseline,candidate).reason,"incomparable_validation_samples");
+ assert.equal(adoptionGate(baseline,{...candidate,sampleSize:71}).reason,"incomparable_validation_samples");
+ assert.equal(adoptionGate(baseline,{...candidate,sampleSize:70}).reason,"requires_prospective_confirmation");
+});
