@@ -1,0 +1,36 @@
+name: Ver.2 regression checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax in HTML module
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const html=readFileSync('index.html','utf8');
+          const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
+          let count=0;
+          for(const [,source] of scripts){
+            if(!source.trim())continue;
+            const file='/tmp/keirin-script-'+count+++'.js';
+            writeFileSync(file,source);
+            const {spawnSync}=await import('node:child_process');
+            const result=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
+            if(result.status!==0)throw Error('Inline script syntax error: '+result.stderr);
+          }
+          if(!count)throw Error('No inline JavaScript scripts found');
+          NODE
+      - name: Run regression tests
+        run: node --test tests/*.test.mjs
