@@ -76,3 +76,8 @@ test('official trio payout parser does not silently truncate long sections',()=>
  assert.match(html,/for\(const part of parts\)\{/);
  assert.doesNotMatch(html,/parts\.map\(section=>section\.slice\(0,1200\)\)/);
 });
+
+test('market ranking needs two distinct valid odds before scoring',()=>{
+ assert.match(html,/market\.length>=2&&maxO>minO/);
+ assert.doesNotMatch(html,/maxO===minO\?\.5/);
+});
