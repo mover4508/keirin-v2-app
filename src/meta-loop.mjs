@@ -1,5 +1,5 @@
 // Bounded improvement cycles. This module evaluates proposals but never mutates the app or deploys.
-import {adoptionGate} from "./safety-gates.mjs";
+import {adoptionGate,FIXED_RULES} from "./safety-gates.mjs";
 export function evaluateImprovementCycle({baseline,candidates,iteration=0,limits={}}){
  if(!limits||typeof limits!=="object"||Array.isArray(limits))throw new Error("invalid limits");
  const budget=(value,fallback,maximum)=>{
@@ -14,6 +14,13 @@ export function evaluateImprovementCycle({baseline,candidates,iteration=0,limits
  if(iteration>=maxIterations)return {status:"stopped",reason:"iteration_budget",iteration,evaluations:[]};
  const evaluations=candidates.slice(0,maxCandidates).map((candidate,index)=>{
   if(!candidate||typeof candidate!=="object"||Array.isArray(candidate))throw new Error("invalid candidate");
+  const changes=candidate.fixedRules;
+  if(changes!==undefined){
+   if(!changes||typeof changes!=="object"||Array.isArray(changes))
+    throw new Error("invalid fixed rules proposal");
+   if(Object.entries(changes).some(([key,value])=>!(key in FIXED_RULES)||FIXED_RULES[key]!==value))
+    return {index,id:String(candidate.id??index),adopt:false,reason:"fixed_rules_violation",metrics:candidate.metrics??null};
+  }
   const verdict=adoptionGate(baseline,candidate.metrics??{});
   return {index,id:String(candidate.id??index),adopt:false,reason:verdict.reason,metrics:candidate.metrics??null};
  });
