@@ -45,7 +45,7 @@
 <div class="row"><label>Picker用プロジェクト番号<input id="project" inputmode="numeric" autocomplete="off"></label><label>Picker用APIキー<input id="pickerKey" autocomplete="off"></label></div>
 <button id="chooseFolder" class="secondary" type="button">既存フォルダを選ぶ</button></details></details>
 <details><summary>バックアップを復元する</summary><label>JSONファイルを選ぶ<input id="import" type="file" accept=".json,application/json"></label></details>
-<p id="backupStatus" role="status"></p></section><p id="releaseNumber" class="muted"></p></main>
+<p id="backupStatus" role="status"></p></section><section><h2>安全性の自己点検</h2><p class="muted">保存データを変更せず、固定購入条件・36エンジン数・主要設定の矛盾を点検します。</p><button id="runSafetyAudit" type="button" class="secondary">自己点検を実行</button><p id="safetyAuditResult" role="status"></p><div id="safetyAuditData"></div></section><p id="releaseNumber" class="muted"></p></main>
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
@@ -777,14 +777,14 @@ function reviewAdditionalTickets(input,grade,regime,keys,history,period,params){
   const checks=[];
   for(let i=1;i<keys.length;i++){
     const key=keys[i],odds=input.odds?.[key],rank=order?.indexOf(key)??-1;
-    if(rank<0){checks.push({key,status:"odds",n:0});break;}
+    if(rank<0){checks.push({key,status:"odds",n:0});return {count:keys.length,checks,reason:"insufficient_evidence"};}
     const priorKey=r=>marketTickets(r.input,rank+1)?.[rank];
     const sample=recentEvidence(matching.filter(r=>{
       const prior=priorKey(r);
       return prior&&band(r.input.odds[prior])===band(odds);
     }),params.expectedWindow);
     const detail={key,rank:rank+1,odds,n:sample.length,minimum:params.expectedMinimum};
-    if(sample.length<params.expectedMinimum){checks.push({...detail,status:"sample"});break;}
+    if(sample.length<params.expectedMinimum){checks.push({...detail,status:"sample"});return {count:keys.length,checks,reason:"insufficient_evidence"};}
     const past=pointTotals(sample,r=>[[priorKey(r)],1]);
     const net=BUY.yen*(wilsonLower(past.hits,sample.length,params.expectedZ)*odds-1);
     const paidNet=past.returned-past.stake;
@@ -1025,7 +1025,7 @@ function parseResult(text,ids){
       const nums=m.slice(1,4).map(Number);
       if(new Set(nums).size!==3||nums.some(x=>!ids.includes(x)||refundIds.includes(x)))throw Error("払戻欄の車番と出走車番・返還車番が一致しません。");
       const key=combo(nums), payout=+m[4].replaceAll(",","");
-      if(!Number.isSafeInteger(payout)||payout<BUY.yen||payout>100000000)throw Error("払戻金を確認してください。");
+      if(!Number.isSafeInteger(payout)||payout<BUY.yen||payout>100000000||payout%10!==0)throw Error("払戻金を確認してください。");
       if(payouts.has(key)&&payouts.get(key)!==payout)throw Error("同じ組番に異なる払戻金が含まれます。");
       payouts.set(key,payout);
     }
@@ -1103,6 +1103,11 @@ function showPrediction(record){
     create("small",record.input.ids.length+"車 · "+record.grade,"muted"));
   out.replaceChildren(create("h3",record.id),division,
     create("p",record.tickets.length+"点 · 合計 "+(record.tickets.length*BUY.yen)+"円","num"));
+  if(record.settlement){
+    out.append(create("p","保存済みの結果照合済みレースです。表示中の買い目は過去の保存予想であり、新たに予想した買い目ではありません。","muted"));
+  }else{
+    out.append(create("p","結果待ち：結果表が未照合です。的中・不的中は確定していません。","muted"));
+  }
   for(const t of record.tickets){
     const box=create("div","","ticket ticketSummary");
     box.append(create("strong",t.key),create("span",BUY.yen+"円"+(t.odds==null?"":" · "+t.odds+"倍")));
@@ -1189,7 +1194,11 @@ $("jumpToPrediction").onclick=event=>{
 function showReview(r){
   const out=$("review");
   out.replaceChildren();
-  if(!r?.settlement)return;
+  if(!r)return;
+  if(!r.settlement){
+    out.append(create("h3",r.id),create("p","結果待ち：結果表の照合が完了するまで的中・不的中を判定しません。","muted"));
+    return;
+  }
   const s=r.settlement;
   const judged=s.voided?"中止・不成立":s.hits?"的中":s.analysis.every(x=>x.refund)?"全点返還":"不的中";
   const net=s.payout+(s.refundYen??0)-s.stake;
@@ -1291,7 +1300,7 @@ function renderDailyBalance(rows){
         stake:settlement.stake,pay:((settlement.payout??0)+(settlement.refundYen??0)),
         net:(settlement.payout??0)+(settlement.refundYen??0)-settlement.stake
       }:null;
-      const values=[record.id.slice(11),!settlement?"結果待ち":settlement.hits>0?"的中":"不的中",
+      const values=[record.id.slice(11),!settlement?"結果待ち":settlement.voided?"中止・不成立":settlement.hits>0?"的中":settlement.analysis?.length&&settlement.analysis.every(x=>x.refund)?"全点返還":"不的中",
         result?result.stake.toLocaleString("ja-JP")+"円":"—",
         result?result.pay.toLocaleString("ja-JP")+"円":"—",
         result?signed(result.net):"未確定"];
@@ -1978,6 +1987,7 @@ async function putDraft(id,patch){
 }
 async function submitPrediction(race,draft){
   const {id}=race;
+  // Never silently regenerate or relabel a previously settled race as a fresh prediction.
   if(db.records[id])return db.records[id];
   const input=readInput(draft.entry,draft.odds,race);
   const rows=records();
@@ -2028,6 +2038,20 @@ async function submitPrediction(race,draft){
     venueEvidence:siteEvidence,venueTrial,spending:{period,proposedKeys,attempts},
     ...(draft.timing?{timingSupplement:draft.timing}:{}),
     baseline:baseline.comparisonTop.slice(0,count),challenger:candidate.comparisonTop.slice(0,count)};
+  // Hard fail before writing any new prediction. This guard works offline and
+  // does not depend on a dynamically loaded audit module.
+  const riderIds=new Set(input.ids.map(Number));
+  const ticketKeys=record.tickets.map(ticket=>ticket.key);
+  const canonical=key=>{
+    const parts=String(key).split("-").map(Number);
+    return parts.length===3&&parts.every(n=>Number.isInteger(n)&&riderIds.has(n))&&new Set(parts).size===3&&
+      parts.join("-")===parts.slice().sort((a,b)=>a-b).join("-");
+  };
+  if(input.ids.length<BUY.minRiders||input.ids.length>BUY.maxRiders||riderIds.size!==input.ids.length||
+    ticketKeys.length<BUY.min||ticketKeys.length>BUY.max||ticketKeys.some(key=>!canonical(key))||
+    new Set(ticketKeys).size!==ticketKeys.length){
+    throw Error("予想の組番・車番・点数に不整合があるため保存を中止しました。");
+  }
   const drafts={...db.drafts};
   if(draft.result)drafts[id]={result:draft.result};else delete drafts[id];
   await persist({...db,drafts,records:{...db.records,[id]:record}});
@@ -2201,7 +2225,9 @@ async function consumePaste(id,raw){
       showReview(completed.record);
       $("resultStatus").textContent=completed.status;
     })();
-    $("entryStatus").textContent=race.id+" の保存済みの予想を表示しています。";
+    $("entryStatus").textContent=race.id+(existing.settlement?
+      " は過去に結果照合済みの保存記録です。新規予想ではありません。今回結果表を貼り付けていなくても、以前の照合結果を表示しています。":
+      " の保存済みの予想です。結果表は未照合のため、判定は結果待ちです。");
     revealPrediction();
     return "complete";
   }
@@ -2292,9 +2318,13 @@ function checkSettings(values){
   const bands=expectedBands(p);
   if(bands.some((value,i)=>i>0&&value<=bands[i-1]))throw Error("オッズ帯の境界は小さい順に設定してください。");
 }
-$("saveSettings").onclick=action("settingsStatus",()=>{
+$("saveSettings").onclick=action("settingsStatus",async()=>{
   const values=Object.fromEntries(Object.keys(fields).map(k=>[k,$("param-"+k).valueAsNumber]));
   checkSettings(values);
+  // Independent validation before writing a candidate configuration.
+  const {validateParameters}=await import("./src/parameter-guard.mjs");
+  const checked=validateParameters({...PARAMS,...values});
+  if(!checked.ok)throw Error("候補設定を保存できません。独立検査："+checked.errors.join("、"));
   return withCurrentRecords(async()=>{
     const {params}=activeConfig();
     if(Object.entries(values).every(([key,value])=>params[key]===value)){
@@ -2343,6 +2373,15 @@ function makeIntegrityAudit(){
     stake,returned,net:returned-stake,recoveryRate:stake?returned/stake:null};
   report.prospectiveEvidenceNote="締切前分類は保存時刻と締切時刻に基づく。実機時計の正確性や原本の真正性は別途検証が必要。";
   try{validateBackup(db);}catch(e){report.status="fail";report.errors.push(String(e.message||e));}
+  if(report.status==="fail"){
+    // Invalid records must never produce a seemingly authoritative performance total.
+    report.totalStake=null;
+    report.totalReturned=null;
+    report.net=null;
+    report.recoveryRate=null;
+    report.forwardOnly={status:"unavailable",reason:"record_integrity_failed"};
+    return report;
+  }
   report.net=report.totalReturned-report.totalStake;
   report.recoveryRate=report.totalStake?report.totalReturned/report.totalStake:null;
   return report;
@@ -2374,7 +2413,7 @@ $("share").onclick=action("backupStatus",async()=>{
 function validateSettlement(r,validKey){
   const s=r.settlement;
   if(!Number.isFinite(Date.parse(s.recordedAt))||!Array.isArray(s.winners)||
-     !s.winners.every(w=>validKey(w?.key)&&Number.isSafeInteger(w.payout)&&w.payout>=BUY.yen)||
+     !s.winners.every(w=>validKey(w?.key)&&Number.isSafeInteger(w.payout)&&w.payout>=BUY.yen&&w.payout<=100000000&&w.payout%10===0)||
      new Set(s.winners.map(w=>w.key)).size!==s.winners.length||
      !Array.isArray(s.analysis)||s.analysis.length!==r.tickets.length)throw Error("不正な結果記録があります。");
   const refundIds=s.refundIds??[];
@@ -2394,13 +2433,17 @@ function validateSettlement(r,validKey){
   if(s.hits!==hits||s.payout!==payout||(s.refundYen??0)!==refund||s.stake!==r.tickets.length*BUY.yen)
     throw Error("払戻・返還・購入想定額が買い目と一致しません。");
   if(typeof s.raw==="string"&&s.raw.trim()){
-    let restored;
-    try{restored=parseResult(s.raw,r.input.ids);}catch{}
-    if(restored&&settlementKey(restored)!==settlementKey(s))
+    // Fail closed: an unreadable saved official result is not verified evidence.
+    let restored,identity;
+    try{
+      restored=parseResult(s.raw,r.input.ids);
+      identity=raceIdentity(s.raw);
+    }catch{
+      throw Error(r.id+" の保存済み結果表の原文を再検証できません。");
+    }
+    if(settlementKey(restored)!==settlementKey(s))
       throw Error(r.id+" の保存額と結果表の原文が一致しません。");
-    let identity;
-    try{identity=raceIdentity(s.raw);}catch{}
-    if(identity&&identity.id!==r.id)throw Error(r.id+" の記録に異なるレースの結果表が含まれます。");
+    if(identity.id!==r.id)throw Error(r.id+" の記録に異なるレースの結果表が含まれます。");
   }
 }
 function validateBackup(incoming){
@@ -2786,6 +2829,123 @@ function openReceivedShare(){
   }
   void showReceivedRace();
 }
+function runSafetySelfAudit(){
+  const out=$("safetyAuditResult"), data=$("safetyAuditData");
+  if(!out||!data)return;
+  data.replaceChildren();
+  const errors=[];
+  if(BUY.yen!==100||BUY.min!==1||BUY.max!==3||BUY.minRiders!==5||BUY.maxRiders!==9)errors.push("固定購入条件");
+  if(allEngines(PARAMS).length!==36)errors.push("36エンジン数");
+  if(!(PARAMS.hardThreshold<PARAMS.upsetThreshold))errors.push("レース区分境界");
+  if(!(PARAMS.validationWindow>=PARAMS.validationMinimum))errors.push("学習比較期間");
+  if(!(PARAMS.historyWindow>=PARAMS.trainingMinimum))errors.push("学習期間");
+  out.textContent=errors.length?"要確認："+errors.join("、"):"固定条件・36エンジン数・主要パラメータ整合性：確認済み。予想精度の保証ではありません。";
+  const configurable=Object.keys(fields),defaults=Object.keys(PARAMS);
+  const uncovered=defaults.filter(key=>!Object.hasOwn(fields,key));
+  data.append(create("p","設定変数の監査：既定値 "+defaults.length+"項目 · 画面から調整可能 "+configurable.length+"項目 · 未公開 "+uncovered.length+"項目"));
+  if(uncovered.length)data.append(create("p","画面で調整できない変数："+uncovered.join("、"),"muted"));
+  const all=records(), settled=all.filter(r=>r.settlement);
+  const forward=settled.filter(confirmedForward);
+  const divisionsCount=[0,0,0], unknown={count:0};
+  for(const r of settled){
+    if(usableEngineInput(r.input)){
+      const k=raceSignals(r.input,PARAMS).regime;
+      if(Number.isInteger(k)&&k>=0&&k<3)divisionsCount[k]++;
+      else unknown.count++;
+    }else unknown.count++;
+  }
+  data.append(create("p","保存済み "+all.length+"件 · 結果照合済み "+settled.length+"件 · 締切前確認 "+forward.length+"件"));
+  // Prospective evidence must never be mixed with retrospective or unverified predictions.
+  const forwardEligible=forward.filter(r=>!r.settlement.voided&&
+    Array.isArray(r.settlement.winners)&&r.settlement.winners.length>0&&
+    Array.isArray(r.tickets)&&r.tickets.length>0&&
+    r.tickets.length>=BUY.min&&r.tickets.length<=BUY.max&&
+    r.tickets.every(t=>typeof t.key==="string"&&/^([1-9])-([1-9])-([1-9])$/.test(t.key))&&
+    Number.isFinite(r.settlement.payout)&&r.settlement.payout>=0&&
+    Number.isFinite(r.settlement.refundYen)&&r.settlement.refundYen>=0&&
+    Number.isFinite(r.settlement.stake)&&r.settlement.stake===r.tickets.length*BUY.yen&&
+    r.settlement.refundYen<=r.settlement.stake&&
+    r.settlement.payout===r.tickets.reduce((sum,t)=>
+      sum+(r.settlement.winners.find(w=>w.key===t.key)?.payout??0),0));
+  const forwardHits=forwardEligible.filter(r=>r.tickets.some(t=>r.settlement.winners.some(w=>w.key===t.key))).length;
+  const forwardStake=forwardEligible.reduce((sum,r)=>sum+r.tickets.length*BUY.yen,0);
+  const forwardPayout=forwardEligible.reduce((sum,r)=>sum+r.tickets.reduce((s,t)=>
+    s+(r.settlement.winners.find(w=>w.key===t.key)?.payout??0),0),0);
+  const forwardRefund=forwardEligible.reduce((sum,r)=>sum+(r.settlement.refundYen??0),0);
+  const forwardReturn=forwardPayout+forwardRefund;
+  data.append(create("p",forwardEligible.length?
+    "締切前確認済みの独立実績："+forwardHits+"/"+forwardEligible.length+"レース的中 · 投入 "+forwardStake+"円 · 払戻 "+forwardPayout+"円 · 返還 "+forwardRefund+"円 · 回収率 "+(forwardStake?Math.round(forwardReturn/forwardStake*1000)/10:0)+"%":
+    "締切前確認済みの独立実績：集計可能なレースがありません。過去記録を前向き精度として表示しません。"));
+
+  const minimumProspective=activeConfig().params.validationMinimum;
+  data.append(create("p",forwardEligible.length<minimumProspective?
+    "前向き検証：最低 "+minimumProspective+"件に対し "+forwardEligible.length+"件。改善候補の採用判断にはデータ不足です。":
+    "前向き検証：最低 "+minimumProspective+"件を満たしました。ただし比較条件・独立性・統計的判定の確認前に自動採用しません。","muted"));
+  data.append(create("p","再判定したレース区分：堅め "+divisionsCount[0]+"件 · 標準 "+divisionsCount[1]+"件 · 荒れ "+divisionsCount[2]+"件 · 判定不可 "+unknown.count+"件"));
+  const byRiders=new Map(),byGrade=new Map();
+  for(const r of settled){
+    const n=r.input?.ids?.length;
+    if(Number.isInteger(n))byRiders.set(n,(byRiders.get(n)??0)+1);
+    const grade=typeof r.grade==="string"&&r.grade.trim()?r.grade:"不明";
+    byGrade.set(grade,(byGrade.get(grade)??0)+1);
+  }
+  data.append(create("p","車立別："+[5,6,7,8,9].map(n=>n+"車 "+(byRiders.get(n)??0)+"件").join(" · ")));
+  data.append(create("p","グレード別："+[...byGrade].sort((a,b)=>a[0].localeCompare(b[0],"ja")).map(([grade,count])=>grade+" "+count+"件").join(" · ")));
+  if(lastDriveReceipt?.savedAt){
+    const savedTime=Date.parse(lastDriveReceipt.savedAt);
+    const valid=Number.isFinite(savedTime)&&lastDriveReceipt.races>=0;
+    data.append(create("p",valid?"Drive保存の最終確認："+new Date(savedTime).toLocaleString("ja-JP")+" · 保存時 "+lastDriveReceipt.races+"件":"Drive保存の最終確認情報を検証できません。"));
+    if(valid&&lastDriveReceipt.races<all.length)data.append(create("p","注意：最終Drive保存後に追加された可能性がある記録があります。再接続してバックアップしてください。","muted"));
+  }else data.append(create("p","この端末ではDrive保存の読み戻し確認履歴がありません。Google Driveの保存状態を確認してください。","muted"));
+  const missing=settled.length-forward.length;
+  if(missing)data.append(create("p","注意：締切前確認がない結果 "+missing+"件は、前向き予測の精度実績として扱いません。","muted"));
+  data.append(create("p","この集計は端末内の保存データを読み取った結果です。データは変更していません。","muted"));
+}
+$("runSafetyAudit").addEventListener("click",runSafetySelfAudit);
+// Independent, read-only audit of the versioned safety modules. This never writes predictions or settings.
+async function runMetaLoopSafetyAudit(){
+  const out=$("safetyAuditData");
+  if(!out)return;
+  try{
+    const {evaluateImprovementCycle}=await import("./src/meta-loop.mjs");
+    // A dry run checks bounded execution; no evidence of predictive improvement is claimed.
+    const dryRun=evaluateImprovementCycle({
+      baseline:{},candidates:[],iteration:0,limits:{maxCandidates:12,maxIterations:10}
+    });
+    const safe=dryRun.status==="evaluated"&&dryRun.requiresHumanOrGovernedRelease===true&&
+      dryRun.evaluations.length===0;
+    out.append(create("p",safe?
+      "メタループ安全監査：周期上限と自動採用禁止を確認。候補0件・精度改善の実証なし。":
+      "メタループ安全監査：想定外の結果です。自動採用を停止してください。","muted"));
+  }catch(error){
+    out.append(create("p","メタループ安全監査の読み込みに失敗："+(error?.message??""),"muted"));
+  }
+}
+async function runModuleSafetyAudit(){
+  const out=$("safetyAuditData");
+  if(!out)return;
+  try{
+    const [{validateParameters},{validateTickets}]=await Promise.all([
+      import("./src/parameter-guard.mjs"),import("./src/safety-gates.mjs")
+    ]);
+    const parameterCheck=validateParameters(activeConfig().params);
+    const all=records(),bad=[];
+    for(const record of all){
+      if(!record?.input?.ids||!Array.isArray(record.tickets)){bad.push(record?.id??"不明");continue;}
+      const check=validateTickets(record.input.ids,record.tickets.map(t=>t.key));
+      if(!check.ok)bad.push(record.id??"不明");
+    }
+    out.append(create("p","独立安全モジュール："+
+      (parameterCheck.ok?"パラメータ整合":"パラメータ要確認 "+parameterCheck.errors.join("、"))+
+      " · 保存買い目 "+all.length+"件中 要確認 "+bad.length+"件"));
+    if(bad.length)out.append(create("p","要確認のレースID（最大10件）："+bad.slice(0,10).join("、"),"muted"));
+    out.append(create("p","この追加監査は読み取り専用です。予想や学習データは変更しません。","muted"));
+  }catch(error){
+    out.append(create("p","独立安全モジュールの読み込みに失敗しました。通信・オフラインキャッシュを確認してください。"+
+      (error?.message??""),"muted"));
+  }
+}
+$("runSafetyAudit").addEventListener("click",()=>{void runModuleSafetyAudit();void runMetaLoopSafetyAudit()});
 setupMobileApp();
 window.addEventListener("pageshow",()=>{void ready.then(openReceivedShare)});
 void ready.then(()=>{
