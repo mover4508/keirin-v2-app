@@ -2809,6 +2809,15 @@ function runSafetySelfAudit(){
   }
   data.append(create("p","保存済み "+all.length+"件 · 結果照合済み "+settled.length+"件 · 締切前確認 "+forward.length+"件"));
   data.append(create("p","再判定したレース区分：堅め "+divisionsCount[0]+"件 · 標準 "+divisionsCount[1]+"件 · 荒れ "+divisionsCount[2]+"件 · 判定不可 "+unknown.count+"件"));
+  const byRiders=new Map(),byGrade=new Map();
+  for(const r of settled){
+    const n=r.input?.ids?.length;
+    if(Number.isInteger(n))byRiders.set(n,(byRiders.get(n)??0)+1);
+    const grade=typeof r.grade==="string"&&r.grade.trim()?r.grade:"不明";
+    byGrade.set(grade,(byGrade.get(grade)??0)+1);
+  }
+  data.append(create("p","車立別："+[5,6,7,8,9].map(n=>n+"車 "+(byRiders.get(n)??0)+"件").join(" · ")));
+  data.append(create("p","グレード別："+[...byGrade].sort((a,b)=>a[0].localeCompare(b[0],"ja")).map(([grade,count])=>grade+" "+count+"件").join(" · ")));
   const missing=settled.length-forward.length;
   if(missing)data.append(create("p","注意：締切前確認がない結果 "+missing+"件は、前向き予測の精度実績として扱いません。","muted"));
   data.append(create("p","この集計は端末内の保存データを読み取った結果です。データは変更していません。","muted"));
