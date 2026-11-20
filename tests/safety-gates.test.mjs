@@ -14,3 +14,17 @@ test("unverified pre-race data not accepted",()=>{const rows=Array.from({length:
 test("verified chronological split",()=>{const rows=Array.from({length:4},(_,i)=>({predictionTimestamp:new Date(2026,0,i+1).toISOString(),beforeDeadline:true}));const x=chronologicalSplit(rows,2,2);assert.equal(x.eligible,true);assert.equal(x.train.length,2);});
 test("retrospective improvements never auto-adopt",()=>assert.equal(adoptionGate({sampleSize:70,hitRate:.3,roi:.6},{sampleSize:70,hitRate:.4,roi:.7,changedTickets:8}).adopt,false));
 test("regression rejected",()=>assert.equal(adoptionGate({sampleSize:70,hitRate:.3,roi:.6},{sampleSize:70,hitRate:.2,roi:.7,changedTickets:8}).reason,"regression"));
+
+test("impossible adoption metrics are rejected explicitly",()=>{
+ const base={sampleSize:70,hitRate:.3,roi:.6};
+ const candidate={sampleSize:70,hitRate:.4,roi:.7,changedTickets:8};
+ for(const changed of [
+  {hitRate:1.2},{hitRate:-.1},{roi:-.2},{sampleSize:70.5},
+  {changedTickets:71},{changedTickets:-1},{changedTickets:3.5}
+ ]){
+  assert.equal(adoptionGate(base,{...candidate,...changed}).reason,"invalid_metrics");
+ }
+ assert.equal(adoptionGate({...base,roi:-1},candidate).reason,"invalid_metrics");
+ assert.equal(adoptionGate(base,candidate,{minimumValidation:0}).reason,"invalid_metrics");
+ assert.equal(adoptionGate(base,candidate,{minimumChanged:Infinity}).reason,"invalid_metrics");
+});
