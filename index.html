@@ -2826,6 +2826,18 @@ function runSafetySelfAudit(){
     }else unknown.count++;
   }
   data.append(create("p","保存済み "+all.length+"件 · 結果照合済み "+settled.length+"件 · 締切前確認 "+forward.length+"件"));
+  // Prospective evidence must never be mixed with retrospective or unverified predictions.
+  const forwardEligible=forward.filter(r=>!r.settlement.voided&&
+    Array.isArray(r.settlement.winners)&&r.settlement.winners.length>0&&
+    Array.isArray(r.tickets)&&r.tickets.length>0);
+  const forwardHits=forwardEligible.filter(r=>r.tickets.some(t=>r.settlement.winners.some(w=>w.key===t.key))).length;
+  const forwardStake=forwardEligible.reduce((sum,r)=>sum+r.tickets.length*BUY.yen,0);
+  const forwardPayout=forwardEligible.reduce((sum,r)=>sum+r.tickets.reduce((s,t)=>
+    s+(r.settlement.winners.find(w=>w.key===t.key)?.payout??0),0),0);
+  data.append(create("p",forwardEligible.length?
+    "締切前確認済みの独立実績："+forwardHits+"/"+forwardEligible.length+"レース的中 · 投入 "+forwardStake+"円 · 払戻 "+forwardPayout+"円 · 回収率 "+(forwardStake?Math.round(forwardPayout/forwardStake*1000)/10:0)+"%":
+    "締切前確認済みの独立実績：集計可能なレースがありません。過去記録を前向き精度として表示しません。"));
+
   data.append(create("p","再判定したレース区分：堅め "+divisionsCount[0]+"件 · 標準 "+divisionsCount[1]+"件 · 荒れ "+divisionsCount[2]+"件 · 判定不可 "+unknown.count+"件"));
   const byRiders=new Map(),byGrade=new Map();
   for(const r of settled){
