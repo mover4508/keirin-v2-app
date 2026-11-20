@@ -191,7 +191,7 @@ test("Ver.2 maintains 36 engines across three regimes and supports 1, 2, 3 ticke
  const end=html.indexOf("const averages=",start);
  assert.ok(start>=0&&end>start);
  const source=html.slice(start,end);
- const sizes=vm.runInNewContext(source+";({families:families.length,regimes:regimes.length,engineCount:allEngines({minLineWeight:1}).length,ids:allEngines({minLineWeight:1}).map(e=>e.id)})");
+ const sizes=vm.runInNewContext("const ENGINE_SIZE=12;"+source+";({families:families.length,regimes:regimes.length,engineCount:allEngines({minLineWeight:1}).length,ids:allEngines({minLineWeight:1}).map(e=>e.id)})");
  assert.equal(sizes.families,12);
  assert.equal(sizes.regimes,3);
  assert.equal(sizes.engineCount,36);
