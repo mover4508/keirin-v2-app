@@ -616,8 +616,10 @@ function engineRanking(list,engine){
 }
 function automaticPointPolicy(ranking,policy=POINT_POLICY){
   // Scores are normalized rank aggregates, so this measures separation rather than hit probability.
-  const firstGap=Number((ranking[0].score-ranking[1].score).toFixed(10));
-  const secondGap=Number((ranking[1].score-ranking[2].score).toFixed(10));
+  const scores=ranking.slice(0,3).map(item=>item?.score);
+  const valid=scores.length===3&&scores.every(Number.isFinite);
+  const firstGap=valid?Number((scores[0]-scores[1]).toFixed(10)):0;
+  const secondGap=valid?Number((scores[1]-scores[2]).toFixed(10)):0;
   return {version:policy.version,id:policy.id,count:countForGaps({firstGap,secondGap},policy),
     firstGap,secondGap,firstThreshold:policy.firstGap,secondThreshold:policy.secondGap};
 }
@@ -625,6 +627,7 @@ function countForGaps(gaps,policy){
   return gaps.firstGap>=policy.firstGap?1:gaps.secondGap>=policy.secondGap?2:BUY.max;
 }
 function wilsonLower(hits,n,z=EXPECTED.z){
+  if(!Number.isFinite(n)||n<=0||!Number.isFinite(hits)||hits<0||hits>n)return 0;
   const p=hits/n, adjustment=z*z/n;
   return Math.max(0,(p+adjustment/2-z*Math.sqrt(p*(1-p)/n+adjustment/(4*n)))/(1+adjustment));
 }
@@ -2156,8 +2159,8 @@ async function settleRecord(record,raw){
   const previous=record.settlement;
   const samePayout=!!previous&&settlementKey(previous)===settlementKey(parsed);
   const timingAdded=!!official.officialDeadlineAt&&!previous?.officialDeadlineAt;
-  const finishAdded=Object.keys(finish).some(id=>!previous?.finish?.[id]);
-  if(samePayout&&!timingAdded&&!finishAdded)return {record,status:"同じ結果を照合済みです。"};
+  const finishChanged=Object.entries(finish).some(([id,detail])=>JSON.stringify(previous?.finish?.[id]??null)!==JSON.stringify(detail));
+  if(samePayout&&!timingAdded&&!finishChanged)return {record,status:"同じ結果を照合済みです。"};
   if(previous&&!samePayout&&!correction(raw))throw Error("保存済みの払戻と異なります。公式の訂正表示を含む結果表を貼り付けてください。");
   const scheduled=official.officialStartAt??record.startAt;
   if(scheduled&&Date.now()<Date.parse(scheduled)&&!voided)throw Error("発走予定時刻より前のため、結果の登録を保留しました。");
