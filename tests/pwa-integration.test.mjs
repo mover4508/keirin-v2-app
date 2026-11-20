@@ -152,3 +152,12 @@ test("integrity failure suppresses financial and prospective statistics",()=>{
   assert.match(audit,new RegExp("report\\."+name+"=null"));
  assert.match(audit,/report\.forwardOnly=\{status:"unavailable",reason:"record_integrity_failed"\}/);
 });
+
+test("saved result originals must be reparseable for a passing integrity audit",()=>{
+ const validation=html.slice(html.indexOf("function validateSettlement(r,validKey){"),html.indexOf("function validateBackup(incoming){"));
+ assert.match(validation,/restored=parseResult\(s\.raw,r\.input\.ids\)/);
+ assert.match(validation,/identity=raceIdentity\(s\.raw\)/);
+ assert.match(validation,/保存済み結果表の原文を再検証できません/);
+ assert.doesNotMatch(validation,/catch\s*\{\s*\}/);
+ assert.match(validation,/if\(identity\.id!==r\.id\)/);
+});
