@@ -2745,6 +2745,7 @@ function queueBackup(){
   },activeConfig().params.backupDelayMs);
 }
 window.addEventListener("online",queueBackup);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&accessToken&&Date.now()<expires)queueBackup();});
 window.addEventListener("focus",()=>{
   if(accessToken&&Date.now()>=expires)setDriveStatus("Driveの接続期限が切れました。「接続してバックアップ」で再接続してください。");
 });
