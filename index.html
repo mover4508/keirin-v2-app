@@ -1189,7 +1189,11 @@ $("jumpToPrediction").onclick=event=>{
 function showReview(r){
   const out=$("review");
   out.replaceChildren();
-  if(!r?.settlement)return;
+  if(!r)return;
+  if(!r.settlement){
+    out.append(create("h3",r.id),create("p","結果待ち：結果表の照合が完了するまで的中・不的中を判定しません。","muted"));
+    return;
+  }
   const s=r.settlement;
   const judged=s.voided?"中止・不成立":s.hits?"的中":s.analysis.every(x=>x.refund)?"全点返還":"不的中";
   const net=s.payout+(s.refundYen??0)-s.stake;
@@ -1291,7 +1295,7 @@ function renderDailyBalance(rows){
         stake:settlement.stake,pay:((settlement.payout??0)+(settlement.refundYen??0)),
         net:(settlement.payout??0)+(settlement.refundYen??0)-settlement.stake
       }:null;
-      const values=[record.id.slice(11),!settlement?"結果待ち":settlement.hits>0?"的中":"不的中",
+      const values=[record.id.slice(11),!settlement?"結果待ち":settlement.voided?"中止・不成立":settlement.hits>0?"的中":settlement.analysis?.length&&settlement.analysis.every(x=>x.refund)?"全点返還":"不的中",
         result?result.stake.toLocaleString("ja-JP")+"円":"—",
         result?result.pay.toLocaleString("ja-JP")+"円":"—",
         result?signed(result.net):"未確定"];
