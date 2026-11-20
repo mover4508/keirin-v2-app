@@ -204,3 +204,18 @@ test("Ver.2 maintains 36 engines across three regimes and supports 1, 2, 3 ticke
  assert.equal(count({firstGap:.05,secondGap:.02},{firstGap:.1,secondGap:.075}),3);
 });
 function requireVm(){return vmModule;}
+
+test("additional ticket evidence gate preserves 2 and 3 tickets when odds or samples are unavailable",()=>{
+ const start=html.indexOf("function reviewAdditionalTickets("),end=html.indexOf("function marketComparison(",start);
+ assert.ok(start>=0&&end>start);
+ const fn=vmModule.runInNewContext("const BUY={min:1,yen:100}; const marketTickets=()=>null; const venueRaceKind=()=>null; const expectedBands=()=>[5,10,20]; const eligibleForLearning=()=>false; const recentEvidence=x=>x; const pointTotals=()=>({hits:0,returned:0,stake:0}); const wilsonLower=()=>0;"+html.slice(start,end)+";reviewAdditionalTickets");
+ const input={odds:{"1-2-3":4,"1-2-4":8,"1-2-5":12},ids:[1,2,3,4,5]};
+ const params={expectedMinimum:30,expectedWindow:100,expectedZ:1.64,expectedNetMinimum:0};
+ for(const keys of [["1-2-3","1-2-4"],["1-2-3","1-2-4","1-2-5"]]){
+  const inactive=fn(input,"A",0,keys,[],{active:false},params);
+  assert.equal(inactive.count,keys.length);
+  const unknownOdds=fn(input,"A",0,keys,[],{active:true},params);
+  assert.equal(unknownOdds.count,keys.length);
+  assert.equal(unknownOdds.reason,"insufficient_evidence");
+ }
+});
