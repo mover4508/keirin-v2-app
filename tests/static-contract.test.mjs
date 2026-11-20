@@ -69,6 +69,7 @@ test('repeat settlement detects changes to existing official finish entries',()=
 });
 test('ticket count and learning statistics guard missing samples',()=>{
  assert.match(html,/const valid=scores\.length===3&&scores\.every\(Number\.isFinite\)/);
+ assert.match(html,/count:valid\?countForGaps\(\{firstGap,secondGap\},policy\):BUY\.max/);
  assert.match(html,/if\(!Number\.isFinite\(n\)\|\|n<=0/);
 });
 
