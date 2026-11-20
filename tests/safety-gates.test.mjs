@@ -61,3 +61,13 @@ test("payout evaluator matches official result monetary bounds",()=>{
  for(const payout of [100,100000000])
   assert.equal(evaluateTickets(ids,["1-2-3"],"1-2-3",payout).returnsYen,payout);
 });
+
+test("rider identifiers must be actual one-digit numbers or numeric strings",()=>{
+ for(const invalid of [true,false,null,undefined,"", "01", "1.0", {}, []]){
+  const riders=[invalid,2,3,4,5,6,7];
+  const result=validateTickets(riders,["1-2-3"]);
+  assert.equal(result.ok,false,String(invalid));
+  assert.ok(result.errors.includes("invalid_riders"),String(invalid));
+ }
+ assert.equal(validateTickets(["1","2","3","4","5","6","7"],["1-2-3"]).ok,true);
+});
