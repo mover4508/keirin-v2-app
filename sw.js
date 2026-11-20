@@ -24,7 +24,7 @@ async function installShell() {
   if (urlFor(manifest.start_url) !== index || urlFor(manifest.share_target?.action) !== sharePath) {
     throw Error("アプリの起動先と共有先を確認できません。");
   }
-  for (const response of responses.slice(2)) {
+  for (const response of responses.slice(2, 4)) { // Only PNG icons; subsequent entries are JavaScript modules.
     const icon = new Uint8Array(await response.clone().arrayBuffer());
     if (![137,80,78,71,13,10,26,10].every((byte, i) => icon[i] === byte)) throw Error("アプリのアイコンを取得できません。");
   }
