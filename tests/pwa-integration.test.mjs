@@ -101,3 +101,11 @@ test("PWA safety audit invokes bounded meta-loop without adopting proposals",()=
  assert.match(html,/dryRun\.requiresHumanOrGovernedRelease===true/);
  assert.match(html,/void runMetaLoopSafetyAudit\(\)/);
 });
+
+test("unsettled race is explicitly pending, never a loss",()=>{
+ const review=html.slice(html.indexOf("function showReview(r){"),html.indexOf("function performanceTotals("));
+ assert.match(review,/if\(!r\.settlement\)/);
+ assert.match(review,/結果待ち：結果表の照合が完了するまで的中・不的中を判定しません/);
+ assert.ok(review.indexOf("if(!r.settlement)")<review.indexOf("const judged="));
+ assert.match(html,/!settlement\?"結果待ち":settlement\.voided\?"中止・不成立"/);
+});
