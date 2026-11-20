@@ -68,3 +68,10 @@ test("prospective validation warns when below configured minimum",()=>{
  assert.match(html,/改善候補の採用判断にはデータ不足です/);
  assert.match(html,/統計的判定の確認前に自動採用しません/);
 });
+
+test("prospective ROI requires internally consistent financial records",()=>{
+ assert.match(html,/r\.tickets\.length>=BUY\.min&&r\.tickets\.length<=BUY\.max/);
+ assert.match(html,/Number\.isFinite\(r\.settlement\.payout\)/);
+ assert.match(html,/Number\.isFinite\(r\.settlement\.refundYen\)/);
+ assert.match(html,/r\.settlement\.stake===r\.tickets\.length\*BUY\.yen/);
+});
