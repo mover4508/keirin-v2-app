@@ -2797,6 +2797,10 @@ function runSafetySelfAudit(){
   if(!(PARAMS.validationWindow>=PARAMS.validationMinimum))errors.push("学習比較期間");
   if(!(PARAMS.historyWindow>=PARAMS.trainingMinimum))errors.push("学習期間");
   out.textContent=errors.length?"要確認："+errors.join("、"):"固定条件・36エンジン数・主要パラメータ整合性：確認済み。予想精度の保証ではありません。";
+  const configurable=Object.keys(fields),defaults=Object.keys(PARAMS);
+  const uncovered=defaults.filter(key=>!Object.hasOwn(fields,key));
+  data.append(create("p","設定変数の監査：既定値 "+defaults.length+"項目 · 画面から調整可能 "+configurable.length+"項目 · 未公開 "+uncovered.length+"項目"));
+  if(uncovered.length)data.append(create("p","画面で調整できない変数："+uncovered.join("、"),"muted"));
   const all=records(), settled=all.filter(r=>r.settlement);
   const forward=settled.filter(confirmedForward);
   const divisionsCount=[0,0,0], unknown={count:0};
