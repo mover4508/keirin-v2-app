@@ -1,3 +1,4 @@
+import * as vmModule from "node:vm";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
@@ -183,3 +184,23 @@ test("insufficient evidence does not forcibly reduce two or three auto-selected 
  assert.match(block,/if\(sample\.length<params\.expectedMinimum\)\{checks\.push\(\{\.\.\.detail,status:"sample"\}\);return \{count:keys\.length,checks,reason:"insufficient_evidence"\};\}/);
  assert.match(block,/if\(!pass\)break;/);
 });
+
+test("Ver.2 maintains 36 engines across three regimes and supports 1, 2, 3 ticket decisions",()=>{
+ const vm=requireVm();
+ const start=html.indexOf("const families=[");
+ const end=html.indexOf("const averages=",start);
+ assert.ok(start>=0&&end>start);
+ const source=html.slice(start,end);
+ const sizes=vm.runInNewContext(source+";({families:families.length,regimes:regimes.length,engineCount:allEngines({minLineWeight:1}).length,ids:allEngines({minLineWeight:1}).map(e=>e.id)})");
+ assert.equal(sizes.families,12);
+ assert.equal(sizes.regimes,3);
+ assert.equal(sizes.engineCount,36);
+ assert.deepEqual(Array.from(sizes.ids),Array.from({length:36},(_,i)=>i+1));
+ const pstart=html.indexOf("function countForGaps("),pend=html.indexOf("function wilsonLower(",pstart);
+ assert.ok(pstart>=0&&pend>pstart);
+ const count=vm.runInNewContext("const BUY={max:3};"+html.slice(pstart,pend)+";countForGaps");
+ assert.equal(count({firstGap:.2,secondGap:0},{firstGap:.1,secondGap:.075}),1);
+ assert.equal(count({firstGap:.05,secondGap:.1},{firstGap:.1,secondGap:.075}),2);
+ assert.equal(count({firstGap:.05,secondGap:.02},{firstGap:.1,secondGap:.075}),3);
+});
+function requireVm(){return vmModule;}
