@@ -71,3 +71,10 @@ test("rider identifiers must be actual one-digit numbers or numeric strings",()=
  }
  assert.equal(validateTickets(["1","2","3","4","5","6","7"],["1-2-3"]).ok,true);
 });
+
+test("trio arrays reject implicit numeric coercion",()=>{
+ for(const ticket of [[true,2,3],[null,2,3],["01",2,3],["",2,3],[{},2,3],[[1],2,3]])
+  assert.equal(normalizeTrio(ticket),null,JSON.stringify(ticket));
+ assert.equal(normalizeTrio(["3",1,2]),"1-2-3");
+ assert.equal(normalizeTrio([3,1,2]),"1-2-3");
+});
