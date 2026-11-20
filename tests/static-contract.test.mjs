@@ -60,3 +60,14 @@ test('partial rider statistics have confidence-weighted engine contribution',()=
  assert.equal(weighted(.9,1,1/3),.3);
  assert.equal(weighted(.9,1,1),.9);
 });
+
+test('repeat settlement detects changes to existing official finish entries',()=>{
+ assert.match(html,/const finishChanged=Object\.entries\(finish\)\.some/);
+ assert.match(html,/if\(samePayout&&!timingAdded&&!finishChanged\)/);
+ const previous={1:{rank:2}}, updated={1:{rank:1}};
+ assert.ok(Object.entries(updated).some(([id,detail])=>JSON.stringify(previous[id]??null)!==JSON.stringify(detail)));
+});
+test('ticket count and learning statistics guard missing samples',()=>{
+ assert.match(html,/const valid=scores\.length===3&&scores\.every\(Number\.isFinite\)/);
+ assert.match(html,/if\(!Number\.isFinite\(n\)\|\|n<=0/);
+});
