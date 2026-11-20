@@ -54,3 +54,10 @@ test("missing or malformed rider lists fail closed without crashing",()=>{
   assert.throws(()=>evaluateTickets(riders,["1-2-3"],"1-2-3",740),/invalid tickets/);
  }
 });
+
+test("payout evaluator matches official result monetary bounds",()=>{
+ for(const payout of [0,10,90,100000010])
+  assert.throws(()=>evaluateTickets(ids,["1-2-3"],"1-2-3",payout),/invalid payout/);
+ for(const payout of [100,100000000])
+  assert.equal(evaluateTickets(ids,["1-2-3"],"1-2-3",payout).returnsYen,payout);
+});
