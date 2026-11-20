@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Public race-index discovery. Metadata only; never label it training data."""
+"""Public race-index discovery. URLs are unverified until source checks pass."""
 import datetime as dt
 import json
 import re
@@ -50,7 +50,7 @@ def collect(day, venue, name):
         parsed = urlparse(card_url)
         if parsed.scheme != "https" or parsed.hostname not in {"www.chariloto.com", "chariloto.com"}:
             continue
-        races[number] = {"number": number, "cardUrl": card_url}
+        races[number] = {"number": number, "cardUrl": card_url, "trifectaOddsUrl": card_url.split("?")[0] + "?bet_type=sanrenfuku&odds=1", "source": "chariloto", "verified": False}
     return {"date": day, "venue": venue, "venueName": name, "indexUrl": url, "races": [races[k] for k in sorted(races)]}
 
 def main():
