@@ -21,6 +21,7 @@
 <label for="sourceChoice">保存した原文</label><select id="sourceChoice"></select>
 <button id="restoreSource" class="secondary" type="button">入力欄に戻す</button>
 <p id="sourceRecoveryStatus" role="status"></p></details></section>
+<section aria-labelledby="discoveryHeading"><h2 id="discoveryHeading">レース一覧（自動検索・試験版）</h2><p class="muted">現在は開催一覧の検索のみです。選択先で出走表を確認できます。予想への自動入力は未対応です。</p><button type="button" id="loadRaceCatalog" class="secondary">レース一覧を更新</button><label for="discoveredRace">検索されたレース</label><select id="discoveredRace"><option value="">一覧を更新してください</option></select><button type="button" id="openDiscoveredRace" class="secondary">出走表を開く</button><p id="discoveryStatus" role="status"></p></section>
 <section id="predictionPanel" aria-labelledby="predictionHeading"><h2 id="predictionHeading" tabindex="-1">予想された買い目</h2>
 <div id="prediction"><p class="muted">出走表と3連複オッズ表を貼り付けると、ここに買い目が表示されます。</p></div>
 <label for="history">保存済みレース</label><select id="history"><option value="">レースを選択</option></select></section>
@@ -51,7 +52,7 @@
 const $=id=>document.getElementById(id);
 const KEY="keirin-v2.1";
 const VERSION="2.2.0", supportedVersions=new Set(["2.1.0",VERSION]);
-const RELEASE="2.4.21";
+const RELEASE="2.4.22";
 const TRAINING_PROTOCOL=2;
 const BUY=Object.freeze({yen:100,min:1,max:3,minRiders:5,maxRiders:9});
 const POINT_POLICY=Object.freeze({version:1,id:"standard",label:"標準基準",firstGap:.10,secondGap:.075});
@@ -2909,5 +2910,32 @@ void ready.then(()=>{
   const latest=records().at(-1);
   if(latest){showPrediction(latest);showReview(latest);}
   openReceivedShare();
+});
+
+// Public race discovery is metadata only. Never promote a discovered link to
+// a prediction or a learning sample without validated source tables.
+const discoverySelect=document.getElementById("discoveredRace");
+document.getElementById("loadRaceCatalog").addEventListener("click",async()=>{
+  const status=document.getElementById("discoveryStatus");
+  status.textContent="レース一覧を取得しています。";
+  try{
+    const response=await fetch("./data/race-catalog.json",{cache:"no-store"});
+    if(!response.ok)throw Error("収集データはまだ公開されていません。");
+    const data=await response.json();
+    discoverySelect.replaceChildren(new Option("レースを選択",""));
+    let n=0;
+    for(const event of data.entries??[]){
+      for(const race of event.races??[]){
+        if(!/^https:\/\//.test(race.cardUrl))continue;
+        discoverySelect.add(new Option(event.date+" "+event.venueName+" "+race.number+"R",race.cardUrl));
+        n++;
+      }
+    }
+    status.textContent=n+"レースを検索しました。出走表の確認後、従来の入力欄を使用してください。";
+  }catch(error){status.textContent=error.message||"レース一覧の取得に失敗しました。";}
+});
+document.getElementById("openDiscoveredRace").addEventListener("click",()=>{
+  const url=discoverySelect.value;
+  if(url&&/^https:\/\//.test(url))window.open(url,"_blank","noopener,noreferrer");
 });
 </script></html>
