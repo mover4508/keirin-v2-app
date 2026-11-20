@@ -16,3 +16,16 @@ test("audit reports grade distribution",()=>{assert.match(html,/byGrade\.set\(gr
 
 test("Drive audit displays last verified receipt",()=>{assert.match(html,/lastDriveReceipt\?\.savedAt/);assert.match(html,/Drive保存の最終確認/);});
 test("Drive audit warns on possible unsynced records",()=>{assert.match(html,/lastDriveReceipt\.races<all\.length/);assert.match(html,/再接続してバックアップしてください/);});
+
+test("read-only audit imports parameter and ticket safety modules",()=>{
+ assert.match(html,/async function runModuleSafetyAudit\(\)/);
+ assert.match(html,/import\("\.\/src\/parameter-guard\.mjs"\)/);
+ assert.match(html,/import\("\.\/src\/safety-gates\.mjs"\)/);
+ assert.match(html,/validateParameters\(activeConfig\(\)\.params\)/);
+ assert.match(html,/validateTickets\(record\.input\.ids,record\.tickets\.map\(t=>t\.key\)\)/);
+});
+test("independent audit does not write local data",()=>{
+ const block=html.split("async function runModuleSafetyAudit(){")[1]?.split('setupMobileApp();')[0];
+ assert.ok(block);
+ assert.doesNotMatch(block,/\bpersist\(|\bwriteStored\(|localStorage\.setItem\(|\bbackup\(/);
+});
