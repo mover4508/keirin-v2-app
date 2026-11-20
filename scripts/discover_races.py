@@ -5,6 +5,7 @@ import json
 import re
 import urllib.request
 from html.parser import HTMLParser
+from urllib.parse import urljoin, urlparse
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -17,6 +18,7 @@ class Links(HTMLParser):
         self.links = []
         self.href = None
         self.label = []
+        self.depth = 0
     def handle_starttag(self, tag, attrs):
         if tag == "a":
             self.href = dict(attrs).get("href")
@@ -42,11 +44,14 @@ def collect(day, venue, name):
         if not m:
             continue
         number = int(m.group(1))
-        if "出走" not in label and "race" not in href:
+        if "出走" not in label and "race" not in href.lower():
             continue
-        from urllib.parse import urljoin
-        races[number] = {"number": number, "cardUrl": urljoin(url, href)}
-    return {"date": day, "venue": venue, "venueName": name, "indexUrl": url, "races": list(races.values())}
+        card_url = urljoin(url, href)
+        parsed = urlparse(card_url)
+        if parsed.scheme != "https" or parsed.hostname not in {"www.chariloto.com", "chariloto.com"}:
+            continue
+        races[number] = {"number": number, "cardUrl": card_url}
+    return {"date": day, "venue": venue, "venueName": name, "indexUrl": url, "races": [races[k] for k in sorted(races)]}
 
 def main():
     today = dt.datetime.now(ZoneInfo("Asia/Tokyo")).date()
