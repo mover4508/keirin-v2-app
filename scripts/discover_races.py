@@ -50,7 +50,7 @@ def collect(day, venue, name):
         parsed = urlparse(card_url)
         if parsed.scheme != "https" or parsed.hostname not in {"www.chariloto.com", "chariloto.com"}:
             continue
-        races[number] = {"number": number, "cardUrl": card_url, "trifectaOddsUrl": card_url.split("?")[0] + "?bet_type=sanrenfuku&odds=1", "source": "chariloto", "verified": False}
+        races[number] = {"number": number, "cardUrl": card_url, "source": "chariloto", "verified": False}
     return {"date": day, "venue": venue, "venueName": name, "indexUrl": url, "races": [races[k] for k in sorted(races)]}
 
 def main():
