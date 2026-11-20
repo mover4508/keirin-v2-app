@@ -81,3 +81,12 @@ test('market ranking needs two distinct valid odds before scoring',()=>{
  assert.match(html,/market\.length>=2&&maxO>minO/);
  assert.doesNotMatch(html,/maxO===minO\?\.5/);
 });
+
+test('market feature confidence accounts for incomplete combination coverage',()=>{
+ assert.match(html,/const expectedCombos=ids\.length\*\(ids\.length-1\)\*\(ids\.length-2\)\/6/);
+ assert.match(html,/Math\.min\(1,market\.length\/expectedCombos\)/);
+ assert.match(html,/,marketCoverage,marketCoverage,1\]/);
+ const combinations=n=>n*(n-1)*(n-2)/6;
+ assert.equal(combinations(5),10);
+ assert.equal(combinations(9),84);
+});
