@@ -596,7 +596,9 @@ function features(input){
     const rawOdds=odds[key];
     const oddsScore=Number.isFinite(rawOdds)&&rawOdds>0&&market.length>=2&&maxO>minO?1-(Math.log(rawOdds)-minO)/(maxO-minO):null;
     const availableStrengths=strengths.filter(Number.isFinite), availablePlaces=place.filter(Number.isFinite);
-    const coverage=[availableStrengths.length/3,availableStrengths.length===3?1:0,knownWins.length/3,availablePlaces.length/3,availablePlaces.length===3?1:0,1,1,1,1,1,1,1];
+    const expectedCombos=ids.length*(ids.length-1)*(ids.length-2)/6;
+    const marketCoverage=market.length>=2&&maxO>minO?Math.min(1,market.length/expectedCombos):0;
+    const coverage=[availableStrengths.length/3,availableStrengths.length===3?1:0,knownWins.length/3,availablePlaces.length/3,availablePlaces.length===3?1:0,1,1,1,1,marketCoverage,marketCoverage,1];
     const value=[availableStrengths.length?averages(availableStrengths):null,availableStrengths.length===3?Math.min(...availableStrengths):null,win,availablePlaces.length?averages(availablePlaces):null,availablePlaces.length===3?Math.min(...availablePlaces):null,
       rs.every(r=>Number.isFinite(r.b))?averages(rs.map(r=>r.b/maxB)):null,line(g=>(g.length-1)/2),line(g=>g.includes(0)?(g.length-1)/2:0),
       line(g=>g.includes(1)&&(g.includes(0)||g.includes(2))?1:0),oddsScore,oddsScore===null?null:1-Math.abs(2*oddsScore-1),
