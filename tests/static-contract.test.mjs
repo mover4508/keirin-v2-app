@@ -68,7 +68,7 @@ test('repeat settlement detects changes to existing official finish entries',()=
  assert.ok(Object.entries(updated).some(([id,detail])=>JSON.stringify(previous[id]??null)!==JSON.stringify(detail)));
 });
 test('ticket count and learning statistics guard missing samples',()=>{
- assert.match(html,/const valid=scores\.length===3&&scores\.every\(Number\.isFinite\)/);
+ assert.match(html,/const valid=scores\.length===3&&scores\.every\(Number\.isFinite\)&&scores\[0\]>=scores\[1\]&&scores\[1\]>=scores\[2\]/);
  assert.match(html,/count:valid\?countForGaps\(\{firstGap,secondGap\},policy\):BUY\.max/);
  assert.match(html,/if\(!Number\.isFinite\(n\)\|\|n<=0/);
 });
