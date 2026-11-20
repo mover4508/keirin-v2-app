@@ -2413,7 +2413,7 @@ $("share").onclick=action("backupStatus",async()=>{
 function validateSettlement(r,validKey){
   const s=r.settlement;
   if(!Number.isFinite(Date.parse(s.recordedAt))||!Array.isArray(s.winners)||
-     !s.winners.every(w=>validKey(w?.key)&&Number.isSafeInteger(w.payout)&&w.payout>=BUY.yen)||
+     !s.winners.every(w=>validKey(w?.key)&&Number.isSafeInteger(w.payout)&&w.payout>=BUY.yen&&w.payout<=100000000&&w.payout%10===0)||
      new Set(s.winners.map(w=>w.key)).size!==s.winners.length||
      !Array.isArray(s.analysis)||s.analysis.length!==r.tickets.length)throw Error("不正な結果記録があります。");
   const refundIds=s.refundIds??[];
