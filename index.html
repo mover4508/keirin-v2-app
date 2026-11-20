@@ -2028,6 +2028,20 @@ async function submitPrediction(race,draft){
     venueEvidence:siteEvidence,venueTrial,spending:{period,proposedKeys,attempts},
     ...(draft.timing?{timingSupplement:draft.timing}:{}),
     baseline:baseline.comparisonTop.slice(0,count),challenger:candidate.comparisonTop.slice(0,count)};
+  // Hard fail before writing any new prediction. This guard works offline and
+  // does not depend on a dynamically loaded audit module.
+  const riderIds=new Set(input.ids.map(Number));
+  const ticketKeys=record.tickets.map(ticket=>ticket.key);
+  const canonical=key=>{
+    const parts=String(key).split("-").map(Number);
+    return parts.length===3&&parts.every(n=>Number.isInteger(n)&&riderIds.has(n))&&new Set(parts).size===3&&
+      parts.join("-")===parts.slice().sort((a,b)=>a-b).join("-");
+  };
+  if(input.ids.length<BUY.minRiders||input.ids.length>BUY.maxRiders||riderIds.size!==input.ids.length||
+    ticketKeys.length<BUY.min||ticketKeys.length>BUY.max||ticketKeys.some(key=>!canonical(key))||
+    new Set(ticketKeys).size!==ticketKeys.length){
+    throw Error("予想の組番・車番・点数に不整合があるため保存を中止しました。");
+  }
   const drafts={...db.drafts};
   if(draft.result)drafts[id]={result:draft.result};else delete drafts[id];
   await persist({...db,drafts,records:{...db.records,[id]:record}});
