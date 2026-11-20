@@ -2829,6 +2829,32 @@ function runSafetySelfAudit(){
   data.append(create("p","この集計は端末内の保存データを読み取った結果です。データは変更していません。","muted"));
 }
 $("runSafetyAudit").addEventListener("click",runSafetySelfAudit);
+// Independent, read-only audit of the versioned safety modules. This never writes predictions or settings.
+async function runModuleSafetyAudit(){
+  const out=$("safetyAuditData");
+  if(!out)return;
+  try{
+    const [{validateParameters},{validateTickets}]=await Promise.all([
+      import("./src/parameter-guard.mjs"),import("./src/safety-gates.mjs")
+    ]);
+    const parameterCheck=validateParameters(activeConfig().params);
+    const all=records(),bad=[];
+    for(const record of all){
+      if(!record?.input?.ids||!Array.isArray(record.tickets)){bad.push(record?.id??"不明");continue;}
+      const check=validateTickets(record.input.ids,record.tickets.map(t=>t.key));
+      if(!check.ok)bad.push(record.id??"不明");
+    }
+    out.append(create("p","独立安全モジュール："+
+      (parameterCheck.ok?"パラメータ整合":"パラメータ要確認 "+parameterCheck.errors.join("、"))+
+      " · 保存買い目 "+all.length+"件中 要確認 "+bad.length+"件"));
+    if(bad.length)out.append(create("p","要確認のレースID（最大10件）："+bad.slice(0,10).join("、"),"muted"));
+    out.append(create("p","この追加監査は読み取り専用です。予想や学習データは変更しません。","muted"));
+  }catch(error){
+    out.append(create("p","独立安全モジュールの読み込みに失敗しました。通信・オフラインキャッシュを確認してください。"+
+      (error?.message??""),"muted"));
+  }
+}
+$("runSafetyAudit").addEventListener("click",()=>{void runModuleSafetyAudit()});
 setupMobileApp();
 window.addEventListener("pageshow",()=>{void ready.then(openReceivedShare)});
 void ready.then(()=>{
