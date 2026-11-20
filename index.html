@@ -1,8 +1,8 @@
-<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="application-name" content="競輪予想"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icon-192.png"><meta name="theme-color" content="#096450"><title>競輪予想自動化システム Ver.2（実装版 2.4.16）</title>
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="application-name" content="競輪予想"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icon-192.png"><meta name="theme-color" content="#096450"><title>競輪予想自動化システム Ver.2（実装版 2.4.17）</title>
 <style>
 :root{color-scheme:light;--ink:#142827;--accent:#096450;--line:#ccd9d3}*{box-sizing:border-box}body{margin:0;background:#eef4f0;color:var(--ink);font:16px/1.55 system-ui,sans-serif}main{max-width:760px;margin:auto;padding:24px 15px 60px}h1{font-size:clamp(26px,7vw,40px);margin:0}h2{font-size:20px;margin:0 0 12px}header{margin-bottom:20px}p{margin:8px 0}section{background:white;border:1px solid var(--line);border-radius:16px;padding:17px;margin:14px 0}label{display:block;font-weight:650;margin-top:10px}input,textarea,select,button{font:inherit}input:not([type=file]),textarea,select{width:100%;padding:9px;border:1px solid #879e92;border-radius:7px;background:white}textarea{min-height:104px}button{border:0;border-radius:8px;background:var(--accent);color:white;padding:9px 12px;margin:8px 5px 0 0;min-height:44px}button.secondary{background:#e0eee8;color:var(--ink)}.muted{color:#47625a;font-size:14px}.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:10px}.backup-jump{display:inline-block;color:var(--accent);padding:10px 0;margin-right:20px;min-height:44px;font-weight:700}#predictionPanel,#backupPanel{scroll-margin-top:12px}#jumpToPrediction{display:inline-block;color:var(--accent);padding:10px 0;min-height:44px;font-weight:700}#jumpToPrediction[hidden]{display:none}.raceDivision{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap;margin:0 0 8px}.raceDivision span{border-radius:6px;background:#e0eee8;color:#124f40;padding:4px 8px;font-weight:750}.ticketSummary{display:flex;align-items:baseline;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:10px;background:#f4faf6;padding:8px 12px;margin:7px 0}.ticketSummary strong{font-variant-numeric:tabular-nums;font-size:clamp(23px,8vw,32px);letter-spacing:.03em;line-height:1.2}.ticketSummary span{font-size:14px}.ticket{border-top:1px solid var(--line);padding-top:9px;margin-top:9px}.audit-card{border-left:3px solid var(--accent);background:#f4faf6;margin:12px 0;padding:8px 12px;border-radius:0 8px 8px 0}.audit-card p{margin:5px 0}.audit-card strong{font-size:18px}.num{font-size:24px;font-weight:750}.point-table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}.point-table th,.point-table td{text-align:right;padding:7px 3px;border-bottom:1px solid var(--line)}.point-table th:first-child{text-align:left}pre{white-space:pre-wrap;overflow-wrap:anywhere}details{margin:10px 0}[role=status]{overflow-wrap:anywhere;color:#6c310d}
 </style>
-<main><header><h1>競輪予想自動化システム Ver.2（実装版 2.4.16）</h1><p>3連複 · 1点100円 · 1〜3点を自動選択</p><a id="jumpToLearning" class="backup-jump" href="#learningRecord">学習・改善記録</a><a class="backup-jump" href="#backupPanel">バックアップ</a><a id="jumpToPrediction" href="#predictionPanel" hidden>買い目を見る</a>
+<main><header><h1>競輪予想自動化システム Ver.2（実装版 2.4.17）</h1><p>3連複 · 1点100円 · 1〜3点を自動選択</p><a id="jumpToLearning" class="backup-jump" href="#learningRecord">学習・改善記録</a><a class="backup-jump" href="#backupPanel">バックアップ</a><a id="jumpToPrediction" href="#predictionPanel" hidden>買い目を見る</a>
 <details id="appSetup"><summary id="appSetupHeading">ホーム画面に追加</summary>
 <button id="installApp" type="button" hidden>競輪予想をインストール</button>
 <p id="installHelp">スマートフォンで配信版を開くと、ホーム画面に追加できます。</p><p id="offlineStatus" class="muted" role="status"></p>
@@ -51,7 +51,7 @@
 const $=id=>document.getElementById(id);
 const KEY="keirin-v2.1";
 const VERSION="2.2.0", supportedVersions=new Set(["2.1.0",VERSION]);
-const RELEASE="2.4.16";
+const RELEASE="2.4.17";
 const TRAINING_PROTOCOL=2;
 const BUY=Object.freeze({yen:100,min:1,max:3,minRiders:5,maxRiders:9});
 const POINT_POLICY=Object.freeze({version:1,id:"standard",label:"標準基準",firstGap:.10,secondGap:.075});
@@ -803,6 +803,31 @@ function reviewAdditionalTickets(input,grade,regime,keys,history,period,params){
     if(!pass)break;
   }
   return {count:BUY.min+checks.filter(check=>check.status==="pass").length,checks};
+}
+// Compare complete 1/2/3-ticket portfolios on chronological, prior-only evidence.
+// A change is accepted only if both halves improve net return without losing hits.
+function reviewPortfolioCount(input,grade,regime,keys,history,current,params){
+  const kind=venueRaceKind(input);
+  const rows=recentEvidence(history.filter(r=>eligibleForLearning(r)&&r.grade===grade&&grade!=="不明"&&
+    kind&&venueRaceKind(r.input)===kind&&r.input.ids.length===input.ids.length&&
+    (r.segmentRegime??r.regime)===regime&&validPointTop(r.baselineTop)&&r.baselineTop.length>=BUY.max&&
+    !r.settlement.voided),params.expectedWindow);
+  const minimum=Math.max(params.expectedMinimum*2,60);
+  if(rows.length<minimum)return {count:current,status:"insufficient_evidence",n:rows.length,minimum};
+  const mid=Math.floor(rows.length/2), halves=[rows.slice(0,mid),rows.slice(mid)];
+  const totals=count=>halves.map(part=>pointTotals(part,r=>[r.baselineTop.slice(0,count),count]));
+  const base=totals(current);
+  const candidates=[];
+  for(let count=BUY.min;count<=BUY.max;count++){
+    if(count===current)continue;
+    const parts=totals(count);
+    const deltas=parts.map((v,i)=>({net:(v.returned-v.stake)-(base[i].returned-base[i].stake),hits:v.hits-base[i].hits}));
+    const pass=deltas.every(v=>v.net>0&&v.hits>=0);
+    candidates.push({count,pass,deltas});
+  }
+  const passing=candidates.filter(v=>v.pass).sort((a,b)=>
+    b.deltas.reduce((sum,v)=>sum+v.net,0)-a.deltas.reduce((sum,v)=>sum+v.net,0));
+  return {count:passing[0]?.count??current,status:passing.length?"validated_change":"keep_baseline",n:rows.length,minimum,candidates};
 }
 function marketComparison(records,onlyForward=false){
   const rows=records.filter(r=>r.settlement&&(!onlyForward||confirmedForward(r))&&marketTickets(r.input,r.tickets.length));
@@ -2042,6 +2067,11 @@ async function submitPrediction(race,draft){
     count=result.count;
     choice=choose(count);
   }
+  const portfolioReview=reviewPortfolioCount(input,grade,baseline.regime,choice.top,history,count,config.params);
+  if(portfolioReview.count!==count){
+    count=portfolioReview.count;
+    choice=choose(count);
+  }
   const {modelAudit,adaptive,venueTrial}=choice;
   const {rankingsByDivision,...pick}=choice.model;
   const selection=rankSelections(choice.ranked,pick.regime,count);
@@ -2049,7 +2079,7 @@ async function submitPrediction(race,draft){
   const record={id,createdAt:savedAt.toISOString(),version:VERSION,appRelease:RELEASE,trainingProtocol:TRAINING_PROTOCOL,input,...timing,adaptive,
     ...pick,...selection,comparisonTop:choice.top,comparisonUsesOdds:hasSavedOdds(input),pointPolicy:{...pointPolicy,count},pointAudit,expectedPoints:baseline.expectedPoints,baselineTop:baseline.comparisonTop,segmentRegime:baseline.regime,candidateRevision:config.revision,candidateParams:config.params,modelAudit,
     activeParams:adaptive?config.params:PARAMS,trainingSize:candidate.trainingSize,trainingScope:candidate.trainingScope,
-    venueEvidence:siteEvidence,venueTrial,stakeRisk:ticketStakeRisk(input,selection.tickets.map(t=>t.key)),spending:{period,proposedKeys,attempts},
+    venueEvidence:siteEvidence,venueTrial,stakeRisk:ticketStakeRisk(input,selection.tickets.map(t=>t.key)),spending:{period,proposedKeys,attempts,portfolioReview},
     ...(draft.timing?{timingSupplement:draft.timing}:{}),
     baseline:baseline.comparisonTop.slice(0,count),challenger:candidate.comparisonTop.slice(0,count)};
   const drafts={...db.drafts};
