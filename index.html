@@ -2319,9 +2319,13 @@ async function consumePaste(id,raw){
     if(!existing.settlement){
       const isEntry=readRiders(raw).riders.length>=BUY.minRiders;
       const sections=trifectaSections(raw);
-      const isOdds=sections.some(section=>!rowOdds(section).next().done||matrixRows(section).some(row=>/^[1-9]\\s+\\p{L}/u.test(row))||emptyOdds(section));
+      const isOdds=sections.some(section=>!rowOdds(section).next().done||matrixRows(section).some(row=>/^[1-9]\s+\p{L}/u.test(row))||emptyOdds(section));
       if(isEntry||isOdds){
-        const draft=await putDraft(race.id,{entry:isEntry?raw:(db.drafts?.[race.id]?.entry??raw),odds:isOdds?raw:(db.drafts?.[race.id]?.odds??raw)});
+        const original=[...Object.values(db.sources??{})].reverse().find(source=>source.field==="entry"&&source.race===race.id&&readRiders(source.raw).riders.length>=BUY.minRiders)?.raw;
+        const entry=isEntry?raw:(db.drafts?.[race.id]?.entry??original);
+        if(!entry)throw Error("再予想には出走表も必要です。出走表と最新オッズ表をまとめて貼り付けてください。");
+        const odds=isOdds?raw:(db.drafts?.[race.id]?.odds??raw);
+        const draft=await putDraft(race.id,{entry,odds});
         const updated=await submitPrediction(race,draft);
         showPrediction(updated);showReview(updated);revealPrediction();
         $("entryStatus").textContent=race.id+" の最新オッズで再予想しました（"+(updated.predictionRevisions?.length??0)+"回更新）。";
