@@ -619,7 +619,7 @@ function engineRanking(list,engine){
 function automaticPointPolicy(ranking,policy=POINT_POLICY){
   // Scores are normalized rank aggregates, so this measures separation rather than hit probability.
   const scores=ranking.slice(0,3).map(item=>item?.score);
-  const valid=scores.length===3&&scores.every(Number.isFinite);
+  const valid=scores.length===3&&scores.every(Number.isFinite)&&scores[0]>=scores[1]&&scores[1]>=scores[2];
   const firstGap=valid?Number((scores[0]-scores[1]).toFixed(10)):0;
   const secondGap=valid?Number((scores[1]-scores[2]).toFixed(10)):0;
   return {version:policy.version,id:policy.id,count:valid?countForGaps({firstGap,secondGap},policy):BUY.max,
