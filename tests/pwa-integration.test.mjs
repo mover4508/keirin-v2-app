@@ -54,3 +54,10 @@ test("prospective metrics exclude retrospective and voided races",()=>{
  assert.match(html,/const forwardPayout=forwardEligible\.reduce/);
  assert.match(html,/過去記録を前向き精度として表示しません/);
 });
+
+test("prospective ROI includes refund amounts in returned stake",()=>{
+ assert.match(html,/const forwardRefund=forwardEligible\.reduce/);
+ assert.match(html,/r\.settlement\.refundYen\?\?0/);
+ assert.match(html,/const forwardReturn=forwardPayout\+forwardRefund/);
+ assert.match(html,/forwardReturn\/forwardStake/);
+});
