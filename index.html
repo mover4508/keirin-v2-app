@@ -2306,9 +2306,13 @@ function checkSettings(values){
   const bands=expectedBands(p);
   if(bands.some((value,i)=>i>0&&value<=bands[i-1]))throw Error("オッズ帯の境界は小さい順に設定してください。");
 }
-$("saveSettings").onclick=action("settingsStatus",()=>{
+$("saveSettings").onclick=action("settingsStatus",async()=>{
   const values=Object.fromEntries(Object.keys(fields).map(k=>[k,$("param-"+k).valueAsNumber]));
   checkSettings(values);
+  // Independent validation before writing a candidate configuration.
+  const {validateParameters}=await import("./src/parameter-guard.mjs");
+  const checked=validateParameters({...PARAMS,...values});
+  if(!checked.ok)throw Error("候補設定を保存できません。独立検査："+checked.errors.join("、"));
   return withCurrentRecords(async()=>{
     const {params}=activeConfig();
     if(Object.entries(values).every(([key,value])=>params[key]===value)){
