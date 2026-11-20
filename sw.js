@@ -1,14 +1,15 @@
-const SHELL = "keirin-v2.4.12";
+const SHELL = "keirin-v2.4.12.1";
 const INBOX = "keirin-v2-share-inbox";
 const MAX_RACE_BYTES = 1024 * 1024;
 const base = self.registration.scope;
 const urlFor = path => new URL(path, base).href;
 const index = urlFor("./index.html");
 const assets = ["./manifest.webmanifest", "./icon-192.png", "./icon-512.png"].map(urlFor);
+const modules = ["./src/parameter-guard.mjs", "./src/safety-gates.mjs", "./src/ticket-diagnostics.mjs", "./src/meta-loop.mjs"].map(urlFor);
 const sharePath = urlFor("./receive-share");
 
 async function installShell() {
-  const requests = [index, ...assets].map(url => new Request(url, {cache:"reload", credentials:"same-origin"}));
+  const requests = [index, ...assets, ...modules].map(url => new Request(url, {cache:"reload", credentials:"same-origin"}));
   const responses = await Promise.all(requests.map(request => fetch(request)));
   const expectedPath = (response, i) => i === 0
     ? [index, base].includes(response.url)
@@ -82,7 +83,7 @@ self.addEventListener("fetch", event => {
   const path = url.origin + url.pathname;
   if (request.mode === "navigate" && (path === base || path === index)) {
     event.respondWith(openApp(request));
-  } else if (assets.includes(url.href)) {
+  } else if (assets.includes(url.href) || modules.includes(url.href)) {
     event.respondWith(caches.open(SHELL).then(async cache => (await cache.match(request)) || fetch(request)));
   }
 });
