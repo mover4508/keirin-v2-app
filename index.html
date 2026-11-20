@@ -1078,7 +1078,7 @@ function parseResult(text,ids){
   const refundIds=[...new Set(refunds.flatMap(m=>m[1].match(/[1-9]/g).map(Number)))].sort((a,b)=>a-b);
   if(refundIds.some(x=>!ids.includes(x)))throw Error("返還車番と出走表が一致しません。");
   if(!voided&&!refundIds.length&&/返還(?:車番|対象車番)[^\n]*[1-9]|(?:欠場|失格)による返還/u.test(raw))throw Error("返還車番を確定できません。公式の返還欄を含めて貼り付けてください。");
-  for(const part of parts.map(section=>section.slice(0,1200))){
+  for(const part of parts){
     for(const m of part.matchAll(pattern("[ \\t\\n:|]+(\\d[\\d,]*)[ \\t]*円"))){
       const nums=m.slice(1,4).map(Number);
       if(new Set(nums).size!==3||nums.some(x=>!ids.includes(x)||refundIds.includes(x)))throw Error("払戻欄の車番と出走車番・返還車番が一致しません。");
