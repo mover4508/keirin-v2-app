@@ -217,5 +217,9 @@ test("additional ticket evidence gate preserves 2 and 3 tickets when odds or sam
   const unknownOdds=fn(input,"A",0,keys,[],{active:true},params);
   assert.equal(unknownOdds.count,keys.length);
   assert.equal(unknownOdds.reason,"insufficient_evidence");
+  const sampleFn=vmModule.runInNewContext("const BUY={min:1,yen:100}; const marketTickets=()=>['1-2-3','1-2-4','1-2-5']; const venueRaceKind=()=> 'test'; const expectedBands=()=>[5,10,20]; const eligibleForLearning=()=>false; const recentEvidence=x=>x; const pointTotals=()=>({hits:0,returned:0,stake:0}); const wilsonLower=()=>0;"+html.slice(start,end)+";reviewAdditionalTickets");
+  const missingSample=sampleFn(input,"A",0,keys,[],{active:true},params);
+  assert.equal(missingSample.count,keys.length);
+  assert.equal(missingSample.reason,"insufficient_evidence");
  }
 });
