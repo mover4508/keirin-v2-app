@@ -1,6 +1,6 @@
 /* Ver.2: pure, side-effect-free safety checks for prediction and evaluation.
    This module never reads local storage, network, or result data to form predictions. */
-export const FIXED_RULES = Object.freeze({betType:"trio",stakeYen:100,minTickets:1,maxTickets:3,minRiders:5,maxRiders:9});
+export const FIXED_RULES = Object.freeze({betType:"trio",stakeYen:100,minTickets:1,maxTickets:3,minRiders:5,maxRiders:9,allowRaceSkip:false});
 export function normalizeTrio(ticket){
   const parts=Array.isArray(ticket)?ticket:String(ticket).split(/[^0-9]+/).filter(Boolean);
   if(parts.length!==3)return null;
