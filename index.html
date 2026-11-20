@@ -2836,8 +2836,12 @@ function runSafetySelfAudit(){
     Array.isArray(r.tickets)&&r.tickets.length>0&&
     r.tickets.length>=BUY.min&&r.tickets.length<=BUY.max&&
     r.tickets.every(t=>typeof t.key==="string"&&/^([1-9])-([1-9])-([1-9])$/.test(t.key))&&
-    Number.isFinite(r.settlement.payout)&&Number.isFinite(r.settlement.refundYen)&&
-    Number.isFinite(r.settlement.stake)&&r.settlement.stake===r.tickets.length*BUY.yen);
+    Number.isFinite(r.settlement.payout)&&r.settlement.payout>=0&&
+    Number.isFinite(r.settlement.refundYen)&&r.settlement.refundYen>=0&&
+    Number.isFinite(r.settlement.stake)&&r.settlement.stake===r.tickets.length*BUY.yen&&
+    r.settlement.refundYen<=r.settlement.stake&&
+    r.settlement.payout===r.tickets.reduce((sum,t)=>
+      sum+(r.settlement.winners.find(w=>w.key===t.key)?.payout??0),0));
   const forwardHits=forwardEligible.filter(r=>r.tickets.some(t=>r.settlement.winners.some(w=>w.key===t.key))).length;
   const forwardStake=forwardEligible.reduce((sum,r)=>sum+r.tickets.length*BUY.yen,0);
   const forwardPayout=forwardEligible.reduce((sum,r)=>sum+r.tickets.reduce((s,t)=>
