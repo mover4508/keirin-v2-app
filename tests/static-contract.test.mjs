@@ -41,3 +41,13 @@ test('partial rider statistics contribute without fabricating a minimum',()=>{
  assert.equal(scores.reduce((a,b)=>a+b,0)/scores.length,.6);
  assert.equal(scores.length===3?Math.min(...scores):null,null);
 });
+
+test('missing or invalid odds never become numeric ranking evidence',()=>{
+ assert.match(html,/Object\.values\(odds\)\.filter\(o=>Number\.isFinite\(o\)&&o>0\)/);
+ assert.match(html,/Number\.isFinite\(rawOdds\)&&rawOdds>0&&minO!==null/);
+ const odds=[2.1,0,-4,Infinity,NaN,8.4];
+ const valid=odds.filter(o=>Number.isFinite(o)&&o>0);
+ assert.deepEqual(valid,[2.1,8.4]);
+ const logs=valid.map(Math.log);
+ assert.ok(logs.every(Number.isFinite));
+});
