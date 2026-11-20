@@ -91,3 +91,10 @@ test('market feature confidence accounts for incomplete combination coverage',()
  assert.equal(combinations(5),10);
  assert.equal(combinations(9),84);
 });
+
+test('service worker refreshes versioned shell and cleans old revisions',()=>{
+ const worker=readFileSync(new URL('../sw.js',import.meta.url),'utf8');
+ assert.match(worker,/const SHELL = "keirin-v2\.4\.25-r1"/);
+ assert.match(worker,/\(\?:-r\\d\+\)\?/);
+ assert.match(worker,/await caches\.delete\(key\)/);
+});
