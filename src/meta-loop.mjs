@@ -9,10 +9,11 @@ export function evaluateImprovementCycle({baseline,candidates,iteration=0,limits
  };
  const maxCandidates=budget(limits.maxCandidates,12,100);
  const maxIterations=budget(limits.maxIterations,10,1000);
- if(!Number.isInteger(iteration)||iteration<0)throw new Error("invalid iteration");
+ if(!Number.isSafeInteger(iteration)||iteration<0)throw new Error("invalid iteration");
  if(!Array.isArray(candidates))throw new Error("invalid candidates");
  if(iteration>=maxIterations)return {status:"stopped",reason:"iteration_budget",iteration,evaluations:[]};
  const evaluations=candidates.slice(0,maxCandidates).map((candidate,index)=>{
+  if(!candidate||typeof candidate!=="object"||Array.isArray(candidate))throw new Error("invalid candidate");
   const verdict=adoptionGate(baseline,candidate.metrics??{});
   return {index,id:String(candidate.id??index),adopt:false,reason:verdict.reason,metrics:candidate.metrics??null};
  });
@@ -22,8 +23,11 @@ export function evaluateImprovementCycle({baseline,candidates,iteration=0,limits
 export function categorizeImprovements(issues){
  const allowed=new Set(["必要","増やす","直す","調整","削除"]);
  if(!Array.isArray(issues))throw new Error("invalid issues");
- return issues.map((item,index)=>({
+ return issues.map((item,index)=>{
+  if(!item||typeof item!=="object"||Array.isArray(item))throw new Error("invalid issue");
+  return ({
   id:String(item.id??index),category:allowed.has(item.category)?item.category:"直す",
   reason:String(item.reason??"根拠未記載"),status:"proposal_only"
- }));
+ });
+ });
 }
