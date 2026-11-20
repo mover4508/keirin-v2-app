@@ -51,3 +51,12 @@ test('missing or invalid odds never become numeric ranking evidence',()=>{
  const logs=valid.map(Math.log);
  assert.ok(logs.every(Number.isFinite));
 });
+
+test('partial rider statistics have confidence-weighted engine contribution',()=>{
+ assert.match(html,/const coverage=\[availableStrengths\.length\/3/);
+ assert.match(html,/knownWins\.length\/3/);
+ assert.match(html,/item\.coverage\?\.\[i\]\?\?1/);
+ const weighted=(value,weight,coverage)=>value*weight*coverage;
+ assert.equal(weighted(.9,1,1/3),.3);
+ assert.equal(weighted(.9,1,1),.9);
+});
