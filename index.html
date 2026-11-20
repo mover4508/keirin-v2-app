@@ -2157,7 +2157,7 @@ async function settleRecord(record,raw){
   if(previous&&!samePayout&&!correction(raw))throw Error("保存済みの払戻と異なります。公式の訂正表示を含む結果表を貼り付けてください。");
   const scheduled=official.officialStartAt??record.startAt;
   if(scheduled&&Date.now()<Date.parse(scheduled)&&!voided)throw Error("発走予定時刻より前のため、結果の登録を保留しました。");
-  const knownFinish=samePayout?{...finish,...previous.finish}:finish;
+  const knownFinish=samePayout?{...(previous.finish??{}),...finish}:finish;
   const analysis=record.tickets.map(t=>{
     const hit=winners.some(w=>w.key===t.key);
     const refund=voided||t.key.split("-").map(Number).some(n=>refundIds.includes(n));
