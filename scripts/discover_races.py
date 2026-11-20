@@ -9,7 +9,7 @@ from urllib.parse import urljoin, urlparse
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-VENUES = {"51": "福井"}
+VENUES = {"26": "西武園", "38": "静岡", "42": "名古屋", "51": "福井", "81": "小倉"}
 BASE = "https://www.chariloto.com/keirin/athletes/{date}/{venue}"
 
 class Links(HTMLParser):
@@ -46,19 +46,14 @@ def collect(day, venue, name):
         if not m:
             continue
         number = int(m.group(1))
-        if "出走" not in label and "race" not in href.lower():
+        if "出走" not in label and "race" not in href.lower() and "/athletes/" not in href:
             continue
         card_url = urljoin(url, href)
         parsed = urlparse(card_url)
         if parsed.scheme != "https" or parsed.hostname not in {"www.chariloto.com", "chariloto.com"}:
             continue
         races[number] = {"number": number, "cardUrl": card_url, "source": "chariloto", "verified": False}
-    # The venue index may show race numbers as text rather than anchors.
-    # Only expose a fallback race URL when the official index actually lists that race.
-    if not races:
-        listed = {int(n) for n in re.findall(r"(?<!\\d)(1[0-2]|[1-9])\\s*R(?![A-Za-z])", html, re.I)}
-        for number in sorted(listed):
-            races[number] = {"number": number, "cardUrl": f"{url}/{number}?bet_type=sanrenfuku&odds=1"}
+    # Never fabricate race URLs from plain text; only discovered links are published.
     return {"date": day, "venue": venue, "venueName": name, "indexUrl": url, "races": [races[k] for k in sorted(races)]}
 
 def main():
