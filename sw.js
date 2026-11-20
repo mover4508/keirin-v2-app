@@ -1,4 +1,4 @@
-const SHELL = "keirin-v2.4.25";
+const SHELL = "keirin-v2.4.25-r1";
 const INBOX = "keirin-v2-share-inbox";
 const MAX_RACE_BYTES = 1024 * 1024;
 const base = self.registration.scope;
@@ -38,7 +38,7 @@ async function installShell() {
 self.addEventListener("install", event => event.waitUntil(installShell()));
 self.addEventListener("activate", event => event.waitUntil((async () => {
   for (const key of await caches.keys()) {
-    if (/^keirin-v\d+(?:\.\d+)+$/.test(key) && key !== SHELL) await caches.delete(key);
+    if (/^keirin-v\d+(?:\.\d+)+(?:-r\d+)?$/.test(key) && key !== SHELL) await caches.delete(key);
   }
   await self.clients.claim();
 })()));
