@@ -32,3 +32,12 @@ test('latest official finish details override older data on repeat settlement',(
  const latest={1:{rank:1}};
  assert.deepEqual({...previous,...latest},{1:{rank:1},2:{rank:3}});
 });
+
+test('partial rider statistics contribute without fabricating a minimum',()=>{
+ assert.match(html,/const availableStrengths=strengths\.filter\(Number\.isFinite\)/);
+ assert.match(html,/availableStrengths\.length===3\?Math\.min/);
+ assert.match(html,/availablePlaces\.length===3\?Math\.min/);
+ const scores=[.8,null,.4].filter(Number.isFinite);
+ assert.equal(scores.reduce((a,b)=>a+b,0)/scores.length,.6);
+ assert.equal(scores.length===3?Math.min(...scores):null,null);
+});
