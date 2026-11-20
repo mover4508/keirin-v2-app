@@ -116,3 +116,12 @@ test("previously settled same-race record is labeled as reused, not a new predic
  assert.match(html,/以前の照合結果を表示しています/);
  assert.match(html,/結果表は未照合のため、判定は結果待ちです/);
 });
+
+test("offline PWA caches and serves safety modules",()=>{
+ const sw=readFileSync(new URL("../sw.js",import.meta.url),"utf8");
+ for(const name of ["parameter-guard","safety-gates","ticket-diagnostics","meta-loop"])
+   assert.ok(sw.includes("./src/"+name+".mjs"),name+" must be precached");
+ assert.match(sw,/\.\.\.modules\]\.map\(url => new Request/);
+ assert.match(sw,/modules\.includes\(url\.href\)/);
+ assert.match(sw,/keirin-v2\.4\.12\.1/);
+});
