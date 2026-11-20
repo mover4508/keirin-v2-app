@@ -2062,7 +2062,7 @@ async function putDraft(id,patch){
 }
 async function submitPrediction(race,draft){
   const {id}=race;
-  if(db.records[id])return db.records[id];
+  if(db.records[id]?.settlement)return db.records[id];
   const input=readInput(draft.entry,draft.odds,race);
   const rows=records();
   const tables=draft.entry+"\n"+draft.odds;
@@ -2148,6 +2148,11 @@ async function submitPrediction(race,draft){
     baseline:baseline.comparisonTop.slice(0,count),challenger:candidate.comparisonTop.slice(0,count)};
   const drafts={...db.drafts};
   if(draft.result)drafts[id]={result:draft.result};else delete drafts[id];
+  const prior=db.records[id];
+  if(prior){
+    const revisions=Array.isArray(prior.predictionRevisions)?prior.predictionRevisions:[];
+    record.predictionRevisions=[...revisions,{at:prior.createdAt,keys:prior.tickets.map(t=>t.key),odds:prior.input.odds,regime:prior.regime}];
+  }
   await persist({...db,drafts,records:{...db.records,[id]:record}});
   return record;
 }
@@ -2311,6 +2316,18 @@ async function consumePaste(id,raw){
   }
   if(db.records[race.id]){
     const existing=db.records[race.id];
+    if(!existing.settlement){
+      const isEntry=readRiders(raw).riders.length>=BUY.minRiders;
+      const sections=trifectaSections(raw);
+      const isOdds=sections.some(section=>!rowOdds(section).next().done||matrixRows(section).some(row=>/^[1-9]\\s+\\p{L}/u.test(row))||emptyOdds(section));
+      if(isEntry||isOdds){
+        const draft=await putDraft(race.id,{entry:isEntry?raw:(db.drafts?.[race.id]?.entry??raw),odds:isOdds?raw:(db.drafts?.[race.id]?.odds??raw)});
+        const updated=await submitPrediction(race,draft);
+        showPrediction(updated);showReview(updated);revealPrediction();
+        $("entryStatus").textContent=race.id+" の最新オッズで再予想しました（"+(updated.predictionRevisions?.length??0)+"回更新）。";
+        return "complete";
+      }
+    }
     showPrediction(existing);
     showReview(existing);
     const pending=db.drafts?.[race.id]?.result;
