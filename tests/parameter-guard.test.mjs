@@ -1,0 +1,10 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {PARAMETER_RULES,validateParameters} from "../src/parameter-guard.mjs";
+const baseline=Object.fromEntries(Object.entries(PARAMETER_RULES).map(([k,[a,b]])=>[k,(a+b)/2]));
+test("valid midpoint parameters",()=>assert.equal(validateParameters(baseline).ok,true));
+test("threshold inversion rejected",()=>assert.ok(validateParameters({...baseline,hardThreshold:.7,upsetThreshold:.6}).errors.includes("regime_threshold_order")));
+test("nonfinite parameter rejected",()=>assert.equal(validateParameters({...baseline,raceSpread:Infinity}).ok,false));
+test("missing parameter rejected",()=>{const p={...baseline};delete p.marketCoverage;assert.equal(validateParameters(p).ok,false);});
+test("weight bounds inversion rejected",()=>assert.ok(validateParameters({...baseline,weightMin:1,weightMax:.9}).errors.includes("weight_bounds_order")));
+test("validation sample window must cover minimum",()=>assert.ok(validateParameters({...baseline,validationWindow:50,validationMinimum:100}).errors.includes("validation_window_too_small")));
