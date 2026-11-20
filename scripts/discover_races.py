@@ -36,6 +36,8 @@ def collect(day, venue, name):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; keirin-v2-discovery/1.0)"})
     with urllib.request.urlopen(req, timeout=20) as response:
         html = response.read(2_000_000).decode("utf-8", errors="replace")
+    if "出走表" not in html and "競輪" not in html:
+        raise ValueError("unexpected_page")
     parser = Links()
     parser.feed(html)
     races = {}
@@ -51,6 +53,12 @@ def collect(day, venue, name):
         if parsed.scheme != "https" or parsed.hostname not in {"www.chariloto.com", "chariloto.com"}:
             continue
         races[number] = {"number": number, "cardUrl": card_url, "source": "chariloto", "verified": False}
+    # The venue index may show race numbers as text rather than anchors.
+    # Only expose a fallback race URL when the official index actually lists that race.
+    if not races:
+        listed = {int(n) for n in re.findall(r"(?<!\\d)(1[0-2]|[1-9])\\s*R(?![A-Za-z])", html, re.I)}
+        for number in sorted(listed):
+            races[number] = {"number": number, "cardUrl": f"{url}/{number}?bet_type=sanrenfuku&odds=1"}
     return {"date": day, "venue": venue, "venueName": name, "indexUrl": url, "races": [races[k] for k in sorted(races)]}
 
 def main():
