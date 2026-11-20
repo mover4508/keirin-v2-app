@@ -168,3 +168,11 @@ test("offline installation verifies PNG signatures only for icon responses",()=>
  assert.match(sw,/for \(const response of responses\.slice\(2, 4\)\)/);
  assert.doesNotMatch(sw,/for \(const response of responses\.slice\(2\)\)/);
 });
+
+test("official result parsing and backup validation agree on payout units and bounds",()=>{
+ const parser=html.slice(html.indexOf("function parseResult(text,ids){"),html.indexOf("async function persist("));
+ const validator=html.slice(html.indexOf("function validateSettlement(r,validKey){"),html.indexOf("function validateBackup(incoming){"));
+ assert.match(parser,/payout%10!==0/);
+ assert.match(parser,/payout>100000000/);
+ assert.match(validator,/w\.payout<=100000000&&w\.payout%10===0/);
+});
