@@ -587,13 +587,14 @@ function features(input){
   const list=[];
   for(let a=0;a<ids.length-2;a++)for(let b=a+1;b<ids.length-1;b++)for(let c=b+1;c<ids.length;c++){
     const numbers=[ids[a],ids[b],ids[c]], key=combo(numbers), rs=numbers.map(id=>byId.get(id));
-    const strengths=rs.every(r=>Number.isFinite(r.score))?rs.map(r=>hi===lo?.5:(r.score-lo)/(hi-lo)):null;
-    const win=rs.every(r=>Number.isFinite(r.win))?averages(rs.map(r=>r.win/100)):null;
-    const place=rs.every(r=>Number.isFinite(r.place))?rs.map(r=>r.place/100):null;
+    const strengths=rs.map(r=>Number.isFinite(r.score)?(hi===lo?.5:(r.score-lo)/(hi-lo)):null);
+    const win=rs.some(r=>Number.isFinite(r.win))?averages(rs.filter(r=>Number.isFinite(r.win)).map(r=>r.win/100)):null;
+    const place=rs.map(r=>Number.isFinite(r.place)?r.place/100:null);
     const matching=lines.map(l=>l.map((id,i)=>numbers.includes(id)?i:-1).filter(i=>i>=0));
     const line=score=>matching.length?Math.max(...matching.map(g=>g.length<2?0:score(g))):null;
     const oddsScore=key in odds?(maxO===minO?.5:1-(Math.log(odds[key])-minO)/(maxO-minO)):null;
-    const value=[strengths?averages(strengths):null,strengths?Math.min(...strengths):null,win,place?averages(place):null,place?Math.min(...place):null,
+    const availableStrengths=strengths.filter(Number.isFinite), availablePlaces=place.filter(Number.isFinite);
+    const value=[availableStrengths.length?averages(availableStrengths):null,availableStrengths.length===3?Math.min(...availableStrengths):null,win,availablePlaces.length?averages(availablePlaces):null,availablePlaces.length===3?Math.min(...availablePlaces):null,
       rs.every(r=>Number.isFinite(r.b))?averages(rs.map(r=>r.b/maxB)):null,line(g=>(g.length-1)/2),line(g=>g.includes(0)?(g.length-1)/2:0),
       line(g=>g.includes(1)&&(g.includes(0)||g.includes(2))?1:0),oddsScore,oddsScore===null?null:1-Math.abs(2*oddsScore-1),
       rs.every(r=>Array.isArray(r.starts)&&r.starts.length&&r.starts.every(Number.isFinite))?averages(rs.map(r=>starts(r.starts.reduce((a,b)=>a+b,0)))):null];
