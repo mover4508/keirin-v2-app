@@ -13,7 +13,7 @@ export function validateTickets(riderIds,tickets){
   const riderList=validRiders?riderIds:[];
   const ids=new Set(riderList.map(Number));
   const errors=[];
-  if(!validRiders||ids.size!==riderList.length||ids.size<5||ids.size>9||[...ids].some(n=>!Number.isInteger(n)||n<1||n>9))errors.push("invalid_riders");
+  if(!validRiders||riderList.some(n=>!(typeof n==="number"&&Number.isInteger(n)||typeof n==="string"&&/^[1-9]$/.test(n)))||ids.size!==riderList.length||ids.size<5||ids.size>9||[...ids].some(n=>!Number.isInteger(n)||n<1||n>9))errors.push("invalid_riders");
   if(!Array.isArray(tickets)||tickets.length<1||tickets.length>3)errors.push("invalid_ticket_count");
   const normalized=(Array.isArray(tickets)?tickets:[]).map(normalizeTrio);
   if(normalized.some(t=>!t))errors.push("invalid_trio");
