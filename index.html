@@ -806,6 +806,21 @@ function reviewAdditionalTickets(input,grade,regime,keys,history,period,params){
 }
 // Compare complete 1/2/3-ticket portfolios on chronological, prior-only evidence.
 // A change is accepted only if both halves improve net return without losing hits.
+// Require each quoted winning ticket to cover the entire stake of its portfolio.
+// This controls single-hit loss, not the probability of losing the race.
+function singleHitBreakEvenCount(input,keys,requested){
+  let count=Math.max(BUY.min,Math.min(BUY.max,requested));
+  const checks=[];
+  while(count>BUY.min){
+    const stake=count*BUY.yen;
+    const loss=keys.slice(0,count).map(key=>({key,odds:Number(input.odds?.[key])})).filter(v=>
+      Number.isFinite(v.odds)&&v.odds>=1&&Math.round(v.odds*BUY.yen)<stake);
+    if(!loss.length)break;
+    checks.push({count,stake,loss:loss.map(v=>v.key)});
+    count--;
+  }
+  return {count,requested,checks,reason:checks.length?"single_hit_break_even":"none"};
+}
 function reviewPortfolioCount(input,grade,regime,keys,history,current,params){
   const kind=venueRaceKind(input);
   const rows=recentEvidence(history.filter(r=>eligibleForLearning(r)&&r.grade===grade&&grade!=="不明"&&
@@ -1158,6 +1173,11 @@ function showPrediction(record){
       "。点数は固定せず、的中確率・期待収支の検証が必要です。","muted"));
   }
   const spending=record.spending;
+  if(spending?.breakEvenReview?.checks?.length){
+    out.append(create("p","的中時の赤字を避けるため、買い目を"+spending.breakEvenReview.requested+"点案から"+
+      record.tickets.length+"点へ調整しました（各点100円・保存オッズ基準）。不的中時の損失や長期収支の黒字を保証するものではありません。","muted"));
+  }
+
   if(spending?.period.active&&spending.proposedKeys.length>record.tickets.length){
     const stop=spending.attempts.flatMap(a=>a.checks).find(c=>c.status!=="pass");
     const why=stop?.status==="sample"?"候補に対応するオッズの比較が "+stop.n+"/"+stop.minimum+"件":
@@ -2072,6 +2092,11 @@ async function submitPrediction(race,draft){
     count=portfolioReview.count;
     choice=choose(count);
   }
+  const breakEvenReview=singleHitBreakEvenCount(input,choice.top,count);
+  if(breakEvenReview.count!==count){
+    count=breakEvenReview.count;
+    choice=choose(count);
+  }
   const {modelAudit,adaptive,venueTrial}=choice;
   const {rankingsByDivision,...pick}=choice.model;
   const selection=rankSelections(choice.ranked,pick.regime,count);
@@ -2079,7 +2104,7 @@ async function submitPrediction(race,draft){
   const record={id,createdAt:savedAt.toISOString(),version:VERSION,appRelease:RELEASE,trainingProtocol:TRAINING_PROTOCOL,input,...timing,adaptive,
     ...pick,...selection,comparisonTop:choice.top,comparisonUsesOdds:hasSavedOdds(input),pointPolicy:{...pointPolicy,count},pointAudit,expectedPoints:baseline.expectedPoints,baselineTop:baseline.comparisonTop,segmentRegime:baseline.regime,candidateRevision:config.revision,candidateParams:config.params,modelAudit,
     activeParams:adaptive?config.params:PARAMS,trainingSize:candidate.trainingSize,trainingScope:candidate.trainingScope,
-    venueEvidence:siteEvidence,venueTrial,stakeRisk:ticketStakeRisk(input,selection.tickets.map(t=>t.key)),spending:{period,proposedKeys,attempts,portfolioReview},
+    venueEvidence:siteEvidence,venueTrial,stakeRisk:ticketStakeRisk(input,selection.tickets.map(t=>t.key)),spending:{period,proposedKeys,attempts,portfolioReview,breakEvenReview},
     ...(draft.timing?{timingSupplement:draft.timing}:{}),
     baseline:baseline.comparisonTop.slice(0,count),challenger:candidate.comparisonTop.slice(0,count)};
   const drafts={...db.drafts};
