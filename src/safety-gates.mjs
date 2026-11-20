@@ -9,9 +9,11 @@ export function normalizeTrio(ticket){
   return nums.sort((a,b)=>a-b).join("-");
 }
 export function validateTickets(riderIds,tickets){
-  const ids=new Set(riderIds.map(Number));
+  const validRiders=Array.isArray(riderIds);
+  const riderList=validRiders?riderIds:[];
+  const ids=new Set(riderList.map(Number));
   const errors=[];
-  if(ids.size!==riderIds.length||ids.size<5||ids.size>9||[...ids].some(n=>!Number.isInteger(n)||n<1||n>9))errors.push("invalid_riders");
+  if(!validRiders||ids.size!==riderList.length||ids.size<5||ids.size>9||[...ids].some(n=>!Number.isInteger(n)||n<1||n>9))errors.push("invalid_riders");
   if(!Array.isArray(tickets)||tickets.length<1||tickets.length>3)errors.push("invalid_ticket_count");
   const normalized=(Array.isArray(tickets)?tickets:[]).map(normalizeTrio);
   if(normalized.some(t=>!t))errors.push("invalid_trio");
