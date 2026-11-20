@@ -100,3 +100,10 @@ test("chronological validation rejects duplicate race IDs",()=>{
  assert.equal(chronologicalSplit([{...rows[0],raceId:"race-2"},...rows.slice(1)],2,2).reason,"duplicate_race_ids");
  assert.equal(chronologicalSplit([{...rows[0],raceId:""},...rows.slice(1)],2,2).reason,"invalid_race_ids");
 });
+
+test("chronological validation rejects nonfinite or fractional race IDs",()=>{
+ const rows=Array.from({length:4},(_,i)=>({raceId:"race-"+i,predictionTimestamp:new Date(Date.UTC(2026,0,i+1)).toISOString(),beforeDeadline:true}));
+ for(const bad of [NaN,Infinity,-Infinity,1.5,Number.MAX_SAFE_INTEGER+1])
+  assert.equal(chronologicalSplit([{...rows[0],raceId:bad},...rows.slice(1)],2,2).reason,"invalid_race_ids");
+ assert.equal(chronologicalSplit([{...rows[0],raceId:123},...rows.slice(1)],2,2).eligible,true);
+});
