@@ -24,7 +24,7 @@ export function evaluateTickets(riderIds,tickets,finishTrio,payoutYen){
   if(!checked.ok)throw new Error("invalid tickets: "+checked.errors.join(","));
   const winner=normalizeTrio(finishTrio);
   if(!winner||winner.split("-").some(n=>!riderIds.map(Number).includes(Number(n))))throw new Error("invalid finish trio");
-  if(!Number.isFinite(payoutYen)||payoutYen<0)throw new Error("invalid payout");
+  if(!Number.isSafeInteger(payoutYen)||payoutYen<0||payoutYen%10!==0)throw new Error("invalid payout");
   const hits=checked.tickets.map(t=>t===winner);
   const returnsYen=hits.some(Boolean)?payoutYen:0;
   return {tickets:checked.tickets,winningTrio:winner,hits,hit:hits.some(Boolean),stakeYen:checked.stakeYen,returnsYen,profitYen:returnsYen-checked.stakeYen};
