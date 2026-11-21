@@ -16,7 +16,7 @@ class RaceDiscoveryTests(unittest.TestCase):
         class Response:
             def __enter__(self): return self
             def __exit__(self, *args): pass
-            def read(self, n): return b'<a href="https://evil.example/race/1">1R 出走表</a><a href="/race/2">2R 出走表</a>'
+            def read(self, n): return '<a href="https://evil.example/race/1">1R 出走表</a><a href="/race/2">2R 出走表</a>'.encode("utf-8")
         with patch("discover_races.urllib.request.urlopen", return_value=Response()):
             result = collect("2026-11-20", "51", "福井")
         self.assertEqual([r["number"] for r in result["races"]], [2])
