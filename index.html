@@ -2590,6 +2590,21 @@ function validateBackup(incoming){
     if(r.modelAudit&&(!Array.isArray(r.modelAudit.noUniqueHit)||!Array.isArray(r.featureCoverage)||!r.featureCoverage.every(x=>x&&typeof x.name==="string"&&Number.isFinite(x.rate))))throw Error("学習記録が不正です。");
     if(r.timingSupplement!==undefined&&(typeof r.timingSupplement!=="string"||raceIdentity(r.timingSupplement).id!==key))
       throw Error("締切・発走時刻の記録が別のレースを示しています。");
+    if(r.predictionRevisions!==undefined&&(!Array.isArray(r.predictionRevisions)||r.predictionRevisions.some(v=>
+      !v||!Number.isFinite(Date.parse(v.at))||!Array.isArray(v.keys)||v.keys.length<BUY.min||v.keys.length>BUY.max||
+      !v.keys.every(validKey)||!v.odds||typeof v.odds!=="object"||Array.isArray(v.odds)||
+      Object.entries(v.odds).some(([k,o])=>!validKey(k)||!validOdds(o)))))
+      throw Error("再予想の履歴が不正です。");
+    if(r.previousPrediction!==undefined){
+      let prior=r.previousPrediction,depth=0;
+      while(prior){
+        if(++depth>10000||prior.id!==key||!Number.isFinite(Date.parse(prior.createdAt))||
+          !Array.isArray(prior.tickets)||prior.tickets.length<BUY.min||prior.tickets.length>BUY.max||
+          !prior.tickets.every(t=>validKey(t.key))||prior.settlement)
+          throw Error("再予想の過去記録が不正です。");
+        prior=prior.previousPrediction;
+      }
+    }
     if(r.settlement)validateSettlement(r,validKey);
   }
 }
