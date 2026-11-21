@@ -1,4 +1,4 @@
-const SHELL = "keirin-v2.4.25-r2";
+const SHELL = "keirin-v2.4.25-r3";
 const INBOX = "keirin-v2-share-inbox";
 const MAX_RACE_BYTES = 1024 * 1024;
 const base = self.registration.scope;
