@@ -38,7 +38,7 @@ test('partial rider statistics contribute without fabricating a minimum',()=>{
  assert.match(html,/availableStrengths\.length===3\?Math\.min/);
  assert.match(html,/availablePlaces\.length===3\?Math\.min/);
  const scores=[.8,null,.4].filter(Number.isFinite);
- assert.equal(scores.reduce((a,b)=>a+b,0)/scores.length,.6);
+ assert.ok(Math.abs(scores.reduce((a,b)=>a+b,0)/scores.length-.6)<1e-12,'floating-point average should be approximately 0.6');
  assert.equal(scores.length===3?Math.min(...scores):null,null);
 });
 
