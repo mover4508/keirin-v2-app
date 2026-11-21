@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-11-21T06:55:41.414882+00:00",
+  "entries": [],
+  "errors": [
+    {
+      "date": "2026-11-21",
+      "venue": "26",
+      "error": "HTTPError"
+    },
+    {
+      "date": "2026-11-21",
+      "venue": "38",
+      "error": "HTTPError"
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "26",
+      "error": "HTTPError"
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "38",
+      "error": "HTTPError"
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "42",
+      "error": "HTTPError"
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "51",
+      "error": "HTTPError"
+    },
+    {
+      "date": "2026-11-22",
+      "venue": "81",
+      "error": "HTTPError"
+    }
+  ],
+  "status": "discovery_only_not_verified_prediction_data"
+}
