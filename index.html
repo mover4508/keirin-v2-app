@@ -2150,6 +2150,9 @@ async function submitPrediction(race,draft){
   if(draft.result)drafts[id]={result:draft.result};else delete drafts[id];
   const prior=db.records[id];
   if(prior){
+    // Preserve the previous prediction for a Drive conflict-safe audit trail.
+    // An older remote revision must never be silently overwritten without a match.
+    record.previousPrediction=prior;
     const revisions=Array.isArray(prior.predictionRevisions)?prior.predictionRevisions:[];
     record.predictionRevisions=[...revisions,{at:prior.createdAt,keys:prior.tickets.map(t=>t.key),odds:prior.input.odds,regime:prior.regime}];
   }
@@ -2324,7 +2327,8 @@ async function consumePaste(id,raw){
         const original=[...Object.values(db.sources??{})].reverse().find(source=>source.field==="entry"&&source.race===race.id&&readRiders(source.raw).riders.length>=BUY.minRiders)?.raw;
         const entry=isEntry?raw:(db.drafts?.[race.id]?.entry??original);
         if(!entry)throw Error("再予想には出走表も必要です。出走表と最新オッズ表をまとめて貼り付けてください。");
-        const odds=isOdds?raw:(db.drafts?.[race.id]?.odds??raw);
+        const odds=isOdds?raw:(db.drafts?.[race.id]?.odds??null);
+        if(!odds)throw Error("最新の3連複オッズ表を貼り付けてください。");
         const draft=await putDraft(race.id,{entry,odds});
         const updated=await submitPrediction(race,draft);
         showPrediction(updated);showReview(updated);revealPrediction();
@@ -2694,7 +2698,12 @@ function predicted(r){
   return JSON.stringify(snapshot);
 }
 function descends(newer,older){
-  if(predicted(newer)!==predicted(older)||older.externalWeather&&JSON.stringify(newer.externalWeather)!==JSON.stringify(older.externalWeather))return false;
+  if(predicted(newer)!==predicted(older)||older.externalWeather&&JSON.stringify(newer.externalWeather)!==JSON.stringify(older.externalWeather)){
+    for(let previous=newer.previousPrediction;previous;previous=previous.previousPrediction){
+      if(predicted(previous)===predicted(older)&&(!older.externalWeather||JSON.stringify(previous.externalWeather)===JSON.stringify(older.externalWeather)))return !older.settlement;
+    }
+    return false;
+  }
   if(!older.settlement)return true;
   for(let s=newer.settlement;s;s=s.prior)if(JSON.stringify(s)===JSON.stringify(older.settlement))return true;
   return false;
