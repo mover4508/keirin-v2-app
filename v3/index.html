@@ -93,10 +93,23 @@ nav button.on{color:var(--band);font-weight:800}
 </header>
 <main>
 <section class="tab on" id="t-yoso">
+  <div class="card" id="installCard" hidden>
+    <h2>アプリとして入れる</h2>
+    <p class="sub" id="installNote" style="margin:0 0 8px">ボタンを押すと、アプリ一覧に「競輪予想3」が入ります。次からはアイコンから開けます。</p>
+    <button class="main" id="installBtn" hidden>アプリとして入れる</button>
+    <div id="installHelp" hidden>
+      <p style="margin:0 0 6px">クロームのメニュー（︙）から「ホーム画面に追加」→「インストール」で、アプリ一覧に入ります。</p>
+      <p class="sub" style="margin:0 0 8px">LINEなど別のアプリの中で開いているときは、先にその画面のメニューから「ブラウザで開く」（または「Chromeで開く」）を選んでください。すでに入れている場合は、アプリ一覧の「競輪予想3」から開いてください。</p>
+      <button id="copyUrl" style="width:100%">このページのアドレスをコピー</button>
+    </div>
+    <div id="installMsg"></div>
+  </div>
   <div class="card" id="startCard" hidden>
     <h2>はじめに</h2>
     <p class="sub" style="margin:0 0 8px" id="startNote">この端末にはまだ記録がありません。ドライブに保存済みの学習データがあれば読み込めます。</p>
     <button class="main" id="startRestore">ドライブから学習データを読み込む</button>
+    <button id="startImport" style="width:100%;margin-top:8px">前のスマホのデータを読み込む（機種変更のとき）</button>
+    <input type="file" id="startFile" accept=".json,.txt,application/json,text/plain" multiple hidden>
     <p class="sub" style="margin:8px 0 0">使い方：チャリロトの出走表とオッズ表をまとめて貼る →「予想する」→ 結果が出たらKEIRIN.JPの結果を「結果」タブに貼る →「照合する」。記録はこの端末に保存されます。車券の購入は20歳になってから。必中ではありません。</p>
     <div id="startMsg"></div>
   </div>
@@ -162,7 +175,7 @@ nav button.on{color:var(--band);font-weight:800}
   <div class="card"><h2>書き出し・読み込み</h2>
     <div class="row"><button id="exportFile" style="flex:1">ファイルに書き出す</button><button id="copyAll" style="flex:1">コピー</button></div>
     <h3>読み込み</h3>
-    <input type="file" id="importFile" accept=".json,application/json,text/plain">
+    <input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" multiple>
     <textarea id="importText" placeholder="書き出したデータを貼り付けても読み込めます" style="min-height:70px;margin-top:8px"></textarea>
     <button id="doImport" style="margin-top:8px;width:100%">読み込む（同じレースは新しい方を残す）</button>
     <div id="ioMsg"></div>
@@ -185,7 +198,7 @@ nav button.on{color:var(--band);font-weight:800}
 // 競輪予想 Ver.3 中核：画面なし・通信なしで動く（予想・照合・学習・メタループ）
 const K=(()=>{
 "use strict";
-const VERSION="3.12.0";
+const VERSION="3.12.1";
 const normal=s=>String(s??"").normalize("NFKC").replace(/\r/g,"");
 const keyOf=a=>[...a].map(Number).sort((x,y)=>x-y).join("-");
 const C3=n=>n*(n-1)*(n-2)/6;
@@ -1376,6 +1389,7 @@ function refreshHeader(){
   $("storeInfo").textContent=`記録 ${n}レース（照合済み ${allRaces().filter(r=>r.settle).length}）・学習 通算${S.loops||0}周・保存先 ${Store.mode==="クラウド"?"クラウド":"この端末"}・最終の全データ保存 ${S.lastFull?new Date(S.lastFull).toLocaleString("ja-JP"):"なし"}`;
   $("startCard").hidden=n>0;
   $("startRestore").hidden=!Drive.avail();
+  $("startImport").hidden=Drive.avail();
   if(!Drive.avail())$("startNote").textContent=S.seeded?"はじめての方は、これまでの72レースで学習した変数から始まります。予想と照合を重ねるほど、あなたの記録で学習が進みます。":"この端末にはまだ記録がありません。";
   for(const id of ["saveFull","restore","autoDriveRow","driveNote"])if($(id))$(id).hidden=!Drive.avail();
   if($("shareDrive"))$("shareDrive").hidden=Drive.avail()||!canShareFile();
@@ -1438,16 +1452,44 @@ $("shareDrive").onclick=async()=>{
   catch(e){if(e?.name!=="AbortError")msg("driveMsg","共有できませんでした。「ファイルに書き出す」を使ってください。","err");}
 };
 $("copyAll").onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(fullData()));msg("ioMsg","コピーしました。","ok");}catch(e){msg("ioMsg","コピーできませんでした。","err");}};
+async function importFiles(files,text,el){
+  const texts=[];
+  for(const f of files||[])texts.push(await f.text());
+  if(text)texts.push(text);
+  if(!texts.length)throw Error("ファイルを選ぶか、データを貼り付けてください。");
+  for(const x of texts)mergeData(JSON.parse(x));
+  renderAll();await Store.save(Object.values(R),(i,m)=>msg(el,"記録中… "+i+"/"+m));
+  msg(el,"読み込みました（"+texts.length+"件・記録 "+Object.keys(R).length+"レース）。","ok");renderAll();
+}
 $("doImport").onclick=async()=>{
-  try{
-    let text=$("importText").value.trim();
-    const f=$("importFile").files?.[0];
-    if(f)text=await f.text();
-    if(!text)throw Error("ファイルを選ぶか、データを貼り付けてください。");
-    mergeData(JSON.parse(text));renderAll();await Store.save(Object.values(R),(i,m)=>msg("ioMsg","記録中… "+i+"/"+m));
-    $("importText").value="";msg("ioMsg","読み込みました（記録 "+Object.keys(R).length+"レース）。","ok");renderAll();
-  }catch(e){msg("ioMsg","読み込めませんでした："+e.message,"err");}
+  try{await importFiles([...($("importFile").files||[])],$("importText").value.trim(),"ioMsg");$("importText").value="";}
+  catch(e){msg("ioMsg","読み込めませんでした："+e.message,"err");}
 };
+$("startImport").onclick=()=>$("startFile").click();
+$("startFile").onchange=async()=>{
+  try{await importFiles([...($("startFile").files||[])],"","startMsg");msg("entryMsg","前のスマホのデータを読み込みました（記録 "+Object.keys(R).length+"レース）。","ok");}
+  catch(e){msg("startMsg","読み込めませんでした："+e.message,"err");}
+};
+/* アプリとして入れる（クロームのインストール機能） */
+let installEvt=null;
+const isApp=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+function renderInstall(){
+  const show=!window.claude?.use&&!isApp()&&/^https?:$/.test(location.protocol);
+  $("installCard").hidden=!show;
+  $("installBtn").hidden=!installEvt;
+  $("installHelp").hidden=!!installEvt;
+  $("installNote").hidden=!installEvt;
+}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvt=e;renderInstall();});
+window.addEventListener("appinstalled",()=>{installEvt=null;$("installCard").hidden=true;});
+$("installBtn").onclick=async()=>{
+  if(!installEvt)return;
+  installEvt.prompt();
+  const r=await installEvt.userChoice.catch(()=>null);
+  if(r?.outcome==="accepted"){msg("installMsg","入れました。アプリ一覧の「競輪予想3」から開いてください。","ok");installEvt=null;}
+  renderInstall();
+};
+$("copyUrl").onclick=async()=>{try{await navigator.clipboard.writeText(location.origin+location.pathname);msg("installMsg","コピーしました。クロームのアドレス欄に貼り付けて開いてください。","ok");}catch(e){msg("installMsg",location.origin+location.pathname);}};
 
 /* ---------- 起動 ---------- */
 (async()=>{
@@ -1458,7 +1500,7 @@ $("doImport").onclick=async()=>{
   if(d.state)S=K.migrate(d.state);
   else{try{const seed=JSON.parse($("seed").textContent);if(seed&&seed.theta){S=K.migrate(seed);S.seeded=true;}}catch(e){}}
   R=d.races||{};
-  renderAll();
+  renderAll();renderInstall();
   if(!window.claude?.use&&"serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){
     const l=document.createElement("link");l.rel="manifest";l.href="manifest.webmanifest";document.head.appendChild(l);
     navigator.serviceWorker.register("sw.js").catch(()=>{});
