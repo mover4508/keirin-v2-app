@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="application-name" content="競輪予想">
+<meta name="theme-color" content="#0b6b4f">
+<title>競輪予想 Ver.3</title>
+<style>
+/* VOICE: 投資の作業台。静かで正確、数字が主役。
+   IDEA: 競輪場の出走表ボード。車番の色札がそのまま買い目になる。
+   PICTURE: 買い目の色札と、区分（堅め・標準・荒れ）のメーター。
+   COLOUR and TYPE: 白地と墨、従来の緑の帯。車番色（1白 2黒 3赤 4青 5黄 6緑 7橙 8桃 9紫）だけを差し色に。日本語ゴシック、数字は等幅。
+   LAYOUT: スマホ1カラム、下タブ固定、操作は親指の届く下側に。 */
+:root{color-scheme:light dark;--bg:light-dark(#f4f6f4,#0f1412);--card:light-dark(#ffffff,#18201c);--ink:light-dark(#141a17,#e9efeb);--sub:light-dark(#5b6762,#9aa8a1);
+--line:light-dark(#dde4df,#2b3631);--band:#0b6b4f;--band2:#08553f;--hit:light-dark(#0b7a3e,#5fd394);--miss:light-dark(#b3261e,#ff8a80);--warn:light-dark(#8a5a00,#ffcc66);
+--k:light-dark(#0d5fa8,#7cb8ff);--s:light-dark(#3d4a44,#c5d1cb);--a:light-dark(#b3261e,#ff8a80)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;overflow-x:clip;padding-bottom:84px}
+header{background:var(--band);color:#fff;padding:12px 16px 10px;position:sticky;top:0;z-index:5;box-shadow:0 1px 0 var(--band2)}
+header h1{margin:0;font-size:19px;line-height:1.2;letter-spacing:.02em}
+header .meta{font-size:12.5px;opacity:.9;display:flex;gap:10px;flex-wrap:wrap;margin-top:3px}
+header .meta span{white-space:nowrap}
+main{max-width:760px;margin:0 auto;padding:12px}
+section.tab{display:none}section.tab.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 12px}
+.card h2{margin:0 0 8px;font-size:17px}.card h3{margin:12px 0 6px;font-size:15px}
+.sub{color:var(--sub);font-size:13.5px}
+textarea,input,select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%}
+textarea{min-height:120px;resize:vertical}
+input:focus,textarea:focus,select:focus,button:focus-visible{outline:3px solid #2e9f78;outline-offset:1px}
+button{font:inherit;font-size:16px;min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:0 16px;cursor:pointer}
+button.main{background:var(--band);border-color:var(--band);color:#fff;font-weight:700;width:100%}
+button.sm{min-height:38px;font-size:14px;padding:0 12px}
+button.sel{background:var(--band);border-color:var(--band);color:#fff;font-weight:700}
+td:first-child{white-space:nowrap}
+button:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.grid label{font-size:12.5px;color:var(--sub);display:block}
+.car{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:6px;font-weight:800;font-size:15px;margin-right:3px;font-variant-numeric:tabular-nums;border:1px solid rgba(0,0,0,.25)}
+.c1{background:#fff;color:#111}.c2{background:#111;color:#fff;border-color:#555}.c3{background:#d7261e;color:#fff}.c4{background:#1f5bd1;color:#fff}.c5{background:#f6d21c;color:#111}
+.c6{background:#18904a;color:#fff}.c7{background:#f08a1c;color:#111}.c8{background:#f49ac1;color:#111}.c9{background:#7b3fb3;color:#fff}
+.bet{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.bet:first-of-type{border-top:0}
+.bet .num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.big{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
+.badge{display:inline-block;padding:3px 12px;border-radius:999px;font-weight:800;font-size:15px;color:#fff}
+.b-堅め{background:var(--k)}.b-標準{background:#5b6762}.b-荒れ{background:var(--a)}
+.meter{position:relative;height:14px;border-radius:7px;background:linear-gradient(90deg,var(--a) 0 33.3%,#8b9690 33.3% 66.6%,var(--k) 66.6%);opacity:.85;margin:10px 0 4px}
+.meter i{position:absolute;top:-5px;width:4px;height:24px;background:var(--ink);border-radius:2px;transform:translateX(-2px)}
+.meter-l{display:flex;justify-content:space-between;font-size:12px;color:var(--sub)}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px}
+.kpi div{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.kpi b{display:block;font-size:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kpi span{font-size:12px;color:var(--sub)}
+.hit{color:var(--hit)}.miss{color:var(--miss)}.warn{color:var(--warn)}
+.banner{border-radius:14px;padding:14px;color:#fff;font-weight:800;font-size:22px;text-align:center;margin-bottom:10px}
+.banner.h{background:#0b7a3e}.banner.m{background:#7d2420}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12.5px;color:var(--sub);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+details{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
+summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:center}
+.why{font-size:14px;margin:4px 0 0;padding-left:10px;border-left:3px solid var(--line)}
+.why b{font-weight:700}
+.list{list-style:none;margin:0;padding:0}
+.list li{padding:8px 0;border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.msg{padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14.5px;margin-top:8px;white-space:pre-wrap}
+.msg.err{border-color:var(--miss);color:var(--miss)}
+.msg.ok{border-color:var(--hit)}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);z-index:6;padding-bottom:env(safe-area-inset-bottom)}
+nav button{border:0;border-radius:0;min-height:60px;background:none;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--sub)}
+nav button svg{width:22px;height:22px}
+nav button.on{color:var(--band);font-weight:800}
+.eng{display:grid;grid-template-columns:44px 1fr auto;gap:2px 8px;font-size:14px;padding:6px 0;border-top:1px solid var(--line)}
+.eng .st{font-size:12px;white-space:nowrap}
+.loop dt{font-weight:700;font-size:13.5px;margin-top:6px}.loop dd{margin:0 0 2px 0;font-size:14px}
+.prog{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--line)}.prog i{display:block;height:100%;background:var(--band);width:0}
+@media (prefers-reduced-motion:no-preference){.card.new{animation:rise .35s ease-out}@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+@media(max-width:600px){table{font-size:13.5px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>競輪予想 Ver.3</h1>
+  <div class="meta"><span id="hVer"></span><span id="hStore">保存先：確認中</span><span id="hDrive">ドライブ：確認中</span></div>
+</header>
+<main>
+<section class="tab on" id="t-yoso">
+  <div class="card" id="startCard" hidden>
+    <h2>はじめに</h2>
+    <p class="sub" style="margin:0 0 8px" id="startNote">この端末にはまだ記録がありません。ドライブに保存済みの学習データがあれば読み込めます。</p>
+    <button class="main" id="startRestore">ドライブから学習データを読み込む</button>
+    <p class="sub" style="margin:8px 0 0">使い方：チャリロトの出走表とオッズ表をまとめて貼る →「予想する」→ 結果が出たらKEIRIN.JPの結果を「結果」タブに貼る →「照合する」。記録はこの端末に保存されます。車券の購入は20歳になってから。必中ではありません。</p>
+    <div id="startMsg"></div>
+  </div>
+  <div class="card">
+    <h2>出走表とオッズ表を貼る</h2>
+    <p class="sub" style="margin:0 0 8px">チャリロトの「出走表詳細」と「オッズ表詳細（3連複）」をまとめて貼り付けます。オッズが変わったら、何度でも貼り直せます（2回目からはオッズ表だけでも可）。</p>
+    <textarea id="entry" placeholder="ここに貼り付け"></textarea>
+    <div class="row" style="margin-top:8px"><button class="main" id="doPredict" style="flex:1">予想する</button><button class="sm" id="clrEntry">消す</button></div>
+    <div id="entryMsg"></div>
+  </div>
+  <div id="predOut"></div>
+</section>
+
+<section class="tab" id="t-kekka">
+  <div class="card">
+    <h2>結果表を貼る</h2>
+    <label class="sub" for="raceSel">照合するレース</label>
+    <select id="raceSel"></select>
+    <p class="sub" style="margin:8px 0">KEIRIN.JPの結果ページ（払戻金と着順）を貼り付けます。レースは貼った内容から自動で探します。</p>
+    <textarea id="result" placeholder="ここに貼り付け"></textarea>
+    <details><summary>貼り付けできないとき（手入力）</summary>
+      <div class="grid" style="margin-top:6px"><div><label for="mKey">3連複の組番（例 1-5-7）</label><input id="mKey" inputmode="numeric"></div><div><label for="mPay">払戻金（円）</label><input id="mPay" inputmode="numeric"></div></div>
+    </details>
+    <button class="main" id="doSettle" style="margin-top:10px">照合する</button>
+    <div id="resultMsg"></div>
+  </div>
+  <div id="settleOut"></div>
+</section>
+
+<section class="tab" id="t-seiseki">
+  <div class="card"><h2>成績</h2>
+    <div class="row" role="group"><button class="sm" data-view="live">実戦</button><button class="sm" data-view="replay">再現（過去データ）</button><button class="sm" data-view="all">すべて</button></div>
+    <div id="kpi" style="margin-top:10px"></div>
+    <p class="sub" id="kpiNote" style="margin:8px 0 0"></p>
+  </div>
+  <div class="card"><h3 style="margin-top:0">区分別・グレード別・車立別</h3><div id="breakdown"></div></div>
+  <div class="card"><h3 style="margin-top:0">レース一覧</h3><ul class="list" id="raceList"></ul></div>
+</section>
+
+<section class="tab" id="t-gakushu">
+  <div class="card"><h2>メタループ</h2>
+    <p class="sub" style="margin:0 0 8px">照合済みの全レースで変数を見直します。過学習を防ぐ強さは交差検証で決め、よくならない変更は採用しません。収束するまで回数の上限なしで回ります。</p>
+    <div class="row"><button class="main" id="doMeta" style="flex:1">メタループを実行</button><button class="sm" id="stopMeta" hidden>止める</button></div>
+    <div class="prog" style="margin-top:10px"><i id="metaBar"></i></div>
+    <div id="metaMsg"></div>
+  </div>
+  <div class="card"><h2>直近のループ</h2><div id="loops"></div></div>
+  <div class="card"><h2>36エンジン</h2><div id="engines"></div></div>
+  <div class="card"><h2>変数（すべて変数化）</h2><p class="sub" style="margin:0 0 6px">「学習」は自動で更新されます。「固定」は運用指針で決まっている値です。</p><div id="vars"></div></div>
+  <div class="card"><h2>変更の履歴</h2><ul class="list" id="changes"></ul></div>
+</section>
+
+<section class="tab" id="t-hozon">
+  <div class="card"><h2>Googleドライブ</h2>
+    <p class="sub" style="margin:0 0 8px" id="driveNote">保存先：「競輪Ver3_予想_学習データ」（無ければ自動で作成）。レースごとの記録は中の「競輪Ver3_レース記録」へ。形式はAIが読み取れる汎用形式です。</p>
+    <label class="row" id="autoDriveRow" style="gap:10px;margin-bottom:10px"><input type="checkbox" id="autoDrive" style="width:22px;height:22px"><span>予想と照合のたびに自動で保存する</span></label>
+    <button class="main" id="shareDrive" hidden>スマホの共有でドライブに保存</button>
+    <p class="sub" id="shareNote" style="margin:8px 0 0">共有の画面で「ドライブ」を選ぶと、全データをAIが読み取れる形式で保存できます。戻すときは下の「読み込み」でファイルを選び、ドライブを開いて選びます。</p>
+    <div class="row"><button class="main" id="saveFull" style="flex:1">全データをドライブに保存</button></div>
+    <div class="row" style="margin-top:8px"><button id="restore" style="flex:1">ドライブから復元</button></div>
+    <div id="driveMsg"></div>
+  </div>
+  <div class="card"><h2>書き出し・読み込み</h2>
+    <div class="row"><button id="exportFile" style="flex:1">ファイルに書き出す</button><button id="copyAll" style="flex:1">コピー</button></div>
+    <h3>読み込み</h3>
+    <input type="file" id="importFile" accept=".json,application/json,text/plain">
+    <textarea id="importText" placeholder="書き出したデータを貼り付けても読み込めます" style="min-height:70px;margin-top:8px"></textarea>
+    <button id="doImport" style="margin-top:8px;width:100%">読み込む（同じレースは新しい方を残す）</button>
+    <div id="ioMsg"></div>
+  </div>
+  <div class="card"><h2>この端末の状態</h2><div id="storeInfo" class="sub"></div>
+    <h3>ホーム画面に置く</h3><p class="sub" style="margin:0">クロームでこのページを開き、右上のメニュー →「アプリをインストール」または「ホーム画面に追加」でアイコンから起動できます。</p>
+    <p class="sub">車券の購入は20歳になってから。必中ではありません。</p>
+  </div>
+</section>
+</main>
+<nav>
+  <button data-tab="yoso" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/></svg>予想</button>
+  <button data-tab="kekka"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg>結果</button>
+  <button data-tab="seiseki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>成績</button>
+  <button data-tab="gakushu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 14-5l2-2v6h-6l2-2a6 6 0 1 0 1 7"/></svg>学習</button>
+  <button data-tab="hozon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"/></svg>保存</button>
+</nav>
+<script type="application/json" id="seed">{"format":"keirin-v3-state","version":"3.11.0","vars":{"yen":100,"maxPts":3,"minPts":1,"candM":8,"aKatame":0.661,"aStd":0.457,"aAre":0.267,"eLo":0.6666666666666666,"eHi":0.3333333333333333,"k0":5,"aK0":20,"torigami":1,"eta":0.019556168427451743,"etaMin":0.005,"etaMax":0.2,"cap":0.1,"topK":2,"l2g":0.3,"l2d":1.5,"dRate":0.5,"evalN":50,"eps":0.002,"missOdds":0.5,"venueK0":10,"riderK0":3,"metaTol":1e-06,"cvEps":0.003},"theta":{"w":{"E01":0.9035546758468331,"E02":0.1654350449328119,"E03":0.16112104964231685,"E04":0.09799875089119754,"E05":0.17435971109339682,"E06":0.11360754286511321,"E07":0.003051390948263432,"E08":0.02620987247124072,"E09":0.10383870637504769,"E10":0.04624295465249873,"E11":-0.005019651775199326,"E12":0.004869155626237171,"E13":-0.019216010538855553,"E14":-0.09755995427681098,"E15":0.18442597460483398,"E16":0.010381441895964835,"E17":0.15239625874400975,"E18":0.038048397122233055,"E19":-0.06352439953056993,"E20":0.09881192026741689,"E21":0.2230028024842093,"E22":-0.07556147169013347,"E23":-0.0310246782318203,"E24":0.028154403168361916,"E25":0.12425895538690128,"E26":0.11623244014296474},"u1":0.3293343952515491,"u2":0.19367988569519987,"b":-2.927135200739141,"t":0.08784229865024683},"theta0":{"w":{"E01":0.9,"E02":0.15,"E03":0.2,"E04":0.15,"E05":0.2,"E06":0.15,"E07":0.08,"E08":0.08,"E09":0.05,"E10":0,"E11":0.05,"E12":0.08,"E13":0,"E14":0,"E15":0.2,"E16":0.08,"E17":0.12,"E18":0,"E19":-0.08,"E20":0.05,"E21":0.25,"E22":-0.03,"E23":0,"E24":0.03,"E25":0.15,"E26":0.1},"u1":0.3,"u2":0.2,"b":-2.9444389791664403,"t":0},"dG":{"G1":{"w":{"E01":-2.1173179569565454e-05,"E02":-0.0004721486802042413,"E03":0.0028598456314112056,"E04":-0.003052523486925673,"E05":-0.0031098459870040835,"E06":-0.0015184398659539296,"E07":-0.0025522900506647684,"E08":0.0003883617188396662,"E09":0.002668810425537092,"E10":-0.00262436855406287,"E11":-0.0012447911067020156,"E12":-0.002565793065950148,"E13":0.0014691882299868585,"E14":-0.002423177166745189,"E15":-0.004960399690977033,"E16":0.0028136407389320263,"E17":-0.004088725357434665,"E18":-4.024878708520725e-05,"E19":0.0023385862781827964,"E20":0.0016490770510274283,"E21":0.0005207305286037611,"E22":0,"E23":0,"E24":0,"E25":0,"E26":0.0022505655715402252},"u1":-0.0006954701210230425,"u2":-0.0006197091886703945,"b":-0.0004811906836535017,"t":-0.026621936461783166},"F1":{"w":{"E01":-0.005015718527456616,"E02":0.002749305501066824,"E03":-0.006848726861611903,"E04":-0.00806141196887463,"E05":-0.004573861428029612,"E06":-0.006516494373416954,"E07":-0.003964650758230356,"E08":-0.0037806524282875576,"E09":0.0018333089282800516,"E10":0.004615400216675869,"E11":-0.011322367301129161,"E12":-0.003976661720352757,"E13":-0.0009161287795922515,"E14":-0.009554314404772812,"E15":-0.0021310897896231243,"E16":-0.007698815516370426,"E17":0.004209001105418859,"E18":0.0036964856715645507,"E19":0.0012302832649191413,"E20":0.0024062977374132264,"E21":-0.005716748530308494,"E22":-0.004215634000947578,"E23":-0.0022489490425560256,"E24":-0.0003600617850225568,"E25":0,"E26":0.00022459020669564879},"u1":0.003896511651270915,"u2":0.0003174264131047411,"b":-0.00393799046155272,"t":0.028948126934895107},"F2":{"w":{"E01":0.005589033638446277,"E02":0.000868901506472895,"E03":-0.0030558537292633653,"E04":0.0008081653432948691,"E05":0.0028898729298778582,"E06":0.0011122073289890066,"E07":-0.009003820772004952,"E08":-0.006947738251130857,"E09":0.006773806400482569,"E10":0.007282886154965042,"E11":0.0015965209311794822,"E12":-0.008113160863965307,"E13":-0.0053129702042548545,"E14":-0.007083120751548052,"E15":0.003678960850231036,"E16":-0.009165827091146021,"E17":0.006365051475216041,"E18":0.004042405625142026,"E19":-0.00019168518045904292,"E20":0.005844175062521751,"E21":-0.0006071928107860306,"E22":-0.0056280008351034805,"E23":-0.004040869483533592,"E24":0,"E25":-0.004205528963280383,"E26":0.0017263242382949656},"u1":0.002754889132501907,"u2":-0.000990932756040048,"b":0.00808769637931577,"t":0.027002634398342856},"ガールズ":{"w":{"E01":0.00021692672590759224,"E02":0,"E03":-0.0008607121114602845,"E04":-0.0002293900637792213,"E05":-0.0003747268710433841,"E06":-0.0004394758235240323,"E07":-3.684852710125511e-05,"E08":-0.0005164518697064765,"E09":-0.00040639661461100635,"E10":5.0295889194912456e-05,"E11":-0.00019488042023443745,"E12":-0.0005293011580588086,"E13":0.0008764868000011052,"E14":-0.0007327240731871602,"E15":0.0002169267259075923,"E16":0,"E17":0,"E18":0,"E19":0,"E20":0,"E21":0.00035339935913071026,"E22":0.0006727711021593263,"E23":0,"E24":0,"E25":-0.0010281194838666723,"E26":-0.0009607716065026185},"u1":0,"u2":0,"b":0.00028262868353406463,"t":-0.011557004821492058}},"dN":{"6":{"w":{"E01":-0.0004549341375262348,"E02":0,"E03":-0.0024073815609206876,"E04":-0.0011475085141092359,"E05":-0.0008129085517845623,"E06":-0.0014001636597538085,"E07":-0.0006973960550039856,"E08":-0.002627414649007776,"E09":-0.0008170722922066251,"E10":0.001970414654909285,"E11":-0.0010344477234462384,"E12":-0.00213199669858515,"E13":0.0014989290815927482,"E14":-0.0009915366994371043,"E15":0.0003146566564056825,"E16":-0.00019325066579494826,"E17":0.0003559287817363089,"E18":4.02722466107969e-05,"E19":-9.900107532068064e-05,"E20":9.900107532068062e-05,"E21":0.0005958668895345383,"E22":-0.0005144748418982866,"E23":-9.743111914241164e-05,"E24":0,"E25":-0.0013979148196829154,"E26":-0.0020878746106734966},"u1":0.0006568359533140694,"u2":0.00024034744872587327,"b":-0.00101311255841865,"t":0.0025584704760019915},"7":{"w":{"E01":0.0012451759744234886,"E02":0.00361820700753972,"E03":-0.008357911141414865,"E04":-0.0063351281752497485,"E05":-0.001245806817410575,"E06":-0.0044435992081981734,"E07":-0.01230792400233258,"E08":-0.008617427900117115,"E09":0.009017791006358241,"E10":0.009978167605926534,"E11":-0.008886279066737876,"E12":-0.010487127043791723,"E13":-0.006851541265438752,"E14":-0.01637862253007092,"E15":0.0014501411301098205,"E16":-0.016671391941721497,"E17":0.010218123798898592,"E18":0.00769861905009578,"E19":0.0011375991597807795,"E20":0.0081514717246143,"E21":-0.0065664088714983545,"E22":-0.008656388891993444,"E23":-0.0061923874069472066,"E24":-0.0003600617850225568,"E25":-0.0038357336274641406,"E26":0.003078017449161492},"u1":0.005994564830458752,"u2":-0.00091385379166118,"b":0.0054454471597157605,"t":0.04183528603574391},"9":{"w":{"E01":-2.1173179569565454e-05,"E02":-0.0004721486802042413,"E03":0.0028598456314112056,"E04":-0.003052523486925673,"E05":-0.0031098459870040835,"E06":-0.0015184398659539296,"E07":-0.0025522900506647684,"E08":0.0003883617188396662,"E09":0.002668810425537092,"E10":-0.00262436855406287,"E11":-0.0012447911067020156,"E12":-0.002565793065950148,"E13":0.0014691882299868585,"E14":-0.002423177166745189,"E15":-0.004960399690977033,"E16":0.0028136407389320263,"E17":-0.004088725357434665,"E18":-4.024878708520725e-05,"E19":0.0023385862781827964,"E20":0.0016490770510274283,"E21":0.0005207305286037611,"E22":0,"E23":0,"E24":0,"E25":0,"E26":0.0022505655715402252},"u1":-0.0006954701210230425,"u2":-0.0006197091886703945,"b":-0.0004811906836535017,"t":-0.026621936461783166}},"kappa":{"全体":{"H":26,"S":28.600387854897875,"N":72},"n9":{"H":0,"S":2.8181406709241896,"N":12},"G1|9":{"H":0,"S":2.8181406709241896,"N":12},"n7":{"H":23,"S":23.314690754824497,"N":56},"F1|7":{"H":12,"S":11.035210915383168,"N":25},"F2|7":{"H":10,"S":11.559223019984005,"N":29},"n6":{"H":3,"S":2.4675564291491923,"N":4},"ガールズ|6":{"H":1,"S":0.9743753790480928,"N":2},"ガールズ|7":{"H":1,"S":0.7202568194573222,"N":2},"F2|6":{"H":2,"S":1.4931810501010996,"N":2}},"venue":{"小倉":{"逃":0,"捲":4,"差":7,"マ":0},"小田原":{"逃":2,"捲":6,"差":2,"マ":0},"広島":{"逃":5,"捲":2,"差":14,"マ":0},"豊橋":{"逃":2,"捲":4,"差":4,"マ":0},"武雄":{"逃":4,"捲":5,"差":4,"マ":0},"静岡":{"逃":0,"捲":0,"差":4,"マ":1}},"vglobal":{"逃":13,"捲":21,"差":35,"マ":1},"rider":{"中川誠一郎":{"n":1,"top3":1,"wins":1,"agari":11.7,"last":"2026-11-22"},"飯野祐太":{"n":1,"top3":1,"wins":0,"agari":11.6,"last":"2026-11-22"},"根田空史":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"纐纈洸翔":{"n":1,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-22"},"佐藤礼文":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"林慶次郎":{"n":1,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-22"},"川口聖二":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"森川大輔":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"内藤宣彦":{"n":1,"top3":1,"wins":0,"agari":11.2,"last":"2026-11-22"},"橋本紀彰":{"n":1,"top3":1,"wins":0,"agari":10.4,"last":"2026-11-22"},"大関祐也":{"n":1,"top3":0,"wins":0,"agari":10,"last":"2026-11-22"},"河村章憲":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"吉成貴博":{"n":1,"top3":1,"wins":0,"agari":10.4,"last":"2026-11-22"},"橋谷成海":{"n":1,"top3":1,"wins":1,"agari":10.5,"last":"2026-11-22"},"堀僚介":{"n":1,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-22"},"赤井学":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"佐竹和也":{"n":3,"top3":1,"wins":1,"agari":12.4,"last":"2026-11-24"},"松岡孝高":{"n":3,"top3":2,"wins":1,"agari":12.7,"last":"2026-11-24"},"江本博明":{"n":3,"top3":2,"wins":1,"agari":12.4,"last":"2026-11-24"},"田頭寛之":{"n":3,"top3":0,"wins":0,"agari":13,"last":"2026-11-24"},"原井剣也":{"n":3,"top3":1,"wins":0,"agari":12,"last":"2026-11-24"},"金子兼久":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-22"},"眞砂英作":{"n":3,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-24"},"引地正人":{"n":1,"top3":1,"wins":0,"agari":12.8,"last":"2026-11-22"},"横内裕人":{"n":1,"top3":0,"wins":0,"agari":13.2,"last":"2026-11-22"},"岩城佑典":{"n":1,"top3":0,"wins":0,"agari":12.9,"last":"2026-11-22"},"中西司":{"n":1,"top3":1,"wins":1,"agari":12.6,"last":"2026-11-22"},"柴田功一郎":{"n":1,"top3":1,"wins":0,"agari":12.6,"last":"2026-11-22"},"三浦靖":{"n":1,"top3":0,"wins":0,"agari":13,"last":"2026-11-22"},"内村竜也":{"n":1,"top3":0,"wins":0,"agari":13,"last":"2026-11-22"},"佐藤一伸":{"n":1,"top3":0,"wins":0,"agari":12.8,"last":"2026-11-22"},"木村隆弘":{"n":1,"top3":1,"wins":0,"agari":11.7,"last":"2026-11-22"},"青柳靖起":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"角令央奈":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"佐々木豪":{"n":1,"top3":1,"wins":1,"agari":11.7,"last":"2026-11-22"},"岡本大嗣":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"五日市誠":{"n":1,"top3":1,"wins":0,"agari":11.4,"last":"2026-11-22"},"安彦統賀":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"香川雄介":{"n":1,"top3":0,"wins":0,"agari":11.7,"last":"2026-11-22"},"門脇翼":{"n":1,"top3":0,"wins":0,"agari":10,"last":"2026-11-22"},"野上竜太":{"n":1,"top3":1,"wins":1,"last":"2026-11-22"},"堺文人":{"n":1,"top3":1,"wins":0,"agari":10.1,"last":"2026-11-22"},"須永勝太":{"n":1,"top3":0,"wins":0,"agari":10.1,"last":"2026-11-22"},"奥出良":{"n":1,"top3":0,"wins":0,"agari":10.3,"last":"2026-11-22"},"板崎佑矢":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"三浦生誠":{"n":1,"top3":0,"wins":0,"agari":10.3,"last":"2026-11-22"},"長松大祐":{"n":3,"top3":1,"wins":1,"agari":12.1,"last":"2026-11-24"},"阿部充宏":{"n":3,"top3":2,"wins":0,"agari":12.7,"last":"2026-11-24"},"山信田学":{"n":3,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-24"},"十文字菊雄":{"n":3,"top3":1,"wins":0,"agari":12.5,"last":"2026-11-24"},"谷元奎心":{"n":3,"top3":2,"wins":0,"agari":12.5,"last":"2026-11-24"},"山口貴弘":{"n":3,"top3":1,"wins":1,"agari":13.6,"last":"2026-11-24"},"高橋紀史":{"n":3,"top3":1,"wins":0,"agari":12.2,"last":"2026-11-24"},"藤岡徹也":{"n":1,"top3":1,"wins":1,"agari":13.1,"last":"2026-11-22"},"新井剛央":{"n":1,"top3":1,"wins":0,"agari":13.8,"last":"2026-11-22"},"城戸崎隆史":{"n":1,"top3":1,"wins":0,"agari":13.6,"last":"2026-11-22"},"松本昂大":{"n":1,"top3":0,"wins":0,"agari":13.9,"last":"2026-11-22"},"北村貴幸":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"佐々木孝司":{"n":1,"top3":0,"wins":0,"agari":14,"last":"2026-11-22"},"吉川悟":{"n":1,"top3":0,"wins":0,"agari":13.9,"last":"2026-11-22"},"岩井芯":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"林大悟":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"金子幸央":{"n":1,"top3":1,"wins":1,"agari":11.5,"last":"2026-11-22"},"大川龍二":{"n":1,"top3":0,"wins":0,"agari":11.1,"last":"2026-11-22"},"岩谷拓磨":{"n":1,"top3":1,"wins":0,"agari":11.2,"last":"2026-11-22"},"海老根恵太":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"晝田宗一郎":{"n":1,"top3":0,"wins":0,"agari":11.2,"last":"2026-11-22"},"志村龍己":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"東口善朋":{"n":1,"top3":1,"wins":0,"agari":11.7,"last":"2026-11-22"},"稲村好将":{"n":1,"top3":0,"wins":0,"agari":10,"last":"2026-11-22"},"寺崎祐樹":{"n":1,"top3":1,"wins":0,"agari":10,"last":"2026-11-22"},"舘泰守":{"n":1,"top3":0,"wins":0,"agari":10,"last":"2026-11-22"},"佐藤亙":{"n":1,"top3":1,"wins":0,"agari":10.2,"last":"2026-11-22"},"馬場和広":{"n":1,"top3":0,"wins":0,"agari":10.1,"last":"2026-11-22"},"前田義和":{"n":1,"top3":1,"wins":1,"agari":10.1,"last":"2026-11-22"},"真木寛斗":{"n":1,"top3":0,"wins":0,"agari":10.7,"last":"2026-11-22"},"平石浩之":{"n":3,"top3":2,"wins":1,"agari":12.2,"last":"2026-11-24"},"立花成泰":{"n":3,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"福田要":{"n":3,"top3":2,"wins":1,"agari":12.3,"last":"2026-11-24"},"高比良豪":{"n":3,"top3":1,"wins":1,"agari":12,"last":"2026-11-24"},"小島雅章":{"n":3,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-24"},"藤原亮太":{"n":3,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-24"},"夏目新吾":{"n":3,"top3":2,"wins":0,"agari":12.3,"last":"2026-11-24"},"小埜正義":{"n":1,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-22"},"國村洋":{"n":1,"top3":0,"wins":0,"agari":12.7,"last":"2026-11-22"},"弓矢輪太郎":{"n":1,"top3":0,"wins":0,"agari":12.9,"last":"2026-11-22"},"藤井優希":{"n":1,"top3":1,"wins":0,"agari":12.7,"last":"2026-11-22"},"坂上忠克":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-22"},"井手健":{"n":1,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-22"},"山中秀将":{"n":1,"top3":1,"wins":1,"agari":12,"last":"2026-11-22"},"長島大介":{"n":1,"top3":0,"wins":0,"agari":11.4,"last":"2026-11-22"},"山崎歩夢":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"三谷将太":{"n":1,"top3":1,"wins":1,"agari":11.3,"last":"2026-11-22"},"脇本勇希":{"n":1,"top3":1,"wins":0,"agari":11.5,"last":"2026-11-22"},"渡邉雅也":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"大石剣士":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"守澤太志":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"志智俊夫":{"n":1,"top3":1,"wins":0,"agari":11.3,"last":"2026-11-22"},"鈴木竜士":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"荻原寿嗣":{"n":1,"top3":1,"wins":0,"agari":10.9,"last":"2026-11-22"},"天野純平":{"n":1,"top3":1,"wins":0,"agari":10.4,"last":"2026-11-22"},"小橋明紀":{"n":1,"top3":1,"wins":1,"agari":10.7,"last":"2026-11-22"},"鈴木誠":{"n":3,"top3":2,"wins":0,"agari":12.7,"last":"2026-11-24"},"松本卓也":{"n":3,"top3":2,"wins":1,"agari":12.5,"last":"2026-11-24"},"安東英博":{"n":3,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-24"},"青井賢治":{"n":3,"top3":2,"wins":2,"agari":12.1,"last":"2026-11-24"},"高橋幸司":{"n":3,"top3":2,"wins":1,"agari":12.4,"last":"2026-11-24"},"佐藤啓斗":{"n":3,"top3":0,"wins":0,"agari":12.8,"last":"2026-11-24"},"行成大祐":{"n":3,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-24"},"表原周":{"n":1,"top3":1,"wins":0,"agari":11.7,"last":"2026-11-22"},"三好恵一郎":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"西森一稀":{"n":1,"top3":1,"wins":1,"agari":11.8,"last":"2026-11-22"},"小笹隼人":{"n":1,"top3":1,"wins":0,"agari":11.7,"last":"2026-11-22"},"須賀和彦":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"川田真也":{"n":1,"top3":0,"wins":0,"agari":12.7,"last":"2026-11-22"},"池田浩士":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"園田匠":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-22"},"杉浦侑吾":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"三谷竜生":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"笠松信幸":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"小林泰正":{"n":1,"top3":0,"wins":0,"agari":11.4,"last":"2026-11-22"},"菅原大也":{"n":1,"top3":0,"wins":0,"agari":14,"last":"2026-11-22"},"柏野智典":{"n":1,"top3":1,"wins":0,"agari":11.4,"last":"2026-11-22"},"阿部将大":{"n":1,"top3":1,"wins":0,"agari":11.3,"last":"2026-11-22"},"岩本俊介":{"n":1,"top3":1,"wins":1,"agari":11.4,"last":"2026-11-22"},"古賀勝大":{"n":1,"top3":1,"wins":1,"last":"2026-11-22"},"久樹克門":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"中井勇介":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"上田隼":{"n":1,"top3":0,"wins":0,"agari":10.2,"last":"2026-11-22"},"山崎航":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"中曽直彦":{"n":3,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"坂本晃輝":{"n":3,"top3":2,"wins":2,"agari":12.7,"last":"2026-11-24"},"加賀美智史":{"n":3,"top3":1,"wins":0,"agari":12.7,"last":"2026-11-24"},"宮倉勇":{"n":3,"top3":2,"wins":0,"agari":12,"last":"2026-11-24"},"曽我圭佑":{"n":3,"top3":3,"wins":1,"agari":12.9,"last":"2026-11-24"},"米嶋賢二":{"n":3,"top3":0,"wins":0,"agari":12.2,"last":"2026-11-24"},"坂本将太郎":{"n":3,"top3":1,"wins":0,"agari":12.5,"last":"2026-11-24"},"富永益生":{"n":1,"top3":1,"wins":1,"agari":12.2,"last":"2026-11-22"},"小竹洋平":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"相澤政宏":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"林敬宏":{"n":1,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-22"},"野津宏介":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"田中勝仁":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"土岐幹多":{"n":1,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-22"},"横関裕樹":{"n":1,"top3":0,"wins":0,"agari":10.4,"last":"2026-11-22"},"野崎将史":{"n":1,"top3":0,"wins":0,"agari":10.3,"last":"2026-11-22"},"吉田昌司":{"n":1,"top3":1,"wins":0,"agari":10.5,"last":"2026-11-22"},"橋本壮史":{"n":1,"top3":1,"wins":1,"agari":10.3,"last":"2026-11-22"},"近藤俊明":{"n":1,"top3":1,"wins":0,"agari":10.3,"last":"2026-11-22"},"福元啓太":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"今村麟太郎":{"n":1,"top3":0,"wins":0,"agari":11.1,"last":"2026-11-22"},"藤田楓":{"n":3,"top3":3,"wins":2,"agari":12.4,"last":"2026-11-24"},"小峰烈":{"n":3,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-24"},"井寺亮太":{"n":3,"top3":1,"wins":0,"agari":13.3,"last":"2026-11-24"},"山崎悟":{"n":3,"top3":2,"wins":0,"agari":12.5,"last":"2026-11-24"},"市本隆司":{"n":3,"top3":2,"wins":0,"agari":12.4,"last":"2026-11-24"},"佐伯辰哉":{"n":3,"top3":1,"wins":0,"agari":12.7,"last":"2026-11-24"},"堀越翔己":{"n":3,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-24"},"本郷雄三":{"n":1,"top3":1,"wins":0,"agari":13,"last":"2026-11-22"},"小畑勝広":{"n":1,"top3":1,"wins":1,"agari":13,"last":"2026-11-22"},"佐藤雅春":{"n":1,"top3":1,"wins":0,"agari":12.9,"last":"2026-11-22"},"大澤雄大":{"n":1,"top3":0,"wins":0,"agari":13,"last":"2026-11-22"},"内田英介":{"n":1,"top3":0,"wins":0,"agari":13.1,"last":"2026-11-22"},"中島竜誠":{"n":1,"top3":0,"wins":0,"agari":13.6,"last":"2026-11-22"},"松本憲斗":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"嘉永泰斗":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"森田優弥":{"n":1,"top3":1,"wins":0,"agari":11.8,"last":"2026-11-22"},"和田健太郎":{"n":1,"top3":1,"wins":0,"agari":11.5,"last":"2026-11-22"},"村田雅一":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"鈴木玄人":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"芦澤大輔":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"山田庸平":{"n":1,"top3":1,"wins":1,"agari":11.7,"last":"2026-11-22"},"松井宏佑":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"山田久徳":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"河合佑弥":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"伊藤裕貴":{"n":1,"top3":1,"wins":1,"agari":10,"last":"2026-11-22"},"小酒大勇":{"n":1,"top3":1,"wins":0,"agari":10,"last":"2026-11-22"},"伊藤成紀":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-22"},"小榑佑弥":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"内山貴裕":{"n":1,"top3":0,"wins":0,"agari":10.3,"last":"2026-11-22"},"片折亮太":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"三澤康人":{"n":3,"top3":1,"wins":0,"agari":12.2,"last":"2026-11-24"},"矢部駿人":{"n":3,"top3":1,"wins":0,"agari":12.5,"last":"2026-11-24"},"菅原裕太":{"n":3,"top3":3,"wins":1,"agari":12.3,"last":"2026-11-24"},"岡部陸斗":{"n":3,"top3":1,"wins":1,"agari":13.8,"last":"2026-11-24"},"森安崇之":{"n":3,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"飯田辰哉":{"n":3,"top3":2,"wins":1,"agari":12.2,"last":"2026-11-24"},"齊藤英伊須":{"n":3,"top3":2,"wins":1,"agari":12.2,"last":"2026-11-24"},"川上隆義":{"n":1,"top3":1,"wins":1,"agari":12.4,"last":"2026-11-22"},"山根慶太":{"n":1,"top3":0,"wins":0,"agari":14.1,"last":"2026-11-22"},"山内卓也":{"n":1,"top3":1,"wins":0,"agari":12.2,"last":"2026-11-22"},"吉松直人":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"今藤康裕":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"棚橋勉":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"古川尚耶":{"n":1,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-22"},"稲川翔":{"n":1,"top3":1,"wins":0,"agari":11.3,"last":"2026-11-22"},"小川勇介":{"n":1,"top3":1,"wins":0,"agari":10.9,"last":"2026-11-22"},"和田真久留":{"n":1,"top3":0,"wins":0,"agari":11.4,"last":"2026-11-22"},"小倉竜二":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"脇本雄太":{"n":1,"top3":1,"wins":1,"agari":11,"last":"2026-11-22"},"上野優太":{"n":1,"top3":0,"wins":0,"agari":11.2,"last":"2026-11-22"},"簗田一輝":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-22"},"北津留翼":{"n":1,"top3":0,"wins":0,"agari":11.2,"last":"2026-11-22"},"田村大":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"小原佑太":{"n":1,"top3":1,"wins":1,"agari":10,"last":"2026-11-22"},"山本直":{"n":1,"top3":0,"wins":0,"agari":10.2,"last":"2026-11-22"},"佐藤和也":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"阪本和也":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"荒川仁":{"n":1,"top3":0,"wins":0,"agari":10.4,"last":"2026-11-22"},"小川賢人":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"窓場千加頼":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"立部楓真":{"n":1,"top3":1,"wins":0,"agari":12.6,"last":"2026-11-22"},"高橋和也":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-22"},"野中龍之介":{"n":1,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-22"},"椎木尾拓哉":{"n":1,"top3":1,"wins":0,"agari":12,"last":"2026-11-22"},"佐川翔吾":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"松岡貴久":{"n":1,"top3":1,"wins":1,"agari":12.5,"last":"2026-11-22"},"松崎広太":{"n":1,"top3":1,"wins":0,"agari":11.5,"last":"2026-11-22"},"村上博幸":{"n":1,"top3":0,"wins":0,"agari":11.4,"last":"2026-11-22"},"中野慎詞":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"佐藤友和":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"寺崎浩平":{"n":1,"top3":1,"wins":0,"agari":11.3,"last":"2026-11-22"},"恩田淳平":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"小原太樹":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-22"},"宿口陽一":{"n":1,"top3":1,"wins":1,"agari":11.4,"last":"2026-11-22"},"橋本強":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-22"},"丸山留依":{"n":1,"top3":0,"wins":0,"agari":10.2,"last":"2026-11-22"},"中井太祐":{"n":1,"top3":1,"wins":1,"last":"2026-11-22"},"箱田優樹":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"西村光太":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"松永将":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"高橋晋也":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"松坂洋平":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"岡本総":{"n":1,"top3":1,"wins":0,"agari":11.9,"last":"2026-11-22"},"一戸康宏":{"n":1,"top3":1,"wins":0,"agari":12,"last":"2026-11-22"},"坂本周輝":{"n":1,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-22"},"吉川起也":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"伊藤信":{"n":1,"top3":1,"wins":1,"agari":12,"last":"2026-11-22"},"後藤悠":{"n":1,"top3":0,"wins":0,"agari":13.4,"last":"2026-11-22"},"佐藤壮":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"荒井崇博":{"n":1,"top3":0,"wins":0,"agari":11.4,"last":"2026-11-22"},"阿部拓真":{"n":1,"top3":0,"wins":0,"agari":11.1,"last":"2026-11-22"},"清水裕友":{"n":1,"top3":1,"wins":1,"agari":11.2,"last":"2026-11-22"},"新田祐大":{"n":1,"top3":1,"wins":0,"agari":11.1,"last":"2026-11-22"},"坂井洋":{"n":1,"top3":0,"wins":0,"agari":11,"last":"2026-11-22"},"和田圭":{"n":1,"top3":0,"wins":0,"agari":11,"last":"2026-11-22"},"犬伏湧也":{"n":1,"top3":1,"wins":0,"agari":11.5,"last":"2026-11-22"},"山崎賢人":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-22"},"武藤龍生":{"n":1,"top3":0,"wins":0,"agari":10.9,"last":"2026-11-22"},"小川真太郎":{"n":1,"top3":1,"wins":0,"agari":10.3,"last":"2026-11-22"},"高橋築":{"n":1,"top3":1,"wins":1,"last":"2026-11-22"},"田中晴基":{"n":1,"top3":1,"wins":0,"agari":10.2,"last":"2026-11-22"},"田中誠":{"n":1,"top3":0,"wins":0,"agari":10.5,"last":"2026-11-22"},"川越勇星":{"n":1,"top3":0,"wins":0,"agari":10.5,"last":"2026-11-22"},"武田亮":{"n":1,"top3":0,"wins":0,"agari":10.3,"last":"2026-11-22"},"渡口勝成":{"n":1,"top3":0,"wins":0,"agari":10.7,"last":"2026-11-22"},"湊聖二":{"n":1,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-22"},"張野幸聖":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"大矢崇弘":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"都築巧":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"和泉尚吾":{"n":1,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-22"},"中村一将":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"篠田幸希":{"n":1,"top3":1,"wins":1,"agari":12,"last":"2026-11-22"},"郡司浩平":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"佐々木悠葵":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"菅田壱道":{"n":1,"top3":1,"wins":0,"agari":11.2,"last":"2026-11-22"},"山口拳矢":{"n":1,"top3":1,"wins":1,"agari":11.2,"last":"2026-11-22"},"眞杉匠":{"n":1,"top3":0,"wins":0,"agari":13,"last":"2026-11-22"},"町田太我":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"深谷知広":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"渡部幸訓":{"n":1,"top3":0,"wins":0,"agari":11.1,"last":"2026-11-22"},"松浦悠士":{"n":1,"top3":1,"wins":0,"agari":11.4,"last":"2026-11-22"},"松本貴治":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"新山響平":{"n":1,"top3":1,"wins":0,"agari":11.8,"last":"2026-11-22"},"菊池岳仁":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"阿部力也":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"成田和也":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"古性優作":{"n":1,"top3":1,"wins":1,"agari":11.3,"last":"2026-11-22"},"吉澤純平":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"石原颯":{"n":1,"top3":1,"wins":0,"agari":11.3,"last":"2026-11-22"},"小谷文康":{"n":2,"top3":0,"wins":0,"agari":12.2,"last":"2026-11-24"},"安坂洋一":{"n":2,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-24"},"加藤昌平":{"n":2,"top3":2,"wins":1,"agari":12.1,"last":"2026-11-24"},"小林高志":{"n":2,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"重一徳":{"n":2,"top3":2,"wins":0,"agari":12.2,"last":"2026-11-24"},"高谷敏史":{"n":2,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-24"},"長岡豪":{"n":2,"top3":0,"wins":0,"last":"2026-11-24","agari":15.6},"財満伊織":{"n":2,"top3":1,"wins":0,"agari":12.7,"last":"2026-11-24"},"爲田学":{"n":2,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"鈴木広人":{"n":2,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-24"},"中西将太郎":{"n":2,"top3":1,"wins":1,"agari":11.7,"last":"2026-11-24"},"ラモスレオ":{"n":1,"top3":0,"wins":0,"agari":12.9,"last":"2026-11-23"},"早坂道義":{"n":2,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-24"},"山崎明寛":{"n":1,"top3":0,"wins":0,"agari":12.7,"last":"2026-11-23"},"門馬琢麿":{"n":2,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-24"},"渡邊諒馬":{"n":2,"top3":2,"wins":2,"agari":12.4,"last":"2026-11-24"},"飯田威文":{"n":1,"top3":0,"wins":0,"agari":12.7,"last":"2026-11-23"},"時松正":{"n":1,"top3":0,"wins":0,"agari":12.2,"last":"2026-11-23"},"菱沼元樹":{"n":2,"top3":0,"wins":0,"agari":11.7,"last":"2026-11-24"},"相良勝美":{"n":2,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-24"},"坂本智哉":{"n":2,"top3":1,"wins":0,"agari":12.2,"last":"2026-11-24"},"曽我部匡史":{"n":2,"top3":2,"wins":0,"agari":12.2,"last":"2026-11-24"},"小田桐義継":{"n":2,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"南和夫":{"n":2,"top3":1,"wins":0,"agari":12.5,"last":"2026-11-24"},"古川大輔":{"n":2,"top3":0,"wins":0,"agari":14,"last":"2026-11-24"},"奥山雅士":{"n":2,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-24"},"井上典善":{"n":2,"top3":0,"wins":0,"agari":12.7,"last":"2026-11-24"},"田崎隼翔":{"n":2,"top3":2,"wins":1,"agari":12.4,"last":"2026-11-24"},"布居光":{"n":2,"top3":1,"wins":1,"agari":13.1,"last":"2026-11-24"},"清水美海":{"n":2,"top3":0,"wins":0,"agari":13.2,"last":"2026-11-24"},"青木美保":{"n":2,"top3":1,"wins":0,"agari":13.3,"last":"2026-11-24"},"西島叶子":{"n":2,"top3":2,"wins":1,"agari":13,"last":"2026-11-24"},"山本知佳":{"n":2,"top3":1,"wins":0,"agari":13.2,"last":"2026-11-24"},"平子結菜":{"n":2,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-24"},"中村由香里":{"n":2,"top3":1,"wins":0,"agari":13,"last":"2026-11-24"},"緒方詩央里":{"n":2,"top3":2,"wins":2,"agari":12.5,"last":"2026-11-24"},"牧田咲子":{"n":2,"top3":0,"wins":0,"agari":12.9,"last":"2026-11-24"},"谷元音羽":{"n":2,"top3":1,"wins":0,"agari":12.6,"last":"2026-11-24"},"高橋美沙紀":{"n":2,"top3":1,"wins":0,"agari":13.2,"last":"2026-11-24"},"枝光美奈":{"n":2,"top3":1,"wins":0,"agari":12.5,"last":"2026-11-24"},"普久原美海":{"n":2,"top3":0,"wins":0,"agari":13.3,"last":"2026-11-24"},"須々田大昇":{"n":1,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-24"},"田山誠":{"n":1,"top3":1,"wins":1,"agari":12.6,"last":"2026-11-24"},"近藤直幹":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-24"},"松本充生":{"n":1,"top3":0,"wins":0,"agari":12.2,"last":"2026-11-24"},"福地晶":{"n":1,"top3":1,"wins":1,"agari":12.5,"last":"2026-11-24"},"佐藤魁皇":{"n":1,"top3":1,"wins":1,"agari":12.1,"last":"2026-11-24"},"檀雄二":{"n":1,"top3":1,"wins":0,"agari":11.9,"last":"2026-11-24"},"三登誉哲":{"n":1,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-24"},"南部亮太":{"n":1,"top3":1,"wins":1,"agari":12.2,"last":"2026-11-24"},"黒田淳":{"n":1,"top3":1,"wins":1,"agari":11.4,"last":"2026-11-24"},"渡邉一成":{"n":1,"top3":0,"wins":0,"agari":11.2,"last":"2026-11-24"},"小林大介":{"n":1,"top3":0,"wins":0,"agari":11.1,"last":"2026-11-24"},"野村典嗣":{"n":1,"top3":1,"wins":0,"agari":11.4,"last":"2026-11-24"},"山根将太":{"n":1,"top3":1,"wins":0,"agari":11.6,"last":"2026-11-24"},"三ツ石康洋":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-24"},"中田雄喜":{"n":1,"top3":0,"wins":0,"agari":11,"last":"2026-11-24"},"荻原尚人":{"n":1,"top3":1,"wins":1,"agari":11.8,"last":"2026-11-24"},"石川裕二":{"n":1,"top3":1,"wins":0,"agari":11.8,"last":"2026-11-24"},"吉田裕全":{"n":1,"top3":1,"wins":0,"agari":11.8,"last":"2026-11-24"},"藤田勝也":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-24"},"岡村潤":{"n":1,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-24"},"太田竜馬":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-24"},"佐々木雄一":{"n":1,"top3":1,"wins":0,"agari":12,"last":"2026-11-24"},"皿屋豊":{"n":1,"top3":1,"wins":1,"agari":11.8,"last":"2026-11-24"},"塩島嵩一朗":{"n":1,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-24"},"原井博斗":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-24"},"大竹哲也":{"n":1,"top3":1,"wins":1,"agari":12.5,"last":"2026-11-25"},"辰己豊":{"n":1,"top3":1,"wins":0,"agari":12.7,"last":"2026-11-25"},"船曳義之":{"n":1,"top3":0,"wins":0,"agari":13.8,"last":"2026-11-25"},"杉浦康一":{"n":1,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-25"},"山本康旗":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-25"},"濱口健二":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-25"},"林佳宗依":{"n":1,"top3":1,"wins":0,"agari":12.9,"last":"2026-11-25"},"白濱一平":{"n":1,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-25"},"櫻井丈":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-25"},"山口慎吾":{"n":1,"top3":0,"wins":0,"agari":12.2,"last":"2026-11-25"},"中村賢二":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-25"},"薮謙治":{"n":1,"top3":1,"wins":0,"agari":12.2,"last":"2026-11-25"},"細沼健治":{"n":1,"top3":0,"wins":0,"agari":13,"last":"2026-11-25"},"田口守":{"n":1,"top3":1,"wins":1,"agari":12.3,"last":"2026-11-25"}},"loops":72,"metaRuns":[{"at":"2026-11-27T22:09:28.361Z","races":72,"folds":5,"priorCV":2.7756,"cv":[{"lam":0.003,"cv":4.1649},{"lam":0.01,"cv":3.9531},{"lam":0.03,"cv":3.6063},{"lam":0.1,"cv":2.7891},{"lam":0.3,"cv":2.7592},{"lam":1,"cv":2.7681},{"lam":3,"cv":2.772}],"chosen":0.3,"adopted":true,"before":2.7568,"after":2.7361,"iterations":27,"a":{"堅め":{"n":29,"best":0.6,"a":0.661,"prof":-2920,"hits":14},"標準":{"n":33,"best":0.4,"a":0.457,"prof":-4780,"hits":11},"荒れ":{"n":10,"best":0.1,"a":0.267,"prof":-2800,"hits":0}}}]}</script>
+<script>
+// 競輪予想 Ver.3 中核：画面なし・通信なしで動く（予想・照合・学習・メタループ）
+const K=(()=>{
+"use strict";
+const VERSION="3.12.0";
+const normal=s=>String(s??"").normalize("NFKC").replace(/\r/g,"");
+const keyOf=a=>[...a].map(Number).sort((x,y)=>x-y).join("-");
+const C3=n=>n*(n-1)*(n-2)/6;
+const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
+const sum=a=>a.reduce((s,x)=>s+x,0);
+const lse=a=>{let m=-Infinity;for(const x of a)if(x>m)m=x;let s=0;for(const x of a)s+=Math.exp(x-m);return m+Math.log(s)};
+const sig=x=>1/(1+Math.exp(-x));
+const logit=p=>Math.log(p/(1-p));
+const r2=(x,d=2)=>Math.round(x*10**d)/10**d;
+const clone=o=>JSON.parse(JSON.stringify(o));
+const nameKey=s=>normal(s).replace(/\s/gu,"");
+
+/* ---------- 競輪場 ---------- */
+const VENUES="函館 青森 いわき平 弥彦 前橋 取手 宇都宮 大宮 西武園 京王閣 立川 松戸 千葉 TIPSTARドーム千葉 川崎 平塚 小田原 伊東温泉 伊東 静岡 名古屋 岐阜 大垣 豊橋 富山 松阪 四日市 福井 奈良 向日町 京都向日町 和歌山 岸和田 玉野 広島 防府 高松 小松島 高知 松山 小倉 久留米 武雄 佐世保 別府 熊本".split(" ").sort((a,b)=>b.length-a.length);
+const venueRe=new RegExp("(?:^|[\\s>【（(｜|])("+VENUES.join("|")+")(?=競輪|[\\s】）)｜|]|$)","u");
+const venueHallRe=new RegExp("^("+VENUES.join("|")+")競輪場","u");
+const canonVenue=v=>({"伊東":"伊東温泉","向日町":"京都向日町","TIPSTARドーム千葉":"千葉"}[v]??v);
+const BANK={"前橋":335,"宇都宮":500,"大宮":500,"松戸":333,"千葉":250,"小田原":333,"伊東温泉":333,"富山":333,"奈良":333,"防府":333,"高知":500};
+const INDOOR=["前橋","小倉","千葉"];
+const bankOf=v=>v?(BANK[v]??400):null;
+const dateRe=/(\d{4})[年/.-]\s*(\d{1,2})[月/.-]\s*(\d{1,2})日?/u;
+const raceRe=/(?<!\d)(?:第\s*)?(1[0-2]|0?[1-9])\s*(?:R\b|レース)/giu;
+const dk=m=>m[1]+"-"+String(m[2]).padStart(2,"0")+"-"+String(m[3]).padStart(2,"0");
+const GRADES=["GP","G1","G2","G3","F1","F2"];
+const gradeNorm=g=>({GIII:"G3",GII:"G2",GI:"G1",FII:"F2",FI:"F1"}[g]??g);
+const gradeRe=/(?:^|[^A-Za-z0-9])(GP|G(?:III|II|I|[123])|F(?:II|I|[12]))(?![A-Za-z0-9])/u;
+
+function identity(text){
+  const lines=normal(text).split("\n").map(l=>l.trim()).filter(Boolean);
+  const found=new Map();
+  for(const line of lines){
+    if(line.length>200)continue;
+    const d=line.match(dateRe), v=line.match(venueRe), rs=[...line.matchAll(raceRe)];
+    if(d&&v&&rs.length===1){
+      const id=dk(d)+" "+canonVenue(v[1])+" "+Number(rs[0][1])+"R";
+      found.set(id,(found.get(id)||0)+1);
+    }
+  }
+  if(!found.size){
+    const v=lines.map(l=>l.match(venueHallRe)).find(Boolean);
+    const r=lines.map(l=>l.match(/^(1[0-2]|0?[1-9])\s*R\s*[ASL]級/u)).find(Boolean);
+    const d=lines.map(l=>l.match(/払戻金\s*(\d{4})[/年.-](\d{1,2})[/月.-](\d{1,2})/u)).find(Boolean);
+    if(v&&r&&d)found.set(dk(d)+" "+canonVenue(v[1])+" "+Number(r[1])+"R",1);
+  }
+  if(!found.size)return null;
+  const id=[...found.entries()].sort((a,b)=>b[1]-a[1])[0][0];
+  const [date,venue,race]=id.split(" ");
+  return {id,date,venue,raceNo:Number(race.slice(0,-1))};
+}
+function gradeOf(text){
+  const lines=normal(text).split("\n");
+  const head=lines.filter(l=>dateRe.test(l)||venueHallRe.test(l.trim()));
+  for(const l of [...head,...lines]){const m=l.match(gradeRe);if(m)return gradeNorm(m[1]);}
+  return null;
+}
+
+/* ---------- 出走表 ---------- */
+const MARKS={"◎":5,"○":4,"〇":4,"▲":3,"△":2,"×":1,"注":1};
+const CLS={S1:6,S2:5,A1:4,A2:3,A3:2,L1:4};
+function parseRiders(text){
+  const riders=new Map(), warn=[];
+  const score=/^\d{2,3}\.\d{1,2}$/, age=/^\d{2}歳?$/;
+  const num=x=>x!=null&&/^\d+(?:\.\d+)?%?$/.test(x)?Number(String(x).replace("%","")):null;
+  for(const line of normal(text).split("\n")){
+    const row=line.trim().split(/[\t |]+/).filter(Boolean);
+    const nameAt=row.findIndex((x,i)=>!(i===0&&x in MARKS)&&/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(x));
+    if(nameAt<1||nameAt>4)continue;
+    const nums=row.slice(0,nameAt).filter(x=>/^[1-9]$/.test(x));
+    if(!nums.length||nums.length>2)continue;
+    const id=+nums.at(-1);
+    const gearAt=row.findIndex((x,i)=>i>nameAt&&/^[1-5]\.\d{2}$/.test(x)&&/^(?:逃|両|追)$/.test(row[i-1]));
+    const scoreAt=gearAt>=0&&/^\d{1,3}\.\d{1,2}$/.test(row[gearAt+1]??"")?gearAt+1:row.findIndex((x,i)=>i>nameAt&&score.test(x)&&+x>=35&&+x<=135);
+    if(scoreAt<0)continue;
+    const prev=row.slice(nameAt,scoreAt);
+    const ageI=prev.findIndex((x,i)=>i>0&&age.test(x)&&+x.replace("歳","")>=16&&+x.replace("歳","")<=70);
+    if(ageI<0&&!prev.some(x=>/^[ASL][123]$/.test(x))&&prev.length>3)continue;
+    const f=row.slice(scoreAt+1);
+    const stats=f.length>=7&&f.slice(0,4).every(x=>/^\d+$/.test(x));
+    const kim=stats&&f.length>=13&&f.slice(7,13).every(x=>/^\d+$/.test(x));
+    const mark=row[0] in MARKS?row[0]:null;
+    const r={id,name:prev.slice(0,ageI>0?ageI:1).join(""),age:ageI>0?+prev[ageI].replace("歳",""):null,
+      pref:ageI>0?(prev[ageI+1]??null):null,cls:prev.find(x=>/^[ASL][123]$/.test(x))??null,
+      style:prev.find(x=>/^(?:逃|両|追)$/.test(x))??null,gear:num(prev.find(x=>/^[1-5]\.\d{2}$/.test(x))),
+      score:+row[scoreAt]||null,noScore:!(+row[scoreAt]),mark,
+      starts:stats?f.slice(0,4).map(Number):null,win:stats?num(f[4]):null,quin:stats?num(f[5]):null,place:stats?num(f[6]):null,
+      kim:kim?{逃:+f[7],捲:+f[8],差:+f[9],マ:+f[10]}:null,S:kim?+f[11]:null,B:kim?+f[12]:null};
+    if(r.win!=null&&r.win>100)r.win=null;
+    if(riders.has(id))warn.push(id+"番が重複しています（後の行を採用）");
+    riders.set(id,r);
+  }
+  return {riders:[...riders.values()].sort((a,b)=>a.id-b.id),warn};
+}
+function parseLines(text,ids){
+  const rows=normal(text).split("\n");
+  const at=rows.findIndex(l=>/(?:周回予想|ライン予想|並び予想)/u.test(l));
+  if(at<0)return {lines:[],note:"並び（周回予想）が見つかりません"};
+  const same=rows[at].replace(/^.*?(?:周回予想|ライン予想|並び予想)[\s:|]*/u,"");
+  const body=[];
+  if(same.trim())body.push(same);
+  for(const l of rows.slice(at+1)){
+    if(!l.trim()){if(body.length)break;else continue;}
+    if(/^[1-9\s=←→–−/・|,.-]+$/u.test(l)){body.push(l);if(body.length>=3)break;}else break;
+  }
+  const raw=body.join("\t\t").replace(/\s+$/u,"");
+  const groups=raw.split(/\s*[/・|,]\s*|\t\t+| {2,}/u).map(g=>g.trim()).filter(Boolean);
+  const lines=groups.map(g=>(g.match(/[1-9]/g)??[]).map(Number)).filter(l=>l.length);
+  const flat=lines.flat();
+  if(flat.length!==ids.length||new Set(flat).size!==ids.length||flat.some(x=>!ids.includes(x)))
+    return {lines:[],note:"並びの車番が出走表と一致しません"};
+  return {lines,note:null};
+}
+
+/* ---------- 3連複オッズ ---------- */
+const betKind=/3\s*連\s*(?:勝\s*)?複(?:式)?|三連複|三連勝複式/gu;
+const betPat=(suffix="")=>new RegExp("(?<!\\d)([1-9])\\s*[-=＝–−－]\\s*([1-9])\\s*[-=＝–−－]\\s*([1-9])(?!\\d)"+suffix,"g");
+function trioSections(raw){
+  return [...raw.matchAll(betKind)].map(m=>raw.slice(m.index+m[0].length)
+    .split(/(?:(?:^|\n)[ \t|]*単(?:[ \t|]|$)|3\s*連\s*(?:勝\s*)?単|2\s*(?:車|枠)\s*(?:連\s*)?[単複]|ワイド|払戻一覧)/u)[0]);
+}
+function matrixOdds(section,riders){
+  const h=/^\s*発売票数\s*:\s*[\d,]+\s*票[ \t]*$/mu.exec(section);
+  if(!h)return [];
+  const rows=section.slice(h.index+h[0].length).split("\n").map(x=>x.trim()).filter(Boolean);
+  const names=new Map(riders.map(r=>[r.id,r.name]));
+  const ids=[...names.keys()].sort((a,b)=>a-b), out=[];
+  const head=(row,id)=>{const m=/^([1-9])\s+(.+)$/u.exec(row??"");return !!m&&+m[1]===id&&nameKey(m[2])===names.get(id);};
+  const price=/^(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?$/u;
+  let c=0;
+  for(let a=0;a<ids.length-2;a++){
+    if(!head(rows[c++],ids[a]))return out;
+    for(let b=a+1;b<ids.length-1;b++){
+      if(!head(rows[c++],ids[b]))return out;
+      for(let d=b+1;d<ids.length;d++){
+        const m=/^([1-9])(?:[ \t]+(.+))?$/u.exec(rows[c++]??"");
+        if(!m||+m[1]!==ids[d])return out;
+        const v=m[2]??rows[c++];
+        if(/^(?:[-–—]+|発売なし|発売無し|欠場)$/u.test(v??""))continue;
+        if(!price.test(v??""))return out;
+        out.push([[ids[a],ids[b],ids[d]],Number(v.replaceAll(",",""))]);
+      }
+    }
+  }
+  return out;
+}
+function parseOdds(text,riders){
+  const raw=normal(text), ids=riders.map(r=>r.id), odds={}, warn=[];
+  for(const sec of trioSections(raw)){
+    const rows=[...sec.matchAll(betPat("[ \\t|:\\n]+(\\d[\\d,]*(?:\\.\\d+)?)(?![\\d.,-]|[ \\t]*円)"))].map(m=>[m.slice(1,4).map(Number),Number(m[4].replaceAll(",",""))]);
+    for(const [nums,v] of [...rows,...matrixOdds(sec,riders)]){
+      if(new Set(nums).size!==3||nums.some(x=>!ids.includes(x))||!(v>=1))continue;
+      const k=keyOf(nums);
+      if(k in odds&&odds[k]!==v)warn.push(k+"に異なるオッズ（後の値を採用）");
+      odds[k]=v;
+    }
+  }
+  return {odds,warn};
+}
+function envOf(text){
+  const t=normal(text);
+  const w=t.match(/(晴|曇|雨|雪|霧)(?:れ|り)?[^\n]{0,8}?風速\s*(\d+(?:\.\d+)?)\s*m/u);
+  const wind=t.match(/風速[ \t:]*(\d+(?:\.\d+)?)[ \t]*m/u);
+  const weather=w?.[1]??t.match(/天候[ \t:]*\n?[ \t]*(晴|曇|雨|雪|霧)/u)?.[1]??null;
+  return {weather,wind:w?+w[2]:wind?+wind[1]:null};
+}
+
+/* レースの貼り付け（出走表＋オッズ）を読む */
+function parseEntry(text){
+  const {riders,warn}=parseRiders(text);
+  const ids=riders.map(r=>r.id);
+  if(ids.length<5||ids.length>9)throw Error("5〜9車の出走表を読み取れませんでした（読めた車数 "+ids.length+"）。チャリロトの出走表詳細とオッズ表詳細をまとめて貼り付けてください。");
+  const ln=parseLines(text,ids), od=parseOdds(text,riders), env=envOf(text), idt=identity(text);
+  return {riders,ids,lines:ln.lines,odds:od.odds,env,identity:idt,grade:gradeOf(text),
+    girls:riders.length>0&&riders.every(r=>r.cls&&r.cls.startsWith("L"))||/ガールズ/u.test(normal(text)),
+    notes:[...warn,...od.warn,...(ln.note?[ln.note]:[])]};
+}
+
+/* ---------- 結果表 ---------- */
+function resultFinish(raw,ids){
+  const rows=raw.split("\n"), fin={};
+  const h=rows.findIndex(r=>/(?:^|[\s|])着(?:順)?[\s|].*車番.*選手名/u.test(r));
+  if(h<0)return fin;
+  const body=rows.slice(h+1).map(r=>r.trim()).filter(r=>r&&!/^[-| ]+$/.test(r));
+  const st=/^(?:[1-9](?:着|同着)?|欠(?:場)?|失(?:格)?|落(?:車|棄)?|棄権|未完走)$/u;
+  for(let i=0;i<body.length;i++){
+    let row=body[i], it=row.split(/[\t ]+/u);
+    if(!st.test(it[0]))break;
+    if(it.length===1&&body[i+1]){row+="\t"+body[++i];it=row.split(/[\t ]+/u);}
+    const id=Number(it[1]);
+    if(!ids.includes(id))continue;
+    const rank=/^[1-9]/u.test(it[0])?Number(it[0][0]):null;
+    const agari=it.slice(3).find(x=>/^1\d\.\d$/.test(x));
+    fin[id]={rank,status:it[0],method:row.match(/逃げ|捲(?:く)?り|差し|マーク/u)?.[0]?.replace("捲くり","捲り")??null,agari:agari?+agari:null,hb:/(?:^|\s)(?:H|B|HB)(?:\s|$)/u.test(row.slice(row.indexOf(it[2]||"")))};
+  }
+  return fin;
+}
+function parseResult(text,ids){
+  const raw=normal(text);
+  const voided=/レース(?:は|が)?[ \t]*(?:中止|不成立)|全(?:車券|組番)(?:を|の)?[ \t]*返還/u.test(raw);
+  const pays=new Map();
+  for(const sec of trioSections(raw))
+    for(const m of sec.matchAll(betPat("[ \\t\\n:|]+(\\d[\\d,]*)[ \\t]*円"))){
+      const nums=m.slice(1,4).map(Number);
+      if(new Set(nums).size!==3||nums.some(x=>!ids.includes(x)))continue;
+      pays.set(keyOf(nums),+m[4].replaceAll(",",""));
+    }
+  const finish=resultFinish(raw,ids);
+  let winners=[...pays].map(([key,pay])=>({key,pay}));
+  let estimated=false;
+  if(!winners.length&&!voided){
+    const top=Object.entries(finish).filter(([,v])=>v.rank&&v.rank<=3).map(([k])=>+k);
+    if(top.length===3){winners=[{key:keyOf(top),pay:null}];estimated=true;}
+  }
+  return {winners,finish,voided,estimated,env:envOf(raw),identity:identity(raw)};
+}
+
+/* ---------- 36エンジン ---------- */
+const ENGINES=[
+ ["E01","競走得点","選手","①出走表"],["E02","級班","選手","①出走表"],["E03","勝率","選手","①出走表"],
+ ["E04","2連対率","選手","①出走表"],["E05","3連対率","選手","①出走表"],["E06","着順実績","選手","②派生"],
+ ["E07","逃げ","選手","②派生"],["E08","捲り","選手","②派生"],["E09","差し","選手","②派生"],["E10","マーク","選手","②派生"],
+ ["E11","スタート取り","選手","②派生"],["E12","バック先行","選手","②派生"],["E13","ギア倍数","選手","①出走表"],["E14","年齢","選手","①出走表"],
+ ["E15","ライン総合力","並び","②派生"],["E16","ライン先頭","並び","②派生"],["E17","番手","並び","②派生"],["E18","3番手以降","並び","②派生"],
+ ["E19","単騎","並び","②派生"],["E20","ライン人数","並び","②派生"],["E21","予想印","選手","①出走表"],
+ ["E22","風×先行","環境","④外部"],["E23","雨×先行","環境","④外部"],["E24","バンク周長×脚質","環境","④外部"],
+ ["E25","選手学習","学習","③学習データ"],["E26","場別傾向","学習","③学習データ"],
+ ["E27","グレード・ガールズ・車立補正","補正","③学習データ"],["E28","市場確率（オッズ）","組合せ","①オッズ"],
+ ["E29","全数理論","組合せ","②派生"],["E30","統合（モデル×市場）","組合せ","③学習データ"],
+ ["E31","ライン内決着","組合せ","②派生"],["E32","先頭・番手セット","組合せ","②派生"],
+ ["E33","区分判定（堅め・標準・荒れ）","区分","②派生"],["E34","買い目・点数・取りガミ防止","買い目","②派生"],
+ ["E35","勝因・敗因分析","分析","③学習データ"],["E36","学習・メタループ制御","学習","③学習データ"]
+].map(([id,name,kind,src])=>({id,name,kind,src}));
+const FEAT=ENGINES.slice(0,26).map(e=>e.id);
+const W0={E01:.9,E02:.15,E03:.2,E04:.15,E05:.2,E06:.15,E07:.08,E08:.08,E09:.05,E10:0,E11:.05,E12:.08,E13:0,E14:0,
+  E15:.2,E16:.08,E17:.12,E18:0,E19:-.08,E20:.05,E21:.25,E22:-.03,E23:0,E24:.03,E25:.15,E26:.1};
+const PARAMS=[...FEAT.map(e=>"w."+e),"u1","u2","b","t"];
+function prior(){return {w:{...W0},u1:.3,u2:.2,b:logit(.05),t:0};}
+const getP=(th,p)=>p.startsWith("w.")?(th.w?.[p.slice(2)]??0):(th[p]??0);
+function setP(th,p,v){if(p.startsWith("w.")){th.w=th.w||{};th.w[p.slice(2)]=v;}else th[p]=v;}
+const zeroT=()=>({w:{},u1:0,u2:0,b:0,t:0});
+
+/* ---------- 変数（すべて変数化） ---------- */
+const VARS_DEF=[
+ ["yen",100,"1点の金額（円）","固定"],["maxPts",3,"1レースの最大点数","固定"],["minPts",1,"1レースの最小点数（見送りなし）","固定"],
+ ["candM",8,"買い目候補の数","調整可"],["aKatame",.75,"堅めの的中重視度（0〜1）","学習"],["aStd",.55,"標準の的中重視度","学習"],["aAre",.35,"荒れの的中重視度","学習"],
+ ["eLo",2/3,"荒れ境界の理論指数（全数比の何乗）","調整可"],["eHi",1/3,"堅め境界の理論指数","調整可"],["k0",5,"区分の実績補正の事前の強さ（レース相当）","調整可"],["aK0",20,"的中重視度の補正の事前の強さ（レース相当）","調整可"],
+ ["torigami",1,"取りガミ判定：オッズ＞点数×この値","調整可"],["eta",.05,"学習率","学習"],["etaMin",.005,"学習率の下限","調整可"],["etaMax",.2,"学習率の上限","調整可"],
+ ["cap",.1,"1回で動かす上限","調整可"],["topK",2,"1レースで動かす変数の数","調整可"],["l2g",.02,"過学習防止（全体）","調整可"],["l2d",.3,"過学習防止（グループ別）","調整可"],
+ ["dRate",.5,"グループ別補正の学習割合","調整可"],["evalN",50,"自己分析で比べるレース数","調整可"],["eps",.002,"悪化とみなす差","調整可"],
+ ["missOdds",.5,"オッズ欠けの補完倍率","調整可"],["venueK0",10,"場別傾向の事前の強さ","調整可"],["riderK0",3,"選手学習の事前の強さ","調整可"],
+ ["metaTol",1e-6,"メタループの収束判定","調整可"],["cvEps",.003,"メタループで採用する最小の改善（交差検証）","調整可"]
+].map(([k,v,label,kind])=>({k,v,label,kind}));
+const defaultVars=()=>Object.fromEntries(VARS_DEF.map(d=>[d.k,d.v]));
+
+function newState(){
+  return {format:"keirin-v3-state",version:VERSION,vars:defaultVars(),theta:prior(),theta0:prior(),dG:{},dN:{},
+    kappa:{},venue:{},vglobal:{逃:0,捲:0,差:0,マ:0},rider:{},wx:{},loops:0,metaRuns:[],changes:[]};
+}
+function migrate(s){
+  const d=newState(); s=s&&typeof s==="object"?s:{};
+  for(const k of Object.keys(d))if(!(k in s))s[k]=d[k];
+  s.vars={...d.vars,...s.vars};
+  for(const p of PARAMS){if(!Number.isFinite(getP(s.theta,p)))setP(s.theta,p,getP(d.theta,p));if(!Number.isFinite(getP(s.theta0,p)))setP(s.theta0,p,getP(d.theta0,p));}
+  s.version=VERSION;
+  return s;
+}
+
+/* ---------- 特徴量（エンジンE01〜E26） ---------- */
+function gkOf(meta){return meta.girls?"ガールズ":(meta.grade||"不明");}
+function shares(r){
+  const k=r.kim, t=k?k.逃+k.捲+k.差+k.マ:0;
+  if(k&&t>0)return {逃:k.逃/t,捲:k.捲/t,差:k.差/t,マ:k.マ/t};
+  if(r.style==="逃")return {逃:1,捲:0,差:0,マ:0};
+  if(r.style==="両")return {逃:.5,捲:.5,差:0,マ:0};
+  if(r.style==="追")return {逃:0,捲:0,差:.5,マ:.5};
+  return null;
+}
+function features(race,state){
+  const {riders,lines,odds,meta}=race, ids=riders.map(r=>r.id), n=ids.length, v=state.vars;
+  const lineOf=new Map(), posOf=new Map();
+  lines.forEach((l,li)=>l.forEach((id,p)=>{lineOf.set(id,li);posOf.set(id,p);}));
+  const hasLines=lines.length>0;
+  const meanScore=sum(riders.map(r=>r.score||0))/n;
+  const raw={};
+  const col=f=>riders.map(r=>{const x=f(r);return Number.isFinite(x)?x:null;});
+  const tot=r=>r.starts?sum(r.starts):0;
+  const sh=riders.map(shares);
+  const front=r=>{const li=lineOf.get(r.id);return hasLines&&lines[li].length>=2&&posOf.get(r.id)===0?1:0;};
+  const frontness=riders.map((r,i)=>sh[i]?sh[i].逃+(front(r)?.5:0):null);
+  raw.E01=col(r=>r.score);
+  raw.E02=col(r=>CLS[r.cls]);
+  raw.E03=col(r=>r.win);raw.E04=col(r=>r.quin);raw.E05=col(r=>r.place);
+  raw.E06=col(r=>tot(r)>0?(3*r.starts[0]+2*r.starts[1]+r.starts[2])/tot(r):null);
+  for(const [e,m] of [["E07","逃"],["E08","捲"],["E09","差"],["E10","マ"]])raw[e]=sh.map(s=>s?s[m]:null);
+  raw.E11=col(r=>tot(r)>0&&r.S!=null?r.S/tot(r):null);
+  raw.E12=col(r=>tot(r)>0&&r.B!=null?r.B/tot(r):null);
+  raw.E13=col(r=>r.gear);
+  raw.E14=col(r=>r.age!=null?-r.age:null);
+  raw.E15=riders.map(r=>hasLines?sum(lines[lineOf.get(r.id)].map(id=>(riders.find(x=>x.id===id).score||meanScore)-meanScore)):null);
+  raw.E16=riders.map(r=>hasLines?front(r):null);
+  raw.E17=riders.map(r=>hasLines?(lines[lineOf.get(r.id)].length>=2&&posOf.get(r.id)===1?1:0):null);
+  raw.E18=riders.map(r=>hasLines?(posOf.get(r.id)>=2?1:0):null);
+  raw.E19=riders.map(r=>hasLines?(lines[lineOf.get(r.id)].length===1?1:0):null);
+  raw.E20=riders.map(r=>hasLines?lines[lineOf.get(r.id)].length:null);
+  raw.E21=riders.some(r=>r.mark)?riders.map(r=>MARKS[r.mark]??0):riders.map(()=>null);
+  const wind=meta.indoor?0:meta.wind, rain=meta.weather?(meta.weather==="雨"||meta.weather==="雪"?1:0):null;
+  raw.E22=frontness.map(f=>f!=null&&wind!=null?wind*f:null);
+  raw.E23=frontness.map(f=>f!=null&&rain!=null&&!meta.indoor?rain*f:null);
+  raw.E24=sh.map(s=>s&&meta.bank?((meta.bank-400)/100)*(s.差+s.マ-s.逃-s.捲):null);
+  const p0=3/n;
+  const mem=riders.map(r=>state.rider[nameKey(r.name)]);
+  raw.E25=mem.some(m=>m&&m.n>0)?mem.map(m=>((m?.top3||0)+v.riderK0*p0)/((m?.n||0)+v.riderK0)):riders.map(()=>null);
+  const vs=state.venue[meta.venue], vg=state.vglobal, gN=sum(Object.values(vg));
+  if(vs&&sum(Object.values(vs))>0){
+    const N=sum(Object.values(vs));
+    const rate=m=>((vs[m]||0)+v.venueK0*((vg[m]+1)/(gN+4)))/(N+v.venueK0);
+    const g=m=>(vg[m]+1)/(gN+4);
+    raw.E26=sh.map(s=>s?sum(["逃","捲","差","マ"].map(m=>s[m]*(rate(m)-g(m))))*10:null);
+  }else raw.E26=riders.map(()=>null);
+  const z={}, act={};
+  for(const e of FEAT){
+    const x=raw[e], pres=x.filter(a=>a!=null);
+    let ok=pres.length>=2;
+    const mu=ok?sum(pres)/pres.length:0, sd=ok?Math.sqrt(sum(pres.map(a=>(a-mu)**2))/pres.length):0;
+    ok=ok&&sd>1e-9;
+    act[e]=ok?pres.length:0;
+    z[e]=x.map(a=>ok&&a!=null?clamp((a-mu)/sd,-3,3):0);
+  }
+  riders.forEach((r,i)=>{if(r.noScore&&act.E01)z.E01[i]=-1.5;});
+  // 組合せ（全数）
+  const combos=[];
+  for(let a=0;a<n;a++)for(let b=a+1;b<n;b++)for(let c=b+1;c<n;c++)combos.push([a,b,c]);
+  const keys=combos.map(t=>keyOf(t.map(i=>ids[i])));
+  const same=(i,j)=>hasLines&&lineOf.get(ids[i])===lineOf.get(ids[j]);
+  const g1=combos.map(([a,b,c])=>(same(a,b)?1:0)+(same(a,c)?1:0)+(same(b,c)?1:0));
+  const g2=combos.map(t=>hasLines&&lines.some(l=>l.length>=2&&t.map(i=>ids[i]).includes(l[0])&&t.map(i=>ids[i]).includes(l[1]))?1:0);
+  const nOdds=keys.filter(k=>odds[k]>=1).length;
+  let lqm=null;
+  if(nOdds>=Math.min(3,keys.length)){
+    const inv=keys.map(k=>odds[k]>=1?1/odds[k]:null);
+    const mn=Math.min(...inv.filter(x=>x!=null));
+    const filled=inv.map(x=>x??mn*v.missOdds);
+    const s=sum(filled);
+    lqm=filled.map(x=>Math.log(x/s));
+  }
+  return {ids,n,z,act,combos,keys,g1,g2,lqm,nOdds,gk:gkOf(meta),hasLines};
+}
+
+/* ---------- 確率（E27〜E30） ---------- */
+function effTheta(state,F){
+  const th=clone(state.theta), dg=state.dG[F.gk], dn=state.dN[F.n];
+  for(const p of PARAMS)setP(th,p,getP(th,p)+(dg?getP(dg,p):0)+(dn?getP(dn,p):0));
+  return th;
+}
+function dist(F,th){
+  const n=F.n, s=new Array(n).fill(0);
+  for(const e of FEAT){const w=th.w[e]||0;if(!w)continue;const z=F.z[e];for(let i=0;i<n;i++)s[i]+=w*z[i];}
+  const mx=Math.max(...s), lam=s.map(x=>Math.exp(x-mx)), L=sum(lam);
+  const lk=F.combos.map(([a,b,c],j)=>{
+    const A=lam[a],B=lam[b],Cc=lam[c];
+    const pl=A/L*(B/(L-A)*Cc/(L-A-B)+Cc/(L-A)*B/(L-A-Cc))+B/L*(A/(L-B)*Cc/(L-B-A)+Cc/(L-B)*A/(L-B-Cc))+Cc/L*(A/(L-Cc)*B/(L-Cc-A)+B/(L-Cc)*A/(L-Cc-B));
+    return Math.log(Math.max(pl,1e-300))+th.u1*F.g1[j]+th.u2*F.g2[j];
+  });
+  const Z=lse(lk); for(let j=0;j<lk.length;j++)lk[j]-=Z;
+  const beta=F.lqm?sig(th.b):1, tau=Math.exp(clamp(th.t,-2,2));
+  const zz=lk.map((x,j)=>tau*(beta*x+(1-beta)*(F.lqm?F.lqm[j]:0)));
+  const Z2=lse(zz);
+  return {p:zz.map(x=>Math.exp(x-Z2)),lp:zz.map(x=>x-Z2),lk,s,beta,tau};
+}
+function lossOf(F,th,key){const j=F.keys.indexOf(key);if(j<0)return null;return -dist(F,th).lp[j];}
+
+/* ---------- 区分（E33）：全数と割合 ---------- */
+function kappaOf(state,gk,n){
+  const v=state.vars, K=state.kappa;
+  const est=(st,prior)=>st&&st.N>0?(st.H+v.k0*(st.S/st.N)*prior)/(st.S+v.k0*(st.S/st.N)):prior;
+  const g=est(K["全体"],1), cn=est(K["n"+n],g);
+  return est(K[gk+"|"+n],cn);
+}
+function classify(state,F,p){
+  const v=state.vars, n=F.n, base=3/C3(n);
+  const src=F.lqm?F.lqm.map(Math.exp):p;
+  const top=[...src].sort((a,b)=>b-a);
+  const P3=sum(top.slice(0,3)), kap=kappaOf(state,F.gk,n), P3c=clamp(P3*kap,0,1);
+  const Tlo=base**v.eLo, Thi=base**v.eHi;
+  const cat=P3c>=Thi?"堅め":P3c<Tlo?"荒れ":"標準";
+  return {cat,P3,P3c,kappa:kap,Tlo,Thi,base,src:F.lqm?"オッズ":"モデル"};
+}
+
+/* ---------- 買い目（E34）：1〜3点・取りガミなし ---------- */
+function choose(state,F,d,race,cat,aOverride){
+  const v=state.vars, a=aOverride??(cat==="堅め"?v.aKatame:cat==="荒れ"?v.aAre:v.aStd);
+  const idx=d.p.map((p,j)=>j).sort((x,y)=>d.p[y]-d.p[x]).slice(0,Math.max(3,v.candM));
+  const odds=race.odds, anyOdds=F.nOdds>0;
+  let best=null;
+  const ok=(j,k)=>{const o=odds[F.keys[j]];return anyOdds?(o>=1&&o>k*v.torigami):true;};
+  const consider=S=>{
+    const k=S.length, ph=sum(S.map(j=>d.p[j]));
+    const ret=anyOdds?sum(S.map(j=>d.p[j]*odds[F.keys[j]]))/k:1;
+    const U=a*Math.log(ph)+(1-a)*Math.log(Math.max(ret,1e-9));
+    if(!best||U>best.U+1e-12)best={S,U,ph,ret,k};
+  };
+  for(let k=v.minPts;k<=v.maxPts;k++){
+    const c=idx.filter(j=>ok(j,k));
+    if(c.length<k)continue;
+    if(k===1)for(const x of c)consider([x]);
+    if(k===2)for(let i=0;i<c.length;i++)for(let j=i+1;j<c.length;j++)consider([c[i],c[j]]);
+    if(k===3)for(let i=0;i<c.length;i++)for(let j=i+1;j<c.length;j++)for(let l=j+1;l<c.length;l++)consider([c[i],c[j],c[l]]);
+  }
+  if(!best)best={S:[idx[0]],U:0,ph:d.p[idx[0]],ret:(odds[F.keys[idx[0]]]||0)*d.p[idx[0]],k:1,forced:true};
+  const bets=best.S.sort((x,y)=>d.p[y]-d.p[x]).map(j=>({key:F.keys[j],odds:odds[F.keys[j]]??null,p:d.p[j],ev:odds[F.keys[j]]?d.p[j]*odds[F.keys[j]]:null}));
+  return {bets,phit:best.ph,roi:best.ret,k:best.k,a,forced:!!best.forced,torigamiSafe:bets.every(b=>b.odds==null||b.odds>bets.length*v.torigami)};
+}
+
+/* ---------- 予想（観察→状況判断→意思決定→実行） ---------- */
+function buildRace(parsed,metaIn,state){
+  const idt=parsed.identity||{};
+  const meta={date:metaIn.date||idt.date||"",venue:metaIn.venue||idt.venue||"",raceNo:metaIn.raceNo||idt.raceNo||null,
+    grade:metaIn.grade||parsed.grade||"不明",girls:metaIn.girls??parsed.girls,n:parsed.ids.length};
+  const wx=state.wx[meta.date+" "+meta.venue];
+  meta.weather=metaIn.weather||parsed.env.weather||wx?.weather||null;
+  const wIn=metaIn.wind!==""&&metaIn.wind!=null?Number(metaIn.wind):null;
+  meta.wind=Number.isFinite(wIn)?wIn:parsed.env.wind??wx?.wind??null;
+  meta.wxSrc=metaIn.wxSrc||(metaIn.weather||Number.isFinite(wIn)?"入力":parsed.env.weather||parsed.env.wind!=null?"出走表":wx?"同日の結果表":null);
+  meta.bank=bankOf(meta.venue);meta.indoor=INDOOR.includes(meta.venue);
+  meta.gk=gkOf(meta);
+  const id=meta.date&&meta.venue&&meta.raceNo?meta.date+" "+meta.venue+" "+meta.raceNo+"R":"未特定 "+new Date().toISOString().slice(0,16);
+  return {id,meta,riders:parsed.riders,lines:parsed.lines,odds:parsed.odds,notes:parsed.notes};
+}
+function predict(race,state){
+  const F=features(race,state), th=effTheta(state,F), d=dist(F,th);
+  const cls=classify(state,F,d.p);
+  const pick=choose(state,F,d,race,cls.cat);
+  const marg={};F.ids.forEach(id=>marg[id]=0);
+  F.keys.forEach((k,j)=>k.split("-").forEach(x=>marg[x]+=d.p[j]));
+  const rank={};F.ids.slice().sort((a,b)=>marg[b]-marg[a]).forEach((id,i)=>rank[id]=i+1);
+  const top=d.p.map((p,j)=>({key:F.keys[j],p,odds:race.odds[F.keys[j]]??null,mk:F.lqm?Math.exp(F.lqm[j]):null})).sort((a,b)=>b.p-a.p).slice(0,10);
+  const actN=FEAT.filter(e=>F.act[e]).length;
+  const contrib={};
+  F.ids.forEach((id,i)=>{contrib[id]=FEAT.map(e=>({e,c:(th.w[e]||0)*F.z[e][i]})).filter(x=>Math.abs(x.c)>1e-6).sort((a,b)=>b.c-a.c);});
+  const mRank={};
+  if(F.lqm)F.lqm.map((x,j)=>({x,j})).sort((a,b)=>b.x-a.x).forEach((o,i)=>mRank[F.keys[o.j]]=i+1);
+  const ooda={
+    観察:`${F.n}車立・オッズ${F.nOdds}/${F.keys.length}通り（全数）・並び${race.lines.length?race.lines.map(l=>l.join("")).join(" / "):"なし"}・天候${race.meta.weather??"未取得"}・風速${race.meta.wind??"未取得"}m`,
+    状況判断:`選手エンジン${actN}/26稼働・${cls.cat}（上位3組の確率${r2(cls.P3*100,1)}%→実績補正後${r2(cls.P3c*100,1)}%、境界 荒れ<${r2(cls.Tlo*100,1)}%・堅め≥${r2(cls.Thi*100,1)}%）`,
+    意思決定:`${pick.bets.length}点 ${pick.bets.map(b=>b.key).join("・")}（的中確率${r2(pick.phit*100,1)}%・期待回収率${r2(pick.roi*100,0)}%）`,
+    実行:`記録して結果待ち。結果表を貼ると照合・学習へ進む`};
+  const pdca={計画:`目標：的中確率${r2(pick.phit*100,1)}%・期待回収率${r2(pick.roi*100,0)}%・投資${pick.bets.length*state.vars.yen}円・取りガミ${pick.torigamiSafe?"なし":"あり（警告）"}`,実行:"予想を記録",評価:"結果待ち",改善:"結果待ち"};
+  return {F,pred:{at:new Date().toISOString(),cat:cls.cat,cls,bets:pick.bets,phit:pick.phit,roi:pick.roi,a:pick.a,forced:pick.forced,torigamiSafe:pick.torigamiSafe,
+    rank,marg,top,contrib,mRank,beta:d.beta,tau:d.tau,actN,act:{...F.act},ooda,pdca}};
+}
+
+/* ---------- 勝因・敗因（E35） ---------- */
+const EN=Object.fromEntries(ENGINES.map(e=>[e.id,e.name]));
+function why(list,sign){
+  const agg={};for(const x of list||[])agg[x.e]=(agg[x.e]||0)+x.c;
+  const xs=Object.entries(agg).map(([e,c])=>({e,c})).filter(x=>sign>0?x.c>0:x.c<0).sort((a,b)=>sign>0?b.c-a.c:a.c-b.c).slice(0,2);
+  return xs.length?xs.map(x=>EN[x.e]).join("・"):"目立つ根拠なし";
+}
+function analyze(race,res){
+  const P=race.pred, win=res.winners.map(w=>w.key), R=new Set((win[0]||"").split("-").map(Number));
+  const nm=id=>race.riders.find(r=>r.id===id)?.name||"";
+  const fin=res.finish||{};
+  const mr=win[0]&&P.mRank?P.mRank[win[0]]:null;
+  const bets=P.bets.map(b=>{
+    const B=b.key.split("-").map(Number), hit=win.includes(b.key);
+    const match=B.filter(x=>R.has(x)), miss=[...R].filter(x=>!B.includes(x)), wrong=B.filter(x=>!R.has(x));
+    let w,l;
+    if(hit){
+      w=`3車的中（${B.map(x=>x+"番 評価"+P.rank[x]+"位").join("、")}）。主な根拠：${why([].concat(...B.map(x=>P.contrib[x]||[])),1)}`;
+      const weak=B.reduce((a,x)=>P.rank[x]>P.rank[a]?x:a,B[0]);
+      l=P.rank[weak]>3?`${weak}番（${nm(weak)}）の評価が${P.rank[weak]}位と低く、点数配分に余地。弱く見た理由：${why(P.contrib[weak],-1)}`:"この買い目の弱点は小さい（3車とも評価上位）。他の買い目で投資が分散した";
+    }else{
+      w=match.length?`${match.map(x=>x+"番（評価"+P.rank[x]+"位・"+(fin[x]?.rank?fin[x].rank+"着":"着順不明")+"）").join("、")}は的中。根拠：${why([].concat(...match.map(x=>P.contrib[x]||[])),1)}`:"一致した車はなし";
+      const ms=miss.map(x=>`${x}番（${nm(x)}・評価${P.rank[x]}位・${fin[x]?.rank??"?"}着${fin[x]?.method?"・"+fin[x].method:""}）を外した。低く見た理由：${why(P.contrib[x],-1)}`);
+      const ws=wrong.map(x=>`${x}番（評価${P.rank[x]}位）は${fin[x]?.rank?fin[x].rank+"着":"圏外"}。重く見すぎた要素：${why(P.contrib[x],1)}`);
+      l=[...ms,...ws].join("。");
+    }
+    return {key:b.key,odds:b.odds,p:b.p,hit,win:w,loss:l};
+  });
+  const P3hit=mr!=null&&mr<=3;
+  const note=mr?`結果${win[0]}は人気${mr}番目（${race.odds[win[0]]??"?"}倍）。${P3hit?"人気上位3組で決着":"人気上位3組の外で決着"}。区分「${P.cat}」は${(P.cat==="堅め")===P3hit||P.cat==="標準"?"概ね想定内":"想定と逆"}`:"";
+  return {bets,note,P3hit};
+}
+
+/* ---------- 学習（1レース1周）とメタループ ---------- */
+/* 損失 −log p(結果) とその勾配（解析的に計算） */
+const ORD=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+function lossGrad(F,th,key){
+  const J=F.keys.indexOf(key);if(J<0)return null;
+  const n=F.n, s=new Array(n).fill(0);
+  for(const e of FEAT){const w=th.w[e]||0;if(!w)continue;const z=F.z[e];for(let i=0;i<n;i++)s[i]+=w*z[i];}
+  let mx=-Infinity;for(const x of s)if(x>mx)mx=x;
+  const lam=s.map(x=>Math.exp(x-mx)), L=sum(lam), m=F.combos.length;
+  const a=new Array(m), dl=new Array(m);
+  for(let j=0;j<m;j++){
+    const t3=F.combos[j];let PL=0;const dv=new Float64Array(n);
+    for(const o of ORD){
+      const x=t3[o[0]],y=t3[o[1]],z=t3[o[2]], d2=L-lam[x], d3=d2-lam[y];
+      const P=lam[x]/L*lam[y]/d2*lam[z]/d3;PL+=P;
+      for(let i=0;i<n;i++){let g=-lam[i]/L;if(i!==x){g-=lam[i]/d2;if(i!==y)g-=lam[i]/d3;}if(i===x||i===y||i===z)g+=1;dv[i]+=P*g;}
+    }
+    PL=Math.max(PL,1e-300);for(let i=0;i<n;i++)dv[i]/=PL;
+    dl[j]=dv;a[j]=Math.log(PL)+th.u1*F.g1[j]+th.u2*F.g2[j];
+  }
+  const Za=lse(a), lk=a.map(x=>x-Za);
+  const hasM=!!F.lqm, beta=hasM?sig(th.b):1, tIn=th.t>-2&&th.t<2, tau=Math.exp(clamp(th.t,-2,2));
+  const zz=lk.map((x,j)=>tau*(beta*x+(1-beta)*(hasM?F.lqm[j]:0))), Z=lse(zz);
+  const p=zz.map(x=>Math.exp(x-Z)), Lv=-(zz[J]-Z);
+  const r=p.map((x,j)=>x-(j===J?1:0));
+  const ds=new Float64Array(n);let gu1=0,gu2=0,gb=0,gt=0;
+  for(let j=0;j<m;j++){const dA=tau*beta*r[j];if(dA){for(let i=0;i<n;i++)ds[i]+=dA*dl[j][i];gu1+=dA*F.g1[j];gu2+=dA*F.g2[j];}
+    if(hasM)gb+=r[j]*tau*(lk[j]-F.lqm[j]);gt+=r[j]*zz[j];}
+  const g={};
+  for(const e of FEAT){let v=0;const z=F.z[e];for(let i=0;i<n;i++)v+=ds[i]*z[i];g["w."+e]=v;}
+  g.u1=gu1;g.u2=gu2;g.b=hasM?gb*beta*(1-beta):0;g.t=tIn?gt:0;
+  return {L:Lv,g};
+}
+function evalLoss(state,races){
+  let L=0,n=0;
+  for(const r of races){const l=lossOf(r.F,effTheta(state,r.F),r.result.winners[0].key);if(l!=null){L+=l;n++;}}
+  return n?L/n:null;
+}
+const settledOf=races=>races.filter(r=>r.F&&r.result&&!r.result.voided&&r.result.winners?.length&&!r.legacy);
+const PLABEL=p=>p.startsWith("w.")?p.slice(2)+" "+EN[p.slice(2)]:{u1:"E31 ライン内決着",u2:"E32 先頭・番手セット",b:"E30 モデルの比率",t:"E30 市場の鋭さ"}[p];
+function learnOne(state,race,all){
+  const v=state.vars, F=race.F, key=race.result.winners[0].key;
+  if(!F||F.keys.indexOf(key)<0)return {skipped:"学習対象外（組番が出走表と一致しません）"};
+  const before=clone(state);
+  const dg=state.dG[F.gk]||(state.dG[F.gk]=zeroT()), dn=state.dN[F.n]||(state.dN[F.n]=zeroT());
+  const g=lossGrad(F,effTheta(state,F),key).g;
+  const prop=PARAMS.map(p=>{
+    const reg=v.l2g*(getP(state.theta,p)-getP(state.theta0,p));
+    return {p,d:clamp(-v.eta*(g[p]+reg),-v.cap,v.cap),g:g[p]};
+  }).filter(x=>Math.abs(x.g)>1e-7).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
+  const chosen=prop.slice(0,v.topK);
+  for(const c of chosen){
+    setP(state.theta,c.p,getP(state.theta,c.p)+c.d);
+    for(const D of [dg,dn]){const x=getP(D,c.p);setP(D,c.p,x+clamp(-v.eta*v.dRate*(c.g+v.l2d*x),-v.cap,v.cap));}
+  }
+  const pool=settledOf(all).slice(-v.evalN);
+  const Lb=evalLoss(before,pool), La=evalLoss(state,pool);
+  const worse=Lb!=null&&La!=null&&La>Lb+v.eps;
+  if(worse){
+    const keepVars={...state.vars};
+    Object.assign(state,clone(before));state.vars={...keepVars,eta:Math.max(v.etaMin,v.eta*.5)};
+  }else state.vars.eta=Math.min(v.etaMax,v.eta*1.05);
+  state.loops=(state.loops||0)+1;
+  return {kept:!worse,Lb,La,eta:state.vars.eta,changes:chosen.map(c=>({p:c.p,label:PLABEL(c.p),d:r2(c.d,4)}))};
+}
+/* 照合時の記録更新（κ・場別・選手・天候） */
+function absorb(state,race,res){
+  const F=race.F, key=res.winners[0]?.key;
+  if(F&&F.lqm&&key){
+    const src=F.lqm.map(Math.exp), order=src.map((p,j)=>j).sort((a,b)=>src[b]-src[a]);
+    const P3=sum(order.slice(0,3).map(j=>src[j])), H=order.slice(0,3).some(j=>F.keys[j]===key)?1:0;
+    for(const k of ["全体","n"+F.n,F.gk+"|"+F.n]){const s=state.kappa[k]||(state.kappa[k]={H:0,S:0,N:0});s.H+=H;s.S+=P3;s.N+=1;}
+  }
+  const firstId=Object.entries(res.finish||{}).find(([,f])=>f.rank===1)?.[0];
+  const m=firstId&&res.finish[firstId].method;
+  const mk={"逃げ":"逃","捲り":"捲","差し":"差","マーク":"マ"}[m];
+  if(mk&&race.meta.venue){const vs=state.venue[race.meta.venue]||(state.venue[race.meta.venue]={逃:0,捲:0,差:0,マ:0});vs[mk]++;state.vglobal[mk]++;}
+  for(const r of race.riders){
+    const f=res.finish?.[r.id];if(!f)continue;
+    const k=nameKey(r.name), s=state.rider[k]||(state.rider[k]={n:0,top3:0,wins:0});
+    s.n++;if(f.rank&&f.rank<=3)s.top3++;if(f.rank===1)s.wins++;if(f.agari)s.agari=f.agari;s.last=race.meta.date;
+  }
+  if(res.env&&(res.env.weather||res.env.wind!=null)&&race.meta.date&&race.meta.venue)state.wx[race.meta.date+" "+race.meta.venue]={weather:res.env.weather,wind:res.env.wind,at:race.id};
+}
+function settle(race,res,state,all){
+  const v=state.vars, P=race.pred, yen=v.yen;
+  const stake=P.bets.length*yen;
+  if(res.voided){race.result=res;race.settle={at:new Date().toISOString(),voided:true,stake,ret:stake,profit:0,hit:false,bets:[]};return race;}
+  const wins=res.winners;
+  let ret=0;
+  for(const b of P.bets){const w=wins.find(x=>x.key===b.key);if(w)ret+=(w.pay??Math.round((b.odds||0)*yen));}
+  const an=analyze(race,res);
+  race.result=res;
+  const F=race.F;
+  absorb(state,race,res);
+  const L=learnOne(state,race,all);
+  const lossNow=F&&wins[0]?lossOf(F,effTheta(state,F),wins[0].key):null;
+  const inact=FEAT.filter(e=>!P.act[e]).map(e=>e+" "+EN[e]);
+  const inc=(L.changes||[]).filter(c=>c.d>0).map(c=>c.label+" +"+c.d), dec=(L.changes||[]).filter(c=>c.d<0).map(c=>c.label+" "+c.d);
+  const smallW=FEAT.filter(e=>Math.abs(state.theta.w[e]||0)<.005&&Math.abs(W0[e])<.005).map(e=>e+" "+EN[e]);
+  const pHit=sum(P.bets.map(b=>b.p));
+  race.settle={at:new Date().toISOString(),hit:ret>0,stake,ret,profit:ret-stake,bets:an.bets,note:an.note,P3hit:an.P3hit,estimated:res.estimated,
+    learn:{kept:L.kept,Lb:L.Lb,La:L.La,eta:L.eta,changes:L.changes||[],skipped:L.skipped||null},
+    pdca:{...P.pdca,実行:`${P.bets.length}点 ${stake}円`,評価:`${ret>0?"的中":"不的中"}（予想した的中確率${r2(pHit*100,1)}%）・払戻${ret}円・収支${ret-stake>=0?"+":""}${ret-stake}円`,
+      改善:L.skipped?L.skipped:L.kept?`変数${(L.changes||[]).length}個を更新（${(L.changes||[]).map(c=>c.label+(c.d>0?" +":" ")+c.d).join("、")||"変更なし"}）`:`更新すると直近${v.evalN}レースの成績が悪化するため巻き戻し・学習率を下げた`},
+    A:{改善:(L.changes||[]).map(c=>c.label).join("、")||"なし",改良:`学習率→${r2(L.eta,4)}`,実装:L.kept?"反映":"保留",自己分析:L.Lb!=null?`直近${Math.min(v.evalN,settledOf(all).length)}レースの損失 ${r2(L.Lb,4)}→${r2(L.La,4)}`:"比較対象なし",再実装:L.kept?"維持":"巻き戻し",ループ:`通算${state.loops}周`},
+    B:{必要なもの:inact.length?inact.slice(0,6).join("、")+(inact.length>6?" ほか":""):"不足なし",増やすべきもの:inc.join("、")||"なし",直すべきもの:(race.notes||[]).join("、")||(L.kept?"なし":"今回の更新（巻き戻し済み）"),
+      調整すべきもの:dec.join("、")||"なし",削除すべきもの:smallW.length?smallW.join("、")+"（重み0のまま。削除せず待機）":"なし",ループ:`通算${state.loops}周`},
+    lossNow};
+  state.changes=[...(state.changes||[]),{at:race.settle.at,race:race.id,kept:L.kept,changes:L.changes||[]}].slice(-200);
+  return race;
+}
+/* メタループ：全レースで変数を最適化。強さ（過学習防止）は交差検証で決める（メタループのメタループ） */
+function objective(state,races,l2g,l2d){
+  let J=0,n=0;
+  for(const r of races){const l=lossOf(r.F,effTheta(state,r.F),r.result.winners[0].key);if(l!=null){J+=l;n++;}}
+  if(!n)return null;
+  J/=n;
+  for(const p of PARAMS)J+=l2g/2*(getP(state.theta,p)-getP(state.theta0,p))**2;
+  for(const D of [...Object.values(state.dG),...Object.values(state.dN)])for(const p of PARAMS)J+=l2d/2*getP(D,p)**2;
+  return J;
+}
+function gradAll(state,races,l2g,l2d){
+  const G={theta:{},dG:{},dN:{}};const add=(o,p,v)=>{o[p]=(o[p]||0)+v;};
+  const R=races.length;
+  for(const r of races){
+    const out=lossGrad(r.F,effTheta(state,r.F),r.result.winners[0].key);if(!out)continue;
+    const gg=G.dG[r.F.gk]||(G.dG[r.F.gk]={}), gn=G.dN[r.F.n]||(G.dN[r.F.n]={});
+    for(const p of PARAMS){const v=out.g[p]/R;add(G.theta,p,v);add(gg,p,v);add(gn,p,v);}
+  }
+  for(const p of PARAMS)add(G.theta,p,l2g*(getP(state.theta,p)-getP(state.theta0,p)));
+  for(const k of ["dG","dN"])for(const g in G[k]){const D=state[k][g]||(state[k][g]=zeroT());for(const p of PARAMS)add(G[k][g],p,l2d*getP(D,p));}
+  return G;
+}
+function fit(state,races,l2g,l2d,maxIt,tol){
+  let J=objective(state,races,l2g,l2d), step=.5, it=0;
+  for(;it<maxIt;it++){
+    const G=gradAll(state,races,l2g,l2d);
+    const back=clone({theta:state.theta,dG:state.dG,dN:state.dN});
+    let ok=false;
+    for(let t=0;t<14;t++){
+      for(const p of PARAMS)setP(state.theta,p,getP(state.theta,p)-step*G.theta[p]);
+      for(const k of ["dG","dN"])for(const g in G[k])for(const p of PARAMS)setP(state[k][g],p,getP(state[k][g],p)-step*G[k][g][p]);
+      const J2=objective(state,races,l2g,l2d);
+      if(J2<J){const imp=J-J2;J=J2;ok=true;step=Math.min(step*1.4,20);if(imp<tol)return {J,it:it+1};break;}
+      const b=clone(back);state.theta=b.theta;state.dG=b.dG;state.dN=b.dN;step*=.5;
+    }
+    if(!ok)return {J,it:it+1};
+  }
+  return {J,it};
+}
+const LADDER=[.003,.01,.03,.1,.3,1,3];
+function* metaLoop(state,racesAll){
+  const races=settledOf(racesAll), v=state.vars;
+  if(races.length<4){yield {phase:"終了",done:true,msg:"照合済みのレースが4レース以上になると実行できます"};return;}
+  const reset=s=>{s.theta=clone(s.theta0);s.dG={};s.dN={};};
+  const base=clone(state);reset(base);
+  const kf=Math.min(5,Math.max(2,Math.floor(races.length/8)));
+  const folds=Array.from({length:kf},(_,k)=>races.filter((_,i)=>i%kf===k));
+  const priorCV=sum(folds.map(f=>evalLoss(base,f)*f.length))/races.length;
+  const cv=[];
+  for(const lam of LADDER){
+    let tot=0;
+    for(let k=0;k<kf;k++){
+      const s=clone(base);const train=races.filter((_,i)=>i%kf!==k);
+      fit(s,train.map(r=>r),lam,lam*5,120,1e-6);
+      tot+=evalLoss(s,folds[k])*folds[k].length;
+      yield {phase:"検証",lam,fold:k+1,kf};
+    }
+    cv.push({lam,cv:tot/races.length});
+  }
+  const best=cv.reduce((a,b)=>b.cv<a.cv?b:a);
+  const useFit=best.cv<priorCV-v.cvEps;
+  const before=evalLoss(state,races);
+  let res={J:before,it:0};
+  if(useFit){
+    reset(state);
+    v.l2g=best.lam;v.l2d=best.lam*5;
+    let J=objective(state,races,v.l2g,v.l2d),it=0;
+    while(true){
+      const r=fit(state,races,v.l2g,v.l2d,10,v.metaTol);it+=r.it;
+      const imp=J-r.J;J=r.J;
+      yield {phase:"本学習",it,J};
+      if(imp<v.metaTol||r.it<10)break;
+    }
+    res={J,it};
+  }
+  const a=tuneA(state,racesAll);
+  const after=evalLoss(state,races);
+  const run={at:new Date().toISOString(),races:races.length,folds:kf,priorCV:r2(priorCV,4),cv:cv.map(c=>({lam:c.lam,cv:r2(c.cv,4)})),
+    chosen:useFit?best.lam:null,adopted:useFit,before:r2(before,4),after:r2(after,4),iterations:res.it,a};
+  state.metaRuns=[...(state.metaRuns||[]),run].slice(-50);
+  yield {phase:"終了",done:true,run};
+}
+/* 区分ごとの的中重視度を実績で補正（理論値を基準に縮小推定） */
+function tuneA(state,racesAll){
+  const races=settledOf(racesAll), out={}, RANGE={堅め:[.6,.95],標準:[.4,.7],荒れ:[.1,.5]};
+  for(const [cat,k] of [["堅め","aKatame"],["標準","aStd"],["荒れ","aAre"]]){
+    const rs=races.filter(r=>r.pred?.cat===cat), [lo,hi]=RANGE[cat];
+    if(!rs.length){out[cat]={n:0,a:state.vars[k]};continue;}
+    let best=null;
+    for(let a=lo;a<=hi+1e-9;a+=.05){
+      let prof=0,hits=0;
+      for(const r of rs){
+        const th=effTheta(state,r.F), d=dist(r.F,th), pk=choose(state,r.F,d,r,cat,a), w=r.result.winners;
+        for(const b of pk.bets){const x=w.find(y=>y.key===b.key);if(x){prof+=(x.pay??(b.odds||0)*100);hits++;}}
+        prof-=pk.bets.length*state.vars.yen;
+      }
+      if(!best||prof>best.prof+1e-9)best={a,prof,hits};
+    }
+    const N=rs.length, k0=state.vars.aK0, def=VARS_DEF.find(d=>d.k===k).v;
+    const a=r2(clamp((best.a*N+def*k0)/(N+k0),lo,hi),3);
+    state.vars[k]=a;out[cat]={n:N,best:r2(best.a,2),a,prof:best.prof,hits:best.hits};
+  }
+  return out;
+}
+/* ---------- 成績 ---------- */
+function stats(races){
+  const rs=races.filter(r=>r.settle&&!r.settle.voided);
+  const agg=list=>{const pts=sum(list.map(r=>r.settle.bets?.length||r.pred?.bets?.length||0)),hitPts=sum(list.map(r=>(r.settle.bets||[]).filter(b=>b.hit).length));
+    const st=sum(list.map(r=>r.settle.stake)),rt=sum(list.map(r=>r.settle.ret));
+    const mod=list.filter(r=>!r.legacy&&r.pred?.phit!=null);
+    return {races:list.length,hitRaces:list.filter(r=>r.settle.ret>0).length,pts,hitPts,stake:st,ret:rt,profit:rt-st,roi:st?rt/st:0,
+      calN:mod.length,expHits:sum(mod.map(r=>r.pred.phit)),hits:mod.filter(r=>r.settle.ret>0).length,expRet:sum(mod.map(r=>r.pred.roi*r.settle.stake)),realRet:sum(mod.map(r=>r.settle.ret)),modStake:sum(mod.map(r=>r.settle.stake))};};
+  const by=f=>{const m={};for(const r of rs){const k=f(r);(m[k]=m[k]||[]).push(r);}return Object.fromEntries(Object.entries(m).map(([k,l])=>[k,agg(l)]));};
+  return {all:agg(rs),cat:by(r=>r.pred?.cat||"不明"),grade:by(r=>r.meta?.gk||"不明"),cars:by(r=>(r.meta?.n||"?")+"車"),venue:by(r=>r.meta?.venue||"不明"),
+    live:agg(rs.filter(r=>!r.replay)),replay:agg(rs.filter(r=>r.replay))};
+}
+
+return {VERSION,normal,keyOf,C3,identity,gradeOf,parseEntry,parseResult,parseRiders,parseLines,parseOdds,ENGINES,FEAT,PARAMS,W0,VARS_DEF,
+  newState,migrate,features,effTheta,dist,classify,choose,buildRace,predict,analyze,settle,learnOne,metaLoop,tuneA,stats,settledOf,evalLoss,
+  objective,getP,prior,lossGrad,fit,kappaOf,nameKey,r2,clone,bankOf,EN};
+})();
+
+
+</script>
+<script>
+{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const yen=n=>n==null?"—":(n<0?"−":"")+Math.abs(Math.round(n)).toLocaleString("ja-JP")+"円";
+const pct=(x,d=1)=>x==null||!isFinite(x)?"—":(x*100).toFixed(d)+"%";
+const car=id=>`<span class="car c${+id}">${+id}</span>`;
+const cars=key=>String(key).split("-").map(car).join("");
+const msg=(el,text,kind="")=>{$(el).innerHTML=text?`<div class="msg ${kind}">${esc(text)}</div>`:"";};
+const FOLDER="競輪Ver3_予想_学習データ", SUBFOLDER="競輪Ver3_レース記録", LOCALKEY="keirin-v3-app";
+let S=K.newState(), R={}, curId=null, viewMode="live", metaStop=false;
+
+/* ---------- 保存（クラウド優先・なければこの端末） ---------- */
+const IDB={db:null,
+  open(){if(this.db)return Promise.resolve(this.db);return new Promise((res,rej)=>{const r=indexedDB.open("keirin-v3",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>{this.db=r.result;res(r.result);};r.onerror=()=>rej(r.error);});},
+  async all(){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction("kv","readonly"),s=t.objectStore("kv"),k=s.getAllKeys(),v=s.getAll();t.oncomplete=()=>res(k.result.map((x,i)=>[x,v.result[i]]));t.onerror=()=>rej(t.error);});},
+  async put(entries,dels=[]){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction("kv","readwrite"),s=t.objectStore("kv");for(const [k,v] of entries)s.put(v,k);for(const k of dels)s.delete(k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error);});}
+};
+const Store={mode:"端末",db:null,uid:null,q:Promise.resolve(),
+  async init(){
+    if(!window.claude?.use)return;
+    try{
+      const [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);
+      const uid=user?await user.id():null;
+      if(db&&uid){this.db=db;this.uid=uid;this.mode="クラウド";}
+    }catch(e){}
+  },
+  col(){return this.db.collection("data/users/"+this.uid);},
+  async load(){
+    if(this.mode==="クラウド"){
+      try{
+        const c=this.col();
+        const [st,rd,lg]=await Promise.all([c.doc("state").get(),c.doc("riders").get(),c.doc("logs").get()]);
+        const races={};let last=0;
+        for(let guard=0;guard<100;guard++){
+          const q=await c.where("seq",">",last).orderBy("seq").limit(500).get();
+          for(const d of q.docs){const x=d.data();if(x&&x.race)races[x.race.id]=x.race;}
+          if(q.size<500)break;last=q.docs[q.docs.length-1].data().seq;
+        }
+        const s=st.exists?{...st.data(),rider:rd.exists?rd.data().rider:{},...(lg.exists?lg.data():{})}:null;
+        return {state:s,races};
+      }catch(e){this.mode="端末";}
+    }
+    return this.loadLocal();
+  },
+  async loadLocal(){
+    try{
+      const rows=await IDB.all();
+      if(rows.length){const races={};let state=null;for(const [k,v] of rows){if(k==="state")state=v;else if(String(k).startsWith("race:"))races[v.id]=v;}this.idb=true;return {state,races};}
+      this.idb=true;
+    }catch(e){this.idb=false;}
+    try{const j=JSON.parse(localStorage.getItem(LOCALKEY)||"null");if(j&&this.idb){await this.saveLocal(Object.values(j.races||{}),j.state);}return j||{state:null,races:{}};}catch(e){return {state:null,races:{}};}
+  },
+  async saveLocal(races,state=S){
+    if(this.idb!==false){try{await IDB.put([["state",JSON.parse(JSON.stringify(state))],...races.map(r=>["race:"+r.id,JSON.parse(JSON.stringify(r))])]);try{localStorage.removeItem(LOCALKEY);}catch(e){}return;}catch(e){this.idb=false;}}
+    try{localStorage.setItem(LOCALKEY,JSON.stringify({state,races:R}));}catch(e){throw Error("この端末の保存容量が足りません。「書き出す」で保存してください。");}
+  },
+  docId(id){let h=2166136261;for(const ch of id){h^=ch.codePointAt(0);h=Math.imul(h,16777619);}return "r_"+(h>>>0).toString(16)+"_"+[...id].length;},
+  save(races,onp){
+    const job=async()=>{
+      if(this.mode==="クラウド"){
+        try{await this.saveCloud(races,onp);}
+        catch(e){
+          if(["invalid_argument","revoked","not_granted","capability_disabled","capability_removed"].includes(e?.code)){
+            this.mode="端末";await this.saveLocal(Object.values(R));refreshHeader();return;}
+          throw e;
+        }
+      }else await this.saveLocal(races||[]);
+    };
+    this.q=this.q.then(job,job);
+    return this.q;
+  },
+  async saveCloud(races,onp){
+        const c=this.col();
+        const {rider,changes,metaRuns,...core}=S;
+        await c.doc("state").set(JSON.parse(JSON.stringify(core)));
+        await c.doc("riders").set({rider:rider||{}});
+        await c.doc("logs").set({changes:changes||[],metaRuns:metaRuns||[]});
+        const many=(races||[]).length>8;
+        for(const r of races||[]){
+          for(let tries=0;;tries++){
+            try{await c.doc(this.docId(r.id)).set({seq:Date.parse(r.createdAt)||Date.now(),race:JSON.parse(JSON.stringify(r))});break;}
+            catch(e){if(tries<5&&(e?.code==="resource_exhausted"||e?.code==="unavailable")){await new Promise(z=>setTimeout(z,1500*(tries+1)));continue;}throw e;}
+          }
+          if(many){onp&&onp(races.indexOf(r)+1,races.length);await new Promise(z=>setTimeout(z,50));}
+        }
+  },
+  async remove(id){if(this.mode==="クラウド")await this.col().doc(this.docId(id)).delete();else{try{await IDB.put([],["race:"+id]);}catch(e){}await this.save([]);}}
+};
+
+/* ---------- Googleドライブ ---------- */
+const Drive={server:"Google Drive",mcp:null,folder:null,sub:null,ok:null,
+  async init(){if(!window.claude?.use)return;try{this.mcp=await claude.use("mcp");}catch(e){}},
+  avail(){return !!this.mcp;},
+  why(e){
+    const c=e?.code;
+    return {needs_reauth:"Googleドライブの再接続が必要です（claude.ai の設定 → コネクタ）。",server_not_connected:"Googleドライブがつながっていません（claude.ai の設定 → コネクタ で追加）。",
+      approval_required:"ドライブへの保存の許可が必要です。もう一度ボタンを押して「許可」を選んでください。",not_in_manifest:"このページではドライブの利用が許可されていません。",
+      selection_required:"Googleドライブのコネクタが複数あります。表示された画面で1つ選んでください。",server_unavailable:"ドライブに一時的につながりません。少し待ってからもう一度。",
+      blocked_by_policy:"組織の設定でドライブが使えません。",tool_error:"ドライブが処理できませんでした。"}[c]||("ドライブとのやり取りに失敗しました。")+((e?.message||(typeof e==="string"?e:""))?"（詳細："+String(e.message||e).slice(0,80)+"）":"");
+  },
+  async call(tool,input){return await this.mcp.callTool(this.server,tool,input);},
+  async findOrMake(title,parent){
+    const q=`title = '${title}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`+(parent?` and parentId = '${parent}'`:"");
+    const r=await this.call("search_files",{query:q,excludeContentSnippets:true,pageSize:10});
+    const files=r.payload?.files||[];
+    if(files.length)return files[0].id;
+    const c=await this.call("create_file",{title,contentMimeType:"application/vnd.google-apps.folder",...(parent?{parentId:parent}:{})});
+    if(!c.payload?.id)throw Error("フォルダ「"+title+"」を作成できませんでした。");
+    return c.payload.id;
+  },
+  async folders(){
+    if(!this.folder)this.folder=await this.findOrMake(FOLDER,null);
+    if(!this.sub)this.sub=await this.findOrMake(SUBFOLDER,this.folder);
+    return {main:this.folder,sub:this.sub};
+  },
+  async put(title,obj,parent){
+    const text=JSON.stringify(obj);
+    if(new TextEncoder().encode(text).length>950000)throw Error("1ファイルが大きすぎます（"+title+"）。");
+    const r=await this.call("create_file",{title,parentId:parent,contentMimeType:"application/json",disableConversionToGoogleType:true,textContent:text});
+    return r.payload;
+  },
+  async saveRace(r,kind){
+    const f=await this.folders();
+    const name="競輪Ver3_"+r.id.replace(/\s+/g,"_")+"_"+kind+".json";
+    const {rider,changes,metaRuns,...core}=S;
+    await this.put(name,{format:"keirin-v3-race",version:K.VERSION,savedAt:new Date().toISOString(),
+      説明:"競輪予想Ver.3の1レース分の記録（予想・結果・勝因・敗因・学習の変化）と、その時点の学習済みの変数。",race:r,learned:core},f.sub);
+    this.ok=true;
+  },
+  async saveFull(){
+    const f=await this.folders();
+    const t=new Date(Date.now()+9*3600e3).toISOString().slice(0,16).replace(/[-:]/g,"").replace("T","_");
+    const parts=splitFull(fullData());
+    let last;
+    for(let i=0;i<parts.length;i++)last=await this.put("競輪Ver3_全データ_"+t+"_"+(i+1)+"-"+parts.length+".json",parts[i],f.main);
+    this.ok=true;S.lastFull=new Date().toISOString();
+    return {title:"競輪Ver3_全データ_"+t+"（"+parts.length+"ファイル）"};
+  },
+  decode(res){
+    const b64=s=>{const bin=atob(s.replace(/\s/g,""));const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder().decode(u);};
+    const tryText=s=>{if(typeof s!=="string")return null;const t=s.trim();if(t.startsWith("{"))return t;try{const d=b64(t);if(d.trim().startsWith("{"))return d;}catch(e){}return null;};
+    const p=res?.payload;
+    if(p&&typeof p==="object"&&p.format)return JSON.stringify(p);
+    let t=tryText(p);if(t)return t;
+    if(p&&typeof p==="object")for(const k of ["content","data","base64Content","blob","text","fileContent"]){t=tryText(p[k]);if(t)return t;}
+    for(const c of res?.content||[]){t=tryText(c.text)||tryText(c.resource?.text)||tryText(c.resource?.blob)||tryText(c.blob);if(t)return t;}
+    return null;
+  },
+  async restore(){
+    const f=await this.folders();
+    const r=await this.call("search_files",{query:`'${f.main}' in ancestors and title contains '競輪Ver3_' and mimeType = 'application/json' and trashed = false`,excludeContentSnippets:true,pageSize:100,orderBy:"modifiedTime desc"});
+    const files=r.payload?.files||[];
+    const re=/全データ_(\d{8}_\d{4})(?:_(\d+)-(\d+))?/;
+    const groups={};
+    for(const x of files){const m=x.title.match(re);if(m)(groups[m[1]]=groups[m[1]]||[]).push({...x,part:+(m[2]||1),total:+(m[3]||1)});}
+    const key=Object.keys(groups).sort().pop();
+    const full=key?groups[key].sort((a,b)=>a.part-b.part):[];
+    if(full.length&&full.length<full[0].total)throw Error("全データ（"+key+"）の分割ファイルがそろっていません（"+full.length+"/"+full[0].total+"）。");
+    const since=full.length?full.map(x=>x.modifiedTime).sort()[0]:"";
+    const later=files.filter(x=>!re.test(x.title)&&x.modifiedTime>since).sort((a,b)=>a.modifiedTime.localeCompare(b.modifiedTime));
+    let n=0;
+    for(const file of [...full,...later]){
+      let res,text;
+      try{res=await this.call("download_file_content",{fileId:file.id});text=this.decode(res);}catch(e){}
+      if(!text){try{res=await this.call("read_file_content",{fileId:file.id});text=this.decode(res);}catch(e){}}
+      if(!text)throw Error("「"+file.title+"」を読み取れませんでした。ドライブからダウンロードして「読み込み」で選んでください。");
+      mergeData(JSON.parse(text));n++;
+      $("hDrive").textContent="ドライブ：読み込み "+n+"/"+(full.length+later.length);
+    }
+    if(!n)throw Error("ドライブに保存済みのデータが見つかりません。");
+    return n;
+  }
+};
+
+/* ---------- 外部の天気（AccuWeather） ---------- */
+const CITY={函館:"函館市",青森:"青森市",いわき平:"いわき市",弥彦:"弥彦村",前橋:"前橋市",取手:"取手市",宇都宮:"宇都宮市",大宮:"さいたま市",西武園:"所沢市",京王閣:"調布市",立川:"立川市",松戸:"松戸市",千葉:"千葉市",川崎:"川崎市",平塚:"平塚市",小田原:"小田原市",伊東温泉:"伊東市",静岡:"静岡市",名古屋:"名古屋市",岐阜:"岐阜市",大垣:"大垣市",豊橋:"豊橋市",富山:"富山市",松阪:"松阪市",四日市:"四日市市",福井:"福井市",奈良:"奈良市",京都向日町:"向日市",和歌山:"和歌山市",岸和田:"岸和田市",玉野:"玉野市",広島:"広島市",防府:"防府市",高松:"高松市",小松島:"小松島市",高知:"高知市",松山:"松山市",小倉:"北九州市",久留米:"久留米市",武雄:"武雄市",佐世保:"佐世保市",別府:"別府市",熊本:"熊本市"};
+const Wx={server:"AccuWeather®",keys:{},
+  async get(venue){
+    const city=CITY[venue];if(!city||!Drive.mcp)return null;
+    try{this.keys=JSON.parse(localStorage.getItem(LOCALKEY+"-wx")||"{}");}catch(e){}
+    let key=this.keys[venue];
+    if(!key){const r=await Drive.mcp.callTool(this.server,"widgets-search-claude",{queryParams:{query:city}});key=r.payload?.results?.[0]?.locationKey;if(!key)return null;this.keys[venue]=key;try{localStorage.setItem(LOCALKEY+"-wx",JSON.stringify(this.keys));}catch(e){}}
+    const c=await Drive.mcp.callTool(this.server,"widgets-current-claude",{queryParams:{locationKey:key,unit:"metric",lang:"ja"}});
+    const cc=c.payload?.currentConditions;if(!cc)return null;
+    const kmh=Number(cc.extended?.windValue), ph=String(cc.phrase||"");
+    return {weather:/雪/.test(ph)?"雪":/雨|雷/.test(ph)?"雨":/晴/.test(ph)?"晴":/曇|くもり/.test(ph)?"曇":null,wind:Number.isFinite(kmh)?Math.round(kmh/3.6*10)/10:null,phrase:ph};
+  }};
+const todayJst=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+
+/* ---------- データの出入り ---------- */
+function fullData(){
+  return {format:"keirin-v3-backup",version:K.VERSION,savedAt:new Date().toISOString(),
+    説明:{内容:"競輪予想自動化システムVer.3の全データ。state＝学習済みの変数・補正・記録、races＝各レース（出走表・オッズ・予想・結果・勝因・敗因・学習の変化）。",
+      方式:"3連複のみ・1点100円・1レース1〜3点・見送りなし・5〜9車。36エンジン、区分は堅め・標準・荒れ（全数と割合で判定）。",
+      注意:"replay=true のレースは過去の貼り付けを順番に再現したもの。legacy=true は旧版の要約記録（学習には使わない）。"},
+    state:S,races:Object.values(R)};
+}
+function mergeData(d){
+  if(!d||typeof d!=="object")throw Error("読み込めない形式です。");
+  if(d.format==="keirin-v3-race"){
+    const r=d.race;if(r?.id){const o=R[r.id];if(!o||(r.settle&&!o.settle)||(Date.parse(r.updatedAt||r.createdAt)>Date.parse(o.updatedAt||o.createdAt)))R[r.id]=r;}
+    if(d.learned&&Date.parse(d.savedAt)>Date.parse(S.updatedAt||0))S=K.migrate({...S,...d.learned,updatedAt:d.savedAt});
+    return;
+  }
+  if(d.format!=="keirin-v3-backup")throw Error("競輪予想Ver.3のデータではありません。");
+  for(const r of d.races||[]){if(!r?.id)continue;const o=R[r.id];if(!o||(r.settle&&!o.settle)||Date.parse(r.updatedAt||r.createdAt)>Date.parse(o.updatedAt||o.createdAt))R[r.id]=r;}
+  if(d.state&&(!S.updatedAt||Date.parse(d.savedAt)>Date.parse(S.updatedAt)))S=K.migrate({...d.state,updatedAt:d.savedAt});
+}
+function splitFull(d,limit=700000){
+  const enc=s=>new TextEncoder().encode(s).length;
+  const {races,state,...head}=d;
+  const parts=[{...head,state,races:[]}];let size=enc(JSON.stringify(parts[0]));
+  for(const r of races){
+    const b=enc(JSON.stringify(r))+1;
+    if(size+b>limit&&parts[parts.length-1].races.length){parts.push({...head,races:[]});size=enc(JSON.stringify(head))+20;}
+    parts[parts.length-1].races.push(r);size+=b;
+  }
+  return parts;
+}
+const allRaces=()=>Object.values(R).sort((a,b)=>(a.meta?.date||"").localeCompare(b.meta?.date||"")||((a.meta?.raceNo||0)-(b.meta?.raceNo||0))||String(a.meta?.venue).localeCompare(String(b.meta?.venue)));
+
+/* ---------- 予想 ---------- */
+function metaInputs(){
+  const g=id=>$(id)?.value?.trim()??"";
+  if(!$("fDate"))return {};
+  return {date:g("fDate"),venue:g("fVenue"),raceNo:Number(g("fRace"))||null,grade:g("fGrade"),girls:$("fGirls").checked,weather:g("fWx"),wind:g("fWind")};
+}
+async function doPredict(fromEdit){
+  msg("entryMsg","");
+  const text=$("entry").value.trim()||(fromEdit&&R[curId]?.raw?.entry)||"";
+  if(!text){msg("entryMsg","出走表とオッズ表を貼り付けてください。","err");return;}
+  let parsed, src=text;
+  try{parsed=K.parseEntry(text);}
+  catch(e){
+    // オッズ表だけを貼ったとき：同じレースの出走表を使って最新オッズで予想し直す
+    const idt=K.identity(text), prev=idt&&R[idt.id];
+    if(prev&&!prev.settle&&prev.raw?.entry&&/3\s*連\s*複/u.test(K.normal(text))){
+      src=K.normal(prev.raw.entry).split(/オッズ表詳細|3\s*連\s*(?:勝\s*)?複/u)[0]+"\n"+text;
+      try{parsed=K.parseEntry(src);}catch(e2){msg("entryMsg",e2.message,"err");return;}
+    }else{msg("entryMsg",e.message+(idt&&!prev?"（オッズ表だけを貼る場合は、先に出走表とまとめて一度予想してください）":""),"err");return;}
+  }
+  let metaIn=fromEdit?metaInputs():{};
+  const idt=parsed.identity;
+  if(!fromEdit&&idt&&idt.date===todayJst()&&!(parsed.env.weather&&parsed.env.wind!=null)&&!S.wx[idt.date+" "+idt.venue]&&Drive.avail()){
+    try{msg("entryMsg","開催地の現在の天気を取得中…");const w=await Wx.get(idt.venue);
+      if(w&&(w.weather||w.wind!=null))metaIn={weather:w.weather||"",wind:w.wind??"",wxSrc:"外部の天気（現在："+w.phrase+"）"};}catch(e){}
+    msg("entryMsg","");
+  }
+  const race=K.buildRace(parsed,metaIn,S);
+  const old=R[race.id];
+  if(old?.settle){msg("entryMsg",race.id+" は照合済みです。成績タブで確認できます。","err");showPrediction(old);return;}
+  const {F,pred}=K.predict(race,S);
+  Object.assign(race,{F,pred,raw:{entry:src},oddsAt:new Date().toISOString(),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),revisions:(old?.revisions||0)+(old?1:0)});
+  R[race.id]=race;curId=race.id;
+  showPrediction(race);
+  $("entry").value="";
+  msg("entryMsg",old?race.id+" を最新のオッズで予想し直しました（"+race.revisions+"回目）。照合には最後の予想を使います。":"","ok");
+  await persist([race],old?null:"予想");
+}
+async function persist(races,kind){
+  try{await Store.save(races);}catch(e){msg("entryMsg",e.message,"err");}
+  refreshHeader();renderRaceSel();
+  if($("autoDrive").checked&&Drive.avail()&&races.length===1&&kind){
+    const r=races[0];
+    $("hDrive").textContent="ドライブ：保存中";
+    try{await Drive.saveRace(r,kind);$("hDrive").textContent="ドライブ：保存済み "+new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});
+      if(!S.lastFull||Date.now()-Date.parse(S.lastFull)>20*3600e3){await Drive.saveFull().catch(()=>{});await Store.save([]);}
+    }catch(e){$("hDrive").textContent="ドライブ：未保存";msg(kind==="予想"?"entryMsg":"resultMsg",Drive.why(e),"err");}
+  }
+}
+function showPrediction(r){
+  const P=r.pred,m=r.meta,c=P.cls,yenPt=S.vars.yen;
+  const pos=x=>Math.max(0,Math.min(100,100*(Math.log(Math.max(x,1e-6))-Math.log(c.base))/(0-Math.log(c.base))));
+  const riders=[...r.riders].sort((a,b)=>P.rank[a.id]-P.rank[b.id]);
+  const engOn=K.ENGINES.map(e=>{const a=P.act[e.id];const st=e.id<="E26"?(a?"稼働":"待機（データなし）"):"稼働";return {e,st};});
+  $("predOut").innerHTML=`
+  <div class="card new">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(r.id)}</h2><span class="badge b-${esc(P.cat)}">${esc(P.cat)}</span></div>
+    <div class="sub">${esc(m.gk)}・${m.n}車立${m.girls?"・ガールズ":""}・バンク${m.bank??"—"}m${m.indoor?"（屋内）":""}・天候${esc(m.weather??"未取得")}・風速${m.wind??"—"}m${m.wxSrc?"（"+esc(m.wxSrc)+"）":""}${r.revisions?"・再予想"+r.revisions+"回":""}${r.oddsAt?"・オッズ取込 "+esc(new Date(r.oddsAt).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})):""}</div>
+    <div class="meter" aria-label="区分メーター"><i style="left:${pos(c.P3c)}%"></i></div>
+    <div class="meter-l"><span>荒れ</span><span>標準</span><span>堅め</span></div>
+    <p class="sub" style="margin:6px 0 0">上位3組の確率 ${pct(c.P3)}（${esc(c.src)}）× 実績補正 ${c.kappa.toFixed(3)} ＝ ${pct(c.P3c)}。境界は全数${K.C3(m.n)}通りからの理論値：荒れ＜${pct(c.Tlo)}、堅め≧${pct(c.Thi)}。</p>
+  </div>
+  <div class="card new">
+    <h2>買い目　<span class="sub">3連複・${P.bets.length}点・${yen(P.bets.length*yenPt)}</span></h2>
+    ${P.bets.map(b=>`<div class="bet"><div>${cars(b.key)}</div><div><b>${esc(b.key)}</b><div class="sub">的中確率 ${pct(b.p)}・期待回収 ${b.ev!=null?pct(b.ev,0):"—"}</div></div><div class="num big">${b.odds!=null?b.odds.toFixed(1)+"<small style='font-size:14px'>倍</small>":"—"}</div></div>`).join("")}
+    <div class="kpi" style="margin-top:8px"><div><b>${pct(P.phit)}</b><span>的中確率（合計）</span></div><div><b>${pct(P.roi,0)}</b><span>期待回収率</span></div><div><b class="${P.torigamiSafe?"hit":"warn"}">${P.torigamiSafe?"なし":"注意"}</b><span>取りガミ</span></div></div>
+    ${(()=>{const c=K.stats(allRaces()).cat[P.cat];return c&&c.calN?`<p class="sub" style="margin:8px 0 0">これまでの「${esc(P.cat)}」：予想した的中数 ${c.expHits.toFixed(1)} に対し実際 ${c.hits}（${c.calN}レース）・期待回収 ${yen(c.expRet)} に対し実回収 ${yen(c.realRet)}</p>`:"";})()}
+    ${P.forced?`<div class="msg warn">取りガミにならない組合せが無いため、最上位の1点にしています。</div>`:""}
+  </div>
+  <div class="card new">
+    <h2>選手の評価</h2>
+    <div class="scroll"><table><thead><tr><th>車</th><th>選手</th><th class="n">評価</th><th class="n">3着内</th><th>主な根拠</th></tr></thead><tbody>
+    ${riders.map(x=>`<tr><td>${car(x.id)}</td><td>${esc(x.name)}<div class="sub">${esc(x.cls??"")} ${esc(x.style??"")} ${x.score??"—"}点${x.mark?" "+esc(x.mark):""}</div></td><td class="n">${P.rank[x.id]}位</td><td class="n">${pct(P.marg[x.id],0)}</td><td class="sub">${esc((P.contrib[x.id]||[]).filter(c=>c.c>0).slice(0,2).map(c=>K.EN[c.e]).join("・")||"—")}</td></tr>`).join("")}
+    </tbody></table></div>
+    <p class="sub" style="margin:6px 0 0">並び：${r.lines.length?r.lines.map(l=>l.join("→")).join("　/　"):"読み取れず（ライン系エンジンは待機）"}</p>
+    <details><summary>確率の上位10組（モデル統合と市場）</summary>
+      <div class="scroll"><table><thead><tr><th>組番</th><th class="n">オッズ</th><th class="n">統合</th><th class="n">市場</th></tr></thead><tbody>
+      ${P.top.map(t=>`<tr><td>${cars(t.key)}</td><td class="n">${t.odds??"—"}</td><td class="n">${pct(t.p)}</td><td class="n">${pct(t.mk)}</td></tr>`).join("")}</tbody></table></div>
+      <p class="sub">モデルの比率 ${pct(P.beta)}・市場の鋭さ ${P.tau.toFixed(3)}（どちらも学習で変わります）</p>
+    </details>
+    <details><summary>観察・状況判断・意思決定・実行</summary><dl class="loop">${Object.entries(P.ooda).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl></details>
+    <details><summary>36エンジンの稼働（${engOn.filter(x=>x.st==="稼働").length}/36）</summary>${engOn.map(({e,st})=>`<div class="eng"><span>${e.id}</span><span>${esc(e.name)} <span class="sub">${esc(e.src)}</span></span><span class="st ${st==="稼働"?"hit":"sub"}">${esc(st)}</span></div>`).join("")}</details>
+    <details><summary>読み取った内容を直す</summary>
+      <div class="grid" style="margin-top:6px">
+        <div><label for="fDate">開催日</label><input id="fDate" value="${esc(m.date)}" placeholder="2026-11-28"></div>
+        <div><label for="fVenue">競輪場</label><input id="fVenue" value="${esc(m.venue)}"></div>
+        <div><label for="fRace">レース番号</label><input id="fRace" inputmode="numeric" value="${m.raceNo??""}"></div>
+        <div><label for="fGrade">グレード</label><select id="fGrade">${["不明",...["GP","G1","G2","G3","F1","F2"]].map(g=>`<option${g===m.grade?" selected":""}>${g}</option>`).join("")}</select></div>
+        <div><label for="fWx">天候</label><select id="fWx"><option value="">未取得</option>${["晴","曇","雨","雪"].map(w=>`<option${w===m.weather?" selected":""}>${w}</option>`).join("")}</select></div>
+        <div><label for="fWind">風速（m）</label><input id="fWind" inputmode="decimal" value="${m.wind??""}"></div>
+      </div>
+      <label class="row" style="gap:10px;margin-top:8px"><input type="checkbox" id="fGirls" style="width:22px;height:22px"${m.girls?" checked":""}><span>ガールズ</span></label>
+      <button id="reCalc" style="margin-top:8px;width:100%">この内容で予想し直す</button>
+    </details>
+    ${(r.notes||[]).length?`<div class="msg warn">${esc(r.notes.join("\n"))}</div>`:""}
+  </div>`;
+  $("reCalc").onclick=()=>doPredict(true);
+}
+
+/* ---------- 照合 ---------- */
+function renderRaceSel(){
+  const list=allRaces().reverse();
+  const open=list.filter(r=>!r.settle&&!r.legacy), done=list.filter(r=>r.settle).slice(0,30);
+  $("raceSel").innerHTML=`<option value="">貼った結果から自動で探す</option>`+open.map(r=>`<option value="${esc(r.id)}">${esc(r.id)}（結果待ち）</option>`).join("")+done.map(r=>`<option value="${esc(r.id)}">${esc(r.id)}（照合済み）</option>`).join("");
+}
+async function doSettle(){
+  msg("resultMsg","");
+  const text=$("result").value.trim();
+  let race=R[$("raceSel").value]||null;
+  let res=null;
+  try{
+    if(text){
+      const idt=K.identity(text);
+      if(!race&&idt)race=R[idt.id]||null;
+      if(!race){const open=allRaces().filter(r=>!r.settle&&!r.legacy);if(open.length===1)race=open[0];}
+      if(!race)throw Error(idt?idt.id+" の予想が見つかりません。先に出走表を貼って予想してください。":"どのレースの結果か特定できません。上の一覧からレースを選んでください。");
+      if(idt&&idt.id!==race.id&&!race.id.startsWith("未特定"))throw Error("貼った結果（"+idt.id+"）と選んだレース（"+race.id+"）が違います。");
+      res=K.parseResult(text,race.F.ids);
+      if(!res.winners.length&&!res.voided)throw Error("3連複の払戻金も着順も読み取れませんでした。結果ページ全体を貼るか、手入力を使ってください。");
+    }else{
+      if(!race)throw Error("レースを選んでください。");
+      const key=$("mKey").value.replace(/[^\d]/g,"").split("").map(Number);
+      if(key.length!==3)throw Error("結果表を貼るか、3連複の組番（例 1-5-7）を入力してください。");
+      const pay=Number($("mPay").value.replace(/[^\d]/g,""))||null;
+      res={winners:[{key:K.keyOf(key),pay}],finish:{},voided:false,estimated:!pay,env:{},identity:null};
+    }
+    if(race.settle)throw Error(race.id+" は照合済みです（二重に学習しないため、やり直しはできません）。");
+    if(res.winners[0]&&!race.F.keys.includes(res.winners[0].key))throw Error("結果の組番 "+res.winners[0].key+" が出走表の車番と合いません。");
+  }catch(e){msg("resultMsg",e.message,"err");return;}
+  K.settle(race,res,S,allRaces());
+  race.raw={...race.raw,result:text||null};race.updatedAt=new Date().toISOString();
+  S.updatedAt=race.updatedAt;
+  $("result").value="";$("mKey").value="";$("mPay").value="";
+  showSettle(race);
+  await persist([race],"結果");
+  renderAll();
+}
+function showSettle(r){
+  const st=r.settle,P=r.pred;
+  if(st.voided){$("settleOut").innerHTML=`<div class="card"><div class="banner m">返還（不成立）</div></div>`;return;}
+  const lr=st.learn||{};
+  $("settleOut").innerHTML=`
+  <div class="card new">
+    <div class="banner ${st.hit?"h":"m"}">${st.hit?"的中":"不的中"}　${st.profit>=0?"+":""}${yen(st.profit)}</div>
+    <div class="row" style="justify-content:space-between"><b>${esc(r.id)}</b><span class="badge b-${esc(P.cat)}">${esc(P.cat)}</span></div>
+    <p style="margin:6px 0">結果 ${cars(r.result.winners[0]?.key||"")} <b>${esc(r.result.winners[0]?.key||"")}</b>　払戻 ${yen(r.result.winners[0]?.pay)}${st.estimated?"（オッズから推定）":""}</p>
+    <div class="kpi"><div><b>${yen(st.stake)}</b><span>投資</span></div><div><b>${yen(st.ret)}</b><span>回収</span></div><div><b class="${st.profit>=0?"hit":"miss"}">${st.profit>=0?"+":""}${yen(st.profit)}</b><span>収支</span></div></div>
+    <p class="sub">${esc(st.note||"")}</p>
+  </div>
+  <div class="card new"><h2>買い目ごとの勝因・敗因</h2>
+    ${st.bets.map(b=>`<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="row">${cars(b.key)}<b>${esc(b.key)}</b><span class="sub">${b.odds??"—"}倍</span><b class="${b.hit?"hit":"miss"}" style="margin-left:auto">${b.hit?"的中":"不的中"}</b></div>
+      <p class="why"><b>勝因</b>　${esc(b.win)}</p><p class="why"><b>敗因</b>　${esc(b.loss)}</p></div>`).join("")}
+  </div>
+  <div class="card new"><h2>学習（1レース1周）</h2>
+    <p style="margin:0 0 6px">${lr.skipped?esc(lr.skipped):lr.kept?"更新を反映しました。":"更新すると成績が悪化するため巻き戻しました（過学習・負のスパイラルの防止）。"}</p>
+    ${loopHtml(st)}
+  </div>`;
+}
+function loopHtml(st){
+  const blk=(t,o)=>o?`<h3>${t}</h3><dl class="loop">${Object.entries(o).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`:"";
+  return blk("計画・実行・評価・改善",st.pdca)+blk("①改善 ②改良 ③実装 ④自己分析 ⑤再実装 ⑥ループ",st.A)+blk("①必要なもの ②増やすべきもの ③直すべきもの ④調整すべきもの ⑤削除すべきもの ⑥ループ",st.B);
+}
+
+/* ---------- 成績 ---------- */
+function renderStats(){
+  const all=allRaces();
+  const pick=viewMode==="live"?all.filter(r=>!r.replay):viewMode==="replay"?all.filter(r=>r.replay):all;
+  const s=K.stats(pick).all;
+  document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("sel",b.dataset.view===viewMode));
+  $("kpi").innerHTML=`<div class="kpi">
+    <div><b>${s.races}</b><span>レース</span></div><div><b>${s.hitRaces}</b><span>的中レース</span></div>
+    <div><b>${pct(s.races?s.hitRaces/s.races:null)}</b><span>レース的中率</span></div><div><b>${pct(s.pts?s.hitPts/s.pts:null)}</b><span>点的中率（${s.hitPts}/${s.pts}）</span></div>
+    <div><b>${yen(s.stake)}</b><span>投資</span></div><div><b>${yen(s.ret)}</b><span>回収</span></div>
+    <div><b class="${s.profit>=0?"hit":"miss"}">${s.profit>=0?"+":""}${yen(s.profit)}</b><span>収支</span></div><div><b>${pct(s.roi,1)}</b><span>回収率</span></div></div>`;
+  $("kpiNote").textContent=viewMode==="replay"?"再現：ドライブに残っていた過去の貼り付けを時系列順に予想→照合→学習した記録（予想はその時点までの学習だけで実施）。":viewMode==="live"?"実戦：レース前に予想した記録（旧版の4レースを含む）。":"";
+  const by=K.stats(pick);
+  const tbl=(title,o)=>`<h3>${title}</h3><div class="scroll"><table><thead><tr><th></th><th class="n">レース</th><th class="n">的中</th><th class="n">投資</th><th class="n">回収</th><th class="n">回収率</th></tr></thead><tbody>${
+    Object.entries(o).sort((a,b)=>b[1].races-a[1].races).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${v.races}</td><td class="n">${v.hitRaces}</td><td class="n">${yen(v.stake)}</td><td class="n">${yen(v.ret)}</td><td class="n">${pct(v.roi,0)}</td></tr>`).join("")||`<tr><td colspan="6" class="sub">まだありません</td></tr>`}</tbody></table></div>`;
+  const cal=Object.entries({全体:by.all,...by.cat}).filter(([,v])=>v.calN>0);
+  const calHtml=`<h3>自己分析（予想の理論値と実際）</h3><div class="scroll"><table><thead><tr><th></th><th class="n">予想した的中数</th><th class="n">実際</th><th class="n">期待回収</th><th class="n">実回収</th></tr></thead><tbody>${
+    cal.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${v.expHits.toFixed(1)}</td><td class="n">${v.hits}/${v.calN}</td><td class="n">${yen(v.expRet)}</td><td class="n">${yen(v.realRet)}</td></tr>`).join("")||`<tr><td colspan="5" class="sub">まだありません</td></tr>`}</tbody></table></div>
+    <p class="sub" style="margin:4px 0 0">予想した的中数＝各レースの的中確率の合計。実際と離れている区分は、学習とメタループで補正されていきます。</p>`;
+  $("breakdown").innerHTML=calHtml+tbl("区分",by.cat)+tbl("グレード・ガールズ",by.grade)+tbl("車立",by.cars)+tbl("競輪場",by.venue);
+  $("raceList").innerHTML=[...pick].reverse().slice(0,150).map(r=>{
+    const st=r.settle;
+    return `<li><div class="row" style="justify-content:space-between"><b>${esc(r.id)}</b><span class="badge b-${esc(r.pred?.cat||"標準")}" style="font-size:12.5px">${esc(r.pred?.cat||"—")}</span></div>
+      <div class="row" style="margin-top:4px">${(r.pred?.bets||[]).map(b=>`<span style="margin-right:8px">${cars(b.key)}</span>`).join("")}</div>
+      <div class="sub">${st?`結果 ${esc(r.result?.winners?.[0]?.key||"—")}・<b class="${st.hit?"hit":"miss"}">${st.voided?"返還":st.hit?"的中":"不的中"}</b>・${st.profit>=0?"+":""}${yen(st.profit)}`:"結果待ち"}${r.replay?"・再現":""}${r.legacy?"・旧版記録":""}</div>
+      <div class="row" style="margin-top:4px"><button class="sm" data-open="${esc(r.id)}">詳しく</button>${!st?`<button class="sm" data-del="${esc(r.id)}">削除</button>`:""}</div></li>`;}).join("")||`<li class="sub">まだ記録がありません</li>`;
+}
+
+/* ---------- 学習タブ ---------- */
+function renderLearn(){
+  const last=allRaces().filter(r=>r.settle&&!r.legacy).slice(-1)[0];
+  $("loops").innerHTML=last?`<p class="sub" style="margin:0">${esc(last.id)}</p>${loopHtml(last.settle)}`:`<p class="sub">照合するとここに表示されます。</p>`;
+  const th=S.theta;
+  const used=e=>allRaces().filter(r=>r.pred?.act?.[e]).length;
+  $("engines").innerHTML=K.ENGINES.map(e=>{
+    let val="";
+    if(e.id<="E26")val="重み "+(th.w[e.id]??0).toFixed(3);
+    else if(e.id==="E30")val="モデル "+pct(1/(1+Math.exp(-th.b)))+"・鋭さ "+Math.exp(th.t).toFixed(3);
+    else if(e.id==="E31")val="係数 "+th.u1.toFixed(3);
+    else if(e.id==="E32")val="係数 "+th.u2.toFixed(3);
+    else if(e.id==="E27")val="グループ "+(Object.keys(S.dG).length+Object.keys(S.dN).length);
+    else if(e.id==="E33")val="補正 "+K.kappaOf(S,"全体",7).toFixed(3);
+    else if(e.id==="E36")val="通算 "+(S.loops||0)+"周";
+    return `<div class="eng"><span>${e.id}</span><span>${esc(e.name)}<br><span class="sub">${esc(e.kind)}・${esc(e.src)}${e.id<="E26"?"・稼働 "+used(e.id)+"レース":""}</span></span><span class="st">${esc(val)}</span></div>`;}).join("");
+  $("vars").innerHTML=`<div class="scroll"><table><thead><tr><th>変数</th><th class="n">値</th><th>種類</th></tr></thead><tbody>${
+    K.VARS_DEF.map(d=>`<tr><td>${esc(d.label)}</td><td class="n">${d.kind==="調整可"?`<input data-var="${d.k}" value="${+(+S.vars[d.k]).toPrecision(4)}" inputmode="decimal" style="width:92px;text-align:right;padding:6px">`:+(+S.vars[d.k]).toPrecision(4)}</td><td class="sub">${esc(d.kind)}</td></tr>`).join("")}</tbody></table></div>`;
+  const m=(S.metaRuns||[]).slice(-1)[0];
+  if(m&&!$("metaMsg").textContent)$("metaMsg").innerHTML=metaSummary(m);
+  $("changes").innerHTML=(S.changes||[]).slice(-20).reverse().map(c=>`<li><b>${esc(c.race)}</b> <span class="sub">${c.kept?"反映":"巻き戻し"}</span><div class="sub">${esc((c.changes||[]).map(x=>x.label+(x.d>0?" +":" ")+x.d).join("、")||"変更なし")}</div></li>`).join("")||`<li class="sub">まだありません</li>`;
+}
+function metaSummary(m){
+  return `<div class="msg ok">${esc(new Date(m.at).toLocaleString("ja-JP"))}　${m.races}レース・交差検証${m.folds}分割
+事前のまま：${m.priorCV}　/　強さ別：${m.cv.map(c=>c.lam+"→"+c.cv).join("、")}
+${m.adopted?"採用：強さ "+m.chosen+"（損失 "+m.before+" → "+m.after+"）":"どの強さでも事前より良くならないため、変数は変えていません"}
+的中重視度：${Object.entries(m.a).map(([k,v])=>k+" "+v.a+"（"+v.n+"レース）").join("、")}</div>`;
+}
+async function runMeta(){
+  metaStop=false;$("doMeta").disabled=true;$("stopMeta").hidden=false;msg("metaMsg","");
+  const g=K.metaLoop(S,allRaces());const total=7*5;let k=0;
+  const step=()=>new Promise(r=>setTimeout(r,0));
+  try{
+    for(;;){
+      if(metaStop){msg("metaMsg","止めました（途中までの変更は残っています）。");break;}
+      const y=g.next().value;if(!y)break;
+      if(y.phase==="検証"){k++;$("metaBar").style.width=Math.min(95,k/total*100)+"%";$("metaMsg").innerHTML=`<div class="msg">検証中：強さ ${y.lam}・${y.fold}/${y.kf}</div>`;}
+      if(y.phase==="本学習"){$("metaBar").style.width="97%";$("metaMsg").innerHTML=`<div class="msg">本学習：${y.it}回目・目的関数 ${y.J.toFixed(5)}</div>`;}
+      if(y.done){$("metaBar").style.width="100%";$("metaMsg").innerHTML=y.run?metaSummary(y.run):`<div class="msg">${esc(y.msg)}</div>`;break;}
+      await step();
+    }
+    S.updatedAt=new Date().toISOString();
+    await Store.save([]);
+  }catch(e){msg("metaMsg","エラー："+e.message,"err");}
+  $("doMeta").disabled=false;$("stopMeta").hidden=true;renderLearn();
+}
+
+/* ---------- 画面 ---------- */
+function refreshHeader(){
+  $("hVer").textContent="実装 "+K.VERSION;
+  $("hStore").textContent="保存先："+(Store.mode==="クラウド"?"クラウド（どの端末でも同じ）":"この端末");
+  if(!window.claude?.use)$("hDrive").hidden=true;
+  if(!Drive.avail())$("hDrive").textContent="ドライブ：このページでは不可";
+  else if(!/保存/.test($("hDrive").textContent))$("hDrive").textContent="ドライブ：準備完了";
+  const n=Object.keys(R).length;
+  $("storeInfo").textContent=`記録 ${n}レース（照合済み ${allRaces().filter(r=>r.settle).length}）・学習 通算${S.loops||0}周・保存先 ${Store.mode==="クラウド"?"クラウド":"この端末"}・最終の全データ保存 ${S.lastFull?new Date(S.lastFull).toLocaleString("ja-JP"):"なし"}`;
+  $("startCard").hidden=n>0;
+  $("startRestore").hidden=!Drive.avail();
+  if(!Drive.avail())$("startNote").textContent=S.seeded?"はじめての方は、これまでの72レースで学習した変数から始まります。予想と照合を重ねるほど、あなたの記録で学習が進みます。":"この端末にはまだ記録がありません。";
+  for(const id of ["saveFull","restore","autoDriveRow","driveNote"])if($(id))$(id).hidden=!Drive.avail();
+  if($("shareDrive"))$("shareDrive").hidden=Drive.avail()||!canShareFile();
+}
+function renderAll(){refreshHeader();renderRaceSel();renderStats();renderLearn();}
+function tab(name){
+  document.querySelectorAll("section.tab").forEach(s=>s.classList.toggle("on",s.id==="t-"+name));
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===name));
+  if(name==="seiseki")renderStats();if(name==="gakushu")renderLearn();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{viewMode=b.dataset.view;renderStats();});
+$("doPredict").onclick=()=>doPredict(false);
+$("clrEntry").onclick=()=>{$("entry").value="";msg("entryMsg","");};
+$("doSettle").onclick=doSettle;
+$("doMeta").onclick=runMeta;$("stopMeta").onclick=()=>{metaStop=true;};
+$("raceList").onclick=async e=>{
+  const o=e.target.closest("[data-open]"),d=e.target.closest("[data-del]");
+  if(o){const r=R[o.dataset.open];if(!r)return;if(r.legacy){alertBox(r);return;}curId=r.id;showPrediction(r);if(r.settle){showSettle(r);tab("kekka");$("settleOut").scrollIntoView();}else tab("yoso");}
+  if(d){const id=d.dataset.del;if(d.dataset.sure!=="1"){d.dataset.sure="1";d.textContent="もう一度押すと削除";return;}delete R[id];await Store.remove(id);renderAll();}
+};
+function alertBox(r){
+  $("settleOut").innerHTML=`<div class="card"><h2>${esc(r.id)}（旧版記録）</h2><p>買い目 ${r.pred.bets.map(b=>esc(b.key)).join("・")}　結果 ${esc(r.result?.winners?.[0]?.key)}　${r.settle.hit?"的中":"不的中"}　${yen(r.settle.profit)}</p>
+  ${r.settle.bets.map(b=>`<p class="why"><b>${esc(b.key)} 勝因</b> ${esc(b.win)}</p><p class="why"><b>敗因</b> ${esc(b.loss)}</p>`).join("")}<p class="sub">${esc(r.settle.note||"")}</p></div>`;tab("kekka");
+}
+$("vars").addEventListener("change",async e=>{
+  const k=e.target.dataset.var;if(!k)return;const v=Number(e.target.value);
+  if(!isFinite(v)){e.target.value=S.vars[k];return;}
+  S.vars[k]=v;S.updatedAt=new Date().toISOString();await Store.save([]);
+});
+$("autoDrive").onchange=()=>{try{localStorage.setItem(LOCALKEY+"-auto",$("autoDrive").checked?"1":"0");}catch(e){}};
+$("saveFull").onclick=async()=>{
+  if(!Drive.avail()){msg("driveMsg","このページからはドライブを使えません。「ファイルに書き出す」を使ってください。","err");return;}
+  msg("driveMsg","保存中…");
+  try{const f=await Drive.saveFull();await Store.save([]);msg("driveMsg","保存しました："+(f?.title||"全データ"),"ok");$("hDrive").textContent="ドライブ：保存済み";refreshHeader();}catch(e){msg("driveMsg",Drive.why(e),"err");}
+};
+async function restoreFlow(el){
+  if(!Drive.avail()){msg(el,"このページからはドライブを使えません。","err");return;}
+  msg(el,"ドライブから読み込み中…");
+  try{const n=await Drive.restore();renderAll();
+    await Store.save(Object.values(R),(i,m)=>msg(el,"読み込み完了。この端末とクラウドに記録中… "+i+"/"+m));
+    msg(el,n+"件のファイルから復元しました（記録 "+Object.keys(R).length+"レース）。","ok");renderAll();}
+  catch(e){msg(el,e.code?Drive.why(e):e.message,"err");}
+}
+$("restore").onclick=()=>restoreFlow("driveMsg");
+$("startRestore").onclick=()=>restoreFlow("startMsg");
+$("exportFile").onclick=async()=>{
+  const text=JSON.stringify(fullData());const name="競輪Ver3_全データ_"+new Date().toISOString().slice(0,10)+".json";
+  try{
+    const dl=window.claude?.use?await claude.use("downloads"):null;
+    if(dl){await dl.save({filename:name,data:new Blob([text],{type:"application/json"})});msg("ioMsg","書き出しました。","ok");return;}
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"application/json"}));a.download=name;document.body.appendChild(a);a.click();a.remove();msg("ioMsg","書き出しました。","ok");
+  }catch(e){msg("ioMsg","書き出せませんでした。「コピー」を使ってください。","err");}
+};
+function canShareFile(){try{return !!navigator.canShare&&navigator.canShare({files:[new File(["{}"],"t.txt",{type:"text/plain"})]});}catch(e){return false;}}
+$("shareDrive").onclick=async()=>{
+  const name="競輪Ver3_全データ_"+new Date(Date.now()+9*3600e3).toISOString().slice(0,16).replace(/[-:]/g,"").replace("T","_")+".txt";
+  try{await navigator.share({files:[new File([JSON.stringify(fullData())],name,{type:"text/plain"})],title:name});S.lastFull=new Date().toISOString();await Store.save([]);msg("driveMsg","共有しました。ドライブを選んだ場合はそこに保存されています。","ok");}
+  catch(e){if(e?.name!=="AbortError")msg("driveMsg","共有できませんでした。「ファイルに書き出す」を使ってください。","err");}
+};
+$("copyAll").onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(fullData()));msg("ioMsg","コピーしました。","ok");}catch(e){msg("ioMsg","コピーできませんでした。","err");}};
+$("doImport").onclick=async()=>{
+  try{
+    let text=$("importText").value.trim();
+    const f=$("importFile").files?.[0];
+    if(f)text=await f.text();
+    if(!text)throw Error("ファイルを選ぶか、データを貼り付けてください。");
+    mergeData(JSON.parse(text));renderAll();await Store.save(Object.values(R),(i,m)=>msg("ioMsg","記録中… "+i+"/"+m));
+    $("importText").value="";msg("ioMsg","読み込みました（記録 "+Object.keys(R).length+"レース）。","ok");renderAll();
+  }catch(e){msg("ioMsg","読み込めませんでした："+e.message,"err");}
+};
+
+/* ---------- 起動 ---------- */
+(async()=>{
+  try{$("autoDrive").checked=localStorage.getItem(LOCALKEY+"-auto")!=="0";}catch(e){$("autoDrive").checked=true;}
+  refreshHeader();
+  await Promise.all([Store.init(),Drive.init()]);
+  const d=await Store.load();
+  if(d.state)S=K.migrate(d.state);
+  else{try{const seed=JSON.parse($("seed").textContent);if(seed&&seed.theta){S=K.migrate(seed);S.seeded=true;}}catch(e){}}
+  R=d.races||{};
+  renderAll();
+  if(!window.claude?.use&&"serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){
+    const l=document.createElement("link");l.rel="manifest";l.href="manifest.webmanifest";document.head.appendChild(l);
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  }
+})();
+}
+</script>
+</body>
+</html>
