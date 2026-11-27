@@ -128,6 +128,7 @@ nav button.on{color:var(--band);font-weight:800}
     <h2>結果表を貼る</h2>
     <label class="sub" for="raceSel">照合するレース</label>
     <select id="raceSel"></select>
+    <div id="selBets"></div>
     <p class="sub" style="margin:8px 0">KEIRIN.JPの結果ページ（払戻金と着順）を貼り付けます。レースは貼った内容から自動で探します。</p>
     <textarea id="result" placeholder="ここに貼り付け"></textarea>
     <details><summary>貼り付けできないとき（手入力）</summary>
@@ -198,7 +199,7 @@ nav button.on{color:var(--band);font-weight:800}
 // 競輪予想 Ver.3 中核：画面なし・通信なしで動く（予想・照合・学習・メタループ）
 const K=(()=>{
 "use strict";
-const VERSION="3.12.1";
+const VERSION="3.12.2";
 const normal=s=>String(s??"").normalize("NFKC").replace(/\r/g,"");
 const keyOf=a=>[...a].map(Number).sort((x,y)=>x-y).join("-");
 const C3=n=>n*(n-1)*(n-2)/6;
@@ -1241,9 +1242,25 @@ function showPrediction(r){
 
 /* ---------- 照合 ---------- */
 function renderRaceSel(){
-  const list=allRaces().reverse();
+  const list=allRaces().reverse(), cur=$("raceSel").value;
   const open=list.filter(r=>!r.settle&&!r.legacy), done=list.filter(r=>r.settle).slice(0,30);
   $("raceSel").innerHTML=`<option value="">貼った結果から自動で探す</option>`+open.map(r=>`<option value="${esc(r.id)}">${esc(r.id)}（結果待ち）</option>`).join("")+done.map(r=>`<option value="${esc(r.id)}">${esc(r.id)}（照合済み）</option>`).join("");
+  if(cur&&R[cur])$("raceSel").value=cur;
+  renderSelBets();
+}
+/* 選んだレースの買い目を表示（未選択のときは結果待ちの一覧） */
+function betRow(r){
+  const P=r.pred||{}, st=r.settle;
+  const t=r.oddsAt||r.updatedAt||r.createdAt;
+  return `<div class="row" style="justify-content:space-between;margin-top:8px"><b>${esc(r.id)}</b><span class="badge b-${esc(P.cat||"標準")}" style="font-size:12.5px">${esc(P.cat||"—")}</span></div>
+    ${(P.bets||[]).map(b=>`<div class="row" style="margin-top:4px">${cars(b.key)}<b>${esc(b.key)}</b><span class="sub">${b.odds!=null?b.odds.toFixed(1)+"倍":"—"}${b.p!=null?"・的中確率 "+pct(b.p):""}</span></div>`).join("")}
+    <div class="sub" style="margin-top:4px">${(P.bets||[]).length}点・${yen((P.bets||[]).length*S.vars.yen)}${t?"・予想 "+esc(new Date(t).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})):""}${r.revisions?"（再予想"+r.revisions+"回）":""}${st?"・結果 "+esc(r.result?.winners?.[0]?.key||"—")+"・"+(st.voided?"返還":st.hit?"的中":"不的中")+" "+(st.profit>=0?"+":"")+yen(st.profit):""}</div>`;
+}
+function renderSelBets(){
+  const id=$("raceSel").value, el=$("selBets");
+  if(id&&R[id]){el.innerHTML=`<div class="msg" style="white-space:normal">${betRow(R[id])}</div>`;return;}
+  const open=allRaces().filter(r=>!r.settle&&!r.legacy).reverse().slice(0,12);
+  el.innerHTML=open.length?`<details open style="border:0;margin-top:4px"><summary class="sub" style="min-height:32px">結果待ちの買い目（${open.length}レース）</summary>${open.map(r=>`<div data-pick="${esc(r.id)}" style="padding:4px 0 8px;border-bottom:1px solid var(--line);cursor:pointer">${betRow(r)}</div>`).join("")}</details>`:"";
 }
 async function doSettle(){
   msg("resultMsg","");
@@ -1406,6 +1423,8 @@ document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{viewMode=b.da
 $("doPredict").onclick=()=>doPredict(false);
 $("clrEntry").onclick=()=>{$("entry").value="";msg("entryMsg","");};
 $("doSettle").onclick=doSettle;
+$("raceSel").onchange=renderSelBets;
+$("selBets").onclick=e=>{const d=e.target.closest("[data-pick]");if(d){$("raceSel").value=d.dataset.pick;renderSelBets();}};
 $("doMeta").onclick=runMeta;$("stopMeta").onclick=()=>{metaStop=true;};
 $("raceList").onclick=async e=>{
   const o=e.target.closest("[data-open]"),d=e.target.closest("[data-del]");
