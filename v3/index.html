@@ -121,11 +121,6 @@ nav button.on{color:var(--band);font-weight:800}
     <div id="entryMsg"></div>
   </div>
   <div id="predOut"></div>
-  <div class="card" id="openCard" hidden>
-    <h2>結果待ちの買い目</h2>
-    <p class="sub" style="margin:0">予想したレースの買い目です。照合すると成績に移ります。</p>
-    <div id="openList"></div>
-  </div>
 </section>
 
 <section class="tab" id="t-kekka">
@@ -204,7 +199,7 @@ nav button.on{color:var(--band);font-weight:800}
 // 競輪予想 Ver.3 中核：画面なし・通信なしで動く（予想・照合・学習・メタループ）
 const K=(()=>{
 "use strict";
-const VERSION="3.12.3";
+const VERSION="3.12.4";
 const normal=s=>String(s??"").normalize("NFKC").replace(/\r/g,"");
 const keyOf=a=>[...a].map(Number).sort((x,y)=>x-y).join("-");
 const C3=n=>n*(n-1)*(n-2)/6;
@@ -1251,13 +1246,7 @@ function renderRaceSel(){
   const open=list.filter(r=>!r.settle&&!r.legacy), done=list.filter(r=>r.settle).slice(0,30);
   $("raceSel").innerHTML=`<option value="">貼った結果から自動で探す</option>`+open.map(r=>`<option value="${esc(r.id)}">${esc(r.id)}（結果待ち）</option>`).join("")+done.map(r=>`<option value="${esc(r.id)}">${esc(r.id)}（照合済み）</option>`).join("");
   if(cur&&R[cur])$("raceSel").value=cur;
-  renderSelBets();renderOpen();
-}
-function renderOpen(){
-  const open=allRaces().filter(r=>!r.settle&&!r.legacy).reverse();
-  $("openCard").hidden=!open.length;
-  $("openList").innerHTML=open.slice(0,30).map(r=>`<div style="padding:4px 0 10px;border-bottom:1px solid var(--line)">${betRow(r)}
-    <div class="row" style="margin-top:6px"><button class="sm" data-detail="${esc(r.id)}">詳しく</button><button class="sm" data-toresult="${esc(r.id)}">結果を貼る</button></div></div>`).join("");
+  renderSelBets();
 }
 /* 選んだレースの買い目を表示（未選択のときは結果待ちの一覧） */
 function betRow(r){
@@ -1271,7 +1260,7 @@ function renderSelBets(){
   const id=$("raceSel").value, el=$("selBets");
   if(id&&R[id]){el.innerHTML=`<div class="msg" style="white-space:normal">${betRow(R[id])}</div>`;return;}
   const open=allRaces().filter(r=>!r.settle&&!r.legacy).reverse().slice(0,12);
-  el.innerHTML=open.length?`<details open style="border:0;margin-top:4px"><summary class="sub" style="min-height:32px">結果待ちの買い目（${open.length}レース）</summary>${open.map(r=>`<div data-pick="${esc(r.id)}" style="padding:4px 0 8px;border-bottom:1px solid var(--line);cursor:pointer">${betRow(r)}</div>`).join("")}</details>`:"";
+  el.innerHTML=open.length?`<details open style="border:0;margin-top:4px"><summary class="sub" style="min-height:32px">結果待ちのレースと買い目（${open.length}レース）・押すと選べます</summary>${open.map(r=>`<div data-pick="${esc(r.id)}" style="padding:4px 0 8px;border-bottom:1px solid var(--line);cursor:pointer">${betRow(r)}</div>`).join("")}</details>`:"";
 }
 async function doSettle(){
   msg("resultMsg","");
@@ -1435,11 +1424,6 @@ $("doPredict").onclick=()=>doPredict(false);
 $("clrEntry").onclick=()=>{$("entry").value="";msg("entryMsg","");};
 $("doSettle").onclick=doSettle;
 $("raceSel").onchange=renderSelBets;
-$("openList").onclick=e=>{
-  const d=e.target.closest("[data-detail]"),g=e.target.closest("[data-toresult]");
-  if(d&&R[d.dataset.detail]){curId=d.dataset.detail;showPrediction(R[curId]);$("predOut").scrollIntoView({behavior:"smooth"});}
-  if(g&&R[g.dataset.toresult]){tab("kekka");$("raceSel").value=g.dataset.toresult;renderSelBets();$("result").focus();}
-};
 $("selBets").onclick=e=>{const d=e.target.closest("[data-pick]");if(d){$("raceSel").value=d.dataset.pick;renderSelBets();}};
 $("doMeta").onclick=runMeta;$("stopMeta").onclick=()=>{metaStop=true;};
 $("raceList").onclick=async e=>{
