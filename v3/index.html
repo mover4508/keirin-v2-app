@@ -17,6 +17,7 @@
 --k:light-dark(#0d5fa8,#7cb8ff);--s:light-dark(#3d4a44,#c5d1cb);--a:light-dark(#b3261e,#ff8a80)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;overflow-x:clip;padding-bottom:84px}
 header{background:var(--band);color:#fff;padding:12px 16px 10px;position:sticky;top:0;z-index:5;box-shadow:0 1px 0 var(--band2)}
@@ -93,6 +94,11 @@ nav button.on{color:var(--band);font-weight:800}
 </header>
 <main>
 <section class="tab on" id="t-yoso">
+  <div class="card" id="backupNag" hidden>
+    <h2>ドライブに控えを残しましょう</h2>
+    <p class="sub" id="nagText" style="margin:0 0 8px"></p>
+    <div class="row"><button class="main" id="nagShare" style="flex:1">いま控えを残す</button><button class="sm" id="nagLater">あとで</button></div>
+  </div>
   <div class="card" id="installCard" hidden>
     <h2>アプリとして入れる</h2>
     <p class="sub" id="installNote" style="margin:0 0 8px">ボタンを押すと、アプリ一覧に「競輪予想3」が入ります。次からはアイコンから開けます。</p>
@@ -168,7 +174,8 @@ nav button.on{color:var(--band);font-weight:800}
     <p class="sub" style="margin:0 0 8px" id="driveNote">保存先：「競輪Ver3_予想_学習データ」（無ければ自動で作成）。レースごとの記録は中の「競輪Ver3_レース記録」へ。形式はAIが読み取れる汎用形式です。</p>
     <label class="row" id="autoDriveRow" style="gap:10px;margin-bottom:10px"><input type="checkbox" id="autoDrive" style="width:22px;height:22px"><span>予想と照合のたびに自動で保存する</span></label>
     <button class="main" id="shareDrive" hidden>スマホの共有でドライブに保存</button>
-    <p class="sub" id="shareNote" style="margin:8px 0 0">共有の画面で「ドライブ」を選ぶと、全データをAIが読み取れる形式で保存できます。戻すときは下の「読み込み」でファイルを選び、ドライブを開いて選びます。</p>
+    <p class="sub" id="shareNote" style="margin:8px 0 0">記録はこのスマホに自動で保存されています。ドライブへの控えは機種変更や故障に備えるためのもので、週に1回ほどで十分です。共有の画面では、上の段の「My Drive」（ドライブのマーク付き）を押すと早く保存できます。戻すときは下の「読み込み」でそのファイルを選びます。</p>
+    <p class="sub" id="lastShare" style="margin:6px 0 0"></p>
     <div class="row"><button class="main" id="saveFull" style="flex:1">全データをドライブに保存</button></div>
     <div class="row" style="margin-top:8px"><button id="restore" style="flex:1">ドライブから復元</button></div>
     <div id="driveMsg"></div>
@@ -199,7 +206,7 @@ nav button.on{color:var(--band);font-weight:800}
 // 競輪予想 Ver.3 中核：画面なし・通信なしで動く（予想・照合・学習・メタループ）
 const K=(()=>{
 "use strict";
-const VERSION="3.12.4";
+const VERSION="3.12.5";
 const normal=s=>String(s??"").normalize("NFKC").replace(/\r/g,"");
 const keyOf=a=>[...a].map(Number).sort((x,y)=>x-y).join("-");
 const C3=n=>n*(n-1)*(n-2)/6;
@@ -449,7 +456,7 @@ const VARS_DEF=[
  ["cap",.1,"1回で動かす上限","調整可"],["topK",2,"1レースで動かす変数の数","調整可"],["l2g",.02,"過学習防止（全体）","調整可"],["l2d",.3,"過学習防止（グループ別）","調整可"],
  ["dRate",.5,"グループ別補正の学習割合","調整可"],["evalN",50,"自己分析で比べるレース数","調整可"],["eps",.002,"悪化とみなす差","調整可"],
  ["missOdds",.5,"オッズ欠けの補完倍率","調整可"],["venueK0",10,"場別傾向の事前の強さ","調整可"],["riderK0",3,"選手学習の事前の強さ","調整可"],
- ["metaTol",1e-6,"メタループの収束判定","調整可"],["cvEps",.003,"メタループで採用する最小の改善（交差検証）","調整可"]
+ ["metaTol",1e-6,"メタループの収束判定","調整可"],["cvEps",.003,"メタループで採用する最小の改善（交差検証）","調整可"],["backupDays",7,"ドライブへの控えを案内するまでの日数","調整可"]
 ].map(([k,v,label,kind])=>({k,v,label,kind}));
 const defaultVars=()=>Object.fromEntries(VARS_DEF.map(d=>[d.k,d.v]));
 
@@ -1411,7 +1418,7 @@ function refreshHeader(){
   for(const id of ["saveFull","restore","autoDriveRow","driveNote"])if($(id))$(id).hidden=!Drive.avail();
   if($("shareDrive"))$("shareDrive").hidden=Drive.avail()||!canShareFile();
 }
-function renderAll(){refreshHeader();renderRaceSel();renderStats();renderLearn();}
+function renderAll(){refreshHeader();renderRaceSel();renderStats();renderLearn();renderNag();}
 function tab(name){
   document.querySelectorAll("section.tab").forEach(s=>s.classList.toggle("on",s.id==="t-"+name));
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===name));
@@ -1465,11 +1472,24 @@ $("exportFile").onclick=async()=>{
   }catch(e){msg("ioMsg","書き出せませんでした。「コピー」を使ってください。","err");}
 };
 function canShareFile(){try{return !!navigator.canShare&&navigator.canShare({files:[new File(["{}"],"t.txt",{type:"text/plain"})]});}catch(e){return false;}}
-$("shareDrive").onclick=async()=>{
+async function shareBackup(el){
   const name="競輪Ver3_全データ_"+new Date(Date.now()+9*3600e3).toISOString().slice(0,16).replace(/[-:]/g,"").replace("T","_")+".txt";
-  try{await navigator.share({files:[new File([JSON.stringify(fullData())],name,{type:"text/plain"})],title:name});S.lastFull=new Date().toISOString();await Store.save([]);msg("driveMsg","共有しました。ドライブを選んだ場合はそこに保存されています。","ok");}
-  catch(e){if(e?.name!=="AbortError")msg("driveMsg","共有できませんでした。「ファイルに書き出す」を使ってください。","err");}
-};
+  try{await navigator.share({files:[new File([JSON.stringify(fullData())],name,{type:"text/plain"})],title:name});S.lastFull=new Date().toISOString();await Store.save([]);msg(el,"控えを残しました。","ok");renderNag();refreshHeader();}
+  catch(e){if(e?.name!=="AbortError")msg(el,"共有できませんでした。「ファイルに書き出す」を使ってください。","err");}
+}
+$("shareDrive").onclick=()=>shareBackup("driveMsg");
+let nagLater=false;
+function renderNag(){
+  const days=S.vars.backupDays??7, last=S.lastFull?Date.parse(S.lastFull):0;
+  const since=allRaces().filter(r=>r.settle&&!r.legacy&&!r.replay&&Date.parse(r.settle.at||0)>last).length;
+  const stale=!last||Date.now()-last>days*86400e3;
+  const show=!Drive.avail()&&canShareFile()&&!nagLater&&since>0&&stale;
+  $("backupNag").hidden=!show;
+  if(show)$("nagText").textContent=(last?"前回の控えから"+Math.floor((Date.now()-last)/86400e3)+"日たちました。":"まだドライブに控えがありません。")+"その後に照合したレースが"+since+"件あります。記録はスマホに残っていますが、機種変更や故障に備えて控えを残しておくと安心です。";
+  if($("lastShare"))$("lastShare").textContent="前回の控え："+(last?new Date(last).toLocaleString("ja-JP"):"まだありません");
+}
+$("nagShare").onclick=()=>shareBackup("installMsg");
+$("nagLater").onclick=()=>{nagLater=true;renderNag();};
 $("copyAll").onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(fullData()));msg("ioMsg","コピーしました。","ok");}catch(e){msg("ioMsg","コピーできませんでした。","err");}};
 async function importFiles(files,text,el){
   const texts=[];
