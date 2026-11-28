@@ -206,7 +206,8 @@ nav button.on{color:var(--band);font-weight:800}
 // 競輪予想 Ver.3 中核：画面なし・通信なしで動く（予想・照合・学習・メタループ）
 const K=(()=>{
 "use strict";
-const VERSION="3.12.6";
+const VERSION="3.12.7";
+const MODEL_VER="1";
 const normal=s=>String(s??"").normalize("NFKC").replace(/\r/g,"");
 const keyOf=a=>[...a].map(Number).sort((x,y)=>x-y).join("-");
 const C3=n=>n*(n-1)*(n-2)/6;
@@ -294,6 +295,7 @@ function parseRiders(text){
       starts:stats?f.slice(0,4).map(Number):null,win:stats?num(f[4]):null,quin:stats?num(f[5]):null,place:stats?num(f[6]):null,
       kim:kim?{逃:+f[7],捲:+f[8],差:+f[9],マ:+f[10]}:null,S:kim?+f[11]:null,B:kim?+f[12]:null};
     if(r.win!=null&&r.win>100)r.win=null;
+    if(/[(（]?(?:取消|欠場|欠車)[)）]?/u.test(r.name)||/(?:^|\s)(?:取消|欠場|欠車)(?:\s|$)/u.test(line)){r.scratched=true;r.name=r.name.replace(/[(（]?(?:取消|欠場|欠車)[)）]?/gu,"");}
     if(riders.has(id))warn.push(id+"番が重複しています（後の行を採用）");
     riders.set(id,r);
   }
@@ -377,10 +379,24 @@ function parseEntry(text){
   const {riders,warn}=parseRiders(text);
   const ids=riders.map(r=>r.id);
   if(ids.length<5||ids.length>9)throw Error("5〜9車の出走表を読み取れませんでした（読めた車数 "+ids.length+"）。チャリロトの出走表詳細とオッズ表詳細をまとめて貼り付けてください。");
-  const ln=parseLines(text,ids), od=parseOdds(text,riders), env=envOf(text), idt=identity(text);
-  return {riders,ids,lines:ln.lines,odds:od.odds,env,identity:idt,grade:gradeOf(text),
-    girls:riders.length>0&&riders.every(r=>r.cls&&r.cls.startsWith("L"))||/ガールズ/u.test(normal(text)),
-    notes:[...warn,...od.warn,...(ln.note?[ln.note]:[])]};
+  const od=parseOdds(text,riders), env=envOf(text), idt=identity(text);
+  const priced=Object.keys(od.odds), notes=[];
+  let rs=riders, ids2=ids;
+  const scr=riders.filter(r=>r.scratched).map(r=>r.id);
+  if(scr.length&&ids.length-scr.length>=5){rs=riders.filter(r=>!r.scratched);ids2=rs.map(r=>r.id);notes.push("取消・欠場："+scr.map(x=>x+"番").join("・")+"（予想から除外）");}
+  if(priced.length>=Math.ceil(C3(ids.length)/3)){
+    const seen=new Set(priced.flatMap(k=>k.split("-").map(Number)));
+    const out=ids2.filter(id=>!seen.has(id));
+    if(out.length&&ids2.length-out.length>=5){rs=rs.filter(r=>seen.has(r.id));ids2=rs.map(r=>r.id);notes.push("欠場とみなした車："+out.map(x=>x+"番").join("・")+"（3連複のオッズがないため除外）");}
+  }
+  let ln=parseLines(text,ids2);
+  if(!ln.lines.length&&ids2.length<ids.length){
+    const full=parseLines(text,ids);
+    if(full.lines.length)ln={lines:full.lines.map(l=>l.filter(x=>ids2.includes(x))).filter(l=>l.length),note:null};
+  }
+  return {riders:rs,ids:ids2,lines:ln.lines,odds:od.odds,env,identity:idt,grade:gradeOf(text),
+    girls:rs.length>0&&rs.every(r=>r.cls&&r.cls.startsWith("L"))||/ガールズ/u.test(normal(text)),
+    notes:[...warn,...od.warn,...notes,...(ln.note?[ln.note]:[])]};
 }
 
 /* ---------- 結果表 ---------- */
@@ -392,6 +408,7 @@ function resultFinish(raw,ids){
   const st=/^(?:[1-9](?:着|同着)?|欠(?:場)?|失(?:格)?|落(?:車|棄)?|棄権|未完走)$/u;
   for(let i=0;i<body.length;i++){
     let row=body[i], it=row.split(/[\t ]+/u);
+    if(/欠場|欠車/u.test(row)&&/^[1-9]$/.test(it[0])&&!/^[1-9]$/.test(it[1]||"")){const id=Number(it[0]);if(ids.includes(id))fin[id]={rank:null,status:"欠場",method:null,agari:null,hb:false};continue;}
     if(!st.test(it[0]))break;
     if(it.length===1&&body[i+1]){row+="\t"+body[++i];it=row.split(/[\t ]+/u);}
     const id=Number(it[1]);
@@ -413,13 +430,15 @@ function parseResult(text,ids){
       pays.set(keyOf(nums),+m[4].replaceAll(",",""));
     }
   const finish=resultFinish(raw,ids);
+  const refund=new Set(Object.entries(finish).filter(([,f])=>/^欠/.test(f.status||"")).map(([id])=>Number(id)));
+  for(const m of raw.matchAll(/返還(?:車番|対象車番)[ \t|:]*([1-9](?:[ \t]*[,、・/][ \t]*[1-9]|[ \t]+[1-9])*)/gu))for(const x of m[1].match(/[1-9]/g))if(ids.includes(+x))refund.add(+x);
   let winners=[...pays].map(([key,pay])=>({key,pay}));
   let estimated=false;
   if(!winners.length&&!voided){
     const top=Object.entries(finish).filter(([,v])=>v.rank&&v.rank<=3).map(([k])=>+k);
     if(top.length===3){winners=[{key:keyOf(top),pay:null}];estimated=true;}
   }
-  return {winners,finish,voided,estimated,env:envOf(raw),identity:identity(raw)};
+  return {winners,finish,voided,estimated,refundIds:[...refund],env:envOf(raw),identity:identity(raw)};
 }
 
 /* ---------- 36エンジン ---------- */
@@ -456,7 +475,7 @@ const VARS_DEF=[
  ["cap",.1,"1回で動かす上限","調整可"],["topK",2,"1レースで動かす変数の数","調整可"],["l2g",.02,"過学習防止（全体）","調整可"],["l2d",.3,"過学習防止（グループ別）","調整可"],
  ["dRate",.5,"グループ別補正の学習割合","調整可"],["evalN",50,"自己分析で比べるレース数","調整可"],["eps",.002,"悪化とみなす差","調整可"],
  ["missOdds",.5,"オッズ欠けの補完倍率","調整可"],["venueK0",10,"場別傾向の事前の強さ","調整可"],["riderK0",3,"選手学習の事前の強さ","調整可"],
- ["metaTol",1e-6,"メタループの収束判定","調整可"],["cvEps",.003,"メタループで採用する最小の改善（交差検証）","調整可"],["backupDays",7,"ドライブへの控えを案内するまでの日数","調整可"]
+ ["metaTol",1e-6,"メタループの収束判定","調整可"],["cvEps",.003,"メタループで採用する最小の改善（交差検証）","調整可"],["backupDays",7,"ドライブへの控えを案内するまでの日数","調整可"],["metaQuickN",5,"メタループを簡易にする増加レース数（未満）","調整可"],["metaQuickRate",.1,"メタループを簡易にする増加の割合（未満）","調整可"]
 ].map(([k,v,label,kind])=>({k,v,label,kind}));
 const defaultVars=()=>Object.fromEntries(VARS_DEF.map(d=>[d.k,d.v]));
 
@@ -780,8 +799,11 @@ function settle(race,res,state,all){
   if(res.voided){race.result=res;race.settle={at:new Date().toISOString(),voided:true,stake,ret:stake,profit:0,hit:false,bets:[]};return race;}
   const wins=res.winners;
   let ret=0;
-  for(const b of P.bets){const w=wins.find(x=>x.key===b.key);if(w)ret+=(w.pay??Math.round((b.odds||0)*yen));}
+  const refund=new Set(res.refundIds||[]);
+  const isRefund=b=>b.key.split("-").some(x=>refund.has(+x));
+  for(const b of P.bets){const w=wins.find(x=>x.key===b.key);if(w)ret+=(w.pay??Math.round((b.odds||0)*yen));else if(isRefund(b))ret+=yen;}
   const an=analyze(race,res);
+  for(const b of an.bets)if(!b.hit&&isRefund(b)){b.refund=true;b.loss="返還（欠場の車を含むため購入額が戻る）。"+b.loss;}
   race.result=res;
   const F=race.F;
   absorb(state,race,res);
@@ -791,9 +813,9 @@ function settle(race,res,state,all){
   const inc=(L.changes||[]).filter(c=>c.d>0).map(c=>c.label+" +"+c.d), dec=(L.changes||[]).filter(c=>c.d<0).map(c=>c.label+" "+c.d);
   const smallW=FEAT.filter(e=>Math.abs(state.theta.w[e]||0)<.005&&Math.abs(W0[e])<.005).map(e=>e+" "+EN[e]);
   const pHit=sum(P.bets.map(b=>b.p));
-  race.settle={at:new Date().toISOString(),hit:ret>0,stake,ret,profit:ret-stake,bets:an.bets,note:an.note,P3hit:an.P3hit,estimated:res.estimated,
+  race.settle={at:new Date().toISOString(),hit:an.bets.some(b=>b.hit),refunds:an.bets.filter(b=>b.refund).length,stake,ret,profit:ret-stake,bets:an.bets,note:an.note,P3hit:an.P3hit,estimated:res.estimated,
     learn:{kept:L.kept,Lb:L.Lb,La:L.La,eta:L.eta,changes:L.changes||[],skipped:L.skipped||null},
-    pdca:{...P.pdca,実行:`${P.bets.length}点 ${stake}円`,評価:`${ret>0?"的中":"不的中"}（予想した的中確率${r2(pHit*100,1)}%）・払戻${ret}円・収支${ret-stake>=0?"+":""}${ret-stake}円`,
+    pdca:{...P.pdca,実行:`${P.bets.length}点 ${stake}円`,評価:`${an.bets.some(b=>b.hit)?"的中":"不的中"}${an.bets.some(b=>b.refund)?"・一部返還":""}（予想した的中確率${r2(pHit*100,1)}%）・払戻${ret}円・収支${ret-stake>=0?"+":""}${ret-stake}円`,
       改善:L.skipped?L.skipped:L.kept?`変数${(L.changes||[]).length}個を更新（${(L.changes||[]).map(c=>c.label+(c.d>0?" +":" ")+c.d).join("、")||"変更なし"}）`:`更新すると直近${v.evalN}レースの成績が悪化するため巻き戻し・学習率を下げた`},
     A:{改善:(L.changes||[]).map(c=>c.label).join("、")||"なし",改良:`学習率→${r2(L.eta,4)}`,実装:L.kept?"反映":"保留",自己分析:L.Lb!=null?`直近${Math.min(v.evalN,settledOf(all).length)}レースの損失 ${r2(L.Lb,4)}→${r2(L.La,4)}`:"比較対象なし",再実装:L.kept?"維持":"巻き戻し",ループ:`通算${state.loops}周`},
     B:{必要なもの:inact.length?inact.slice(0,6).join("、")+(inact.length>6?" ほか":""):"不足なし",増やすべきもの:inc.join("、")||"なし",直すべきもの:(race.notes||[]).join("、")||(L.kept?"なし":"今回の更新（巻き戻し済み）"),
@@ -852,14 +874,17 @@ function* metaLoop(state,racesAll,opts={}){
   if(races.length<4){yield {phase:"終了",done:true,msg:"照合済みのレースが4レース以上になると実行できます"};return;}
   const reset=s=>{s.theta=clone(s.theta0);s.dG={};s.dN={};};
   const sig=sigOf(races), last=(state.metaRuns||[]).slice(-1)[0];
-  const same=!!last&&(last.sig?last.sig===sig&&last.version===VERSION:
+  const mv=x=>x.model||(x.version||x.cv?"1":null);
+  const same=!!last&&(last.sig?last.sig===sig&&mv(last)===MODEL_VER:
     last.races===races.length&&races.every(r=>!r.settle?.at||r.settle.at<=last.at));
   if(!opts.force&&same){
     yield {phase:"終了",done:true,skipped:true,last,msg:"前回（"+new Date(last.at).toLocaleString("ja-JP")+"）から照合済みのレースが増えていないため、結果は前回と同じです。実行を省きました。"};
     return;
   }
   const newN=last?races.length-(last.races||0):races.length;
-  if(!opts.force&&last&&last.version===VERSION&&newN>0&&newN<Math.max(5,races.length*.1)){
+  const quick=!opts.force&&last&&mv(last)===MODEL_VER&&last.cv&&newN>0&&newN<Math.max(v.metaQuickN,races.length*v.metaQuickRate);
+  if(opts.quickOnly&&!quick){yield {phase:"終了",done:true,needFull:true,newN};return;}
+  if(quick){
     // 増えたレースが少ないとき：前回選んだ強さを使い、交差検証を省いて本学習だけ行う
     const before=evalLoss(state,races);let it=0;
     if(last.adopted&&last.chosen!=null){
@@ -868,7 +893,7 @@ function* metaLoop(state,racesAll,opts={}){
       while(true){const r=fit(state,races,v.l2g,v.l2d,10,v.metaTol);it+=r.it;const imp=J-r.J;J=r.J;yield {phase:"本学習",it,J};if(imp<v.metaTol||r.it<10)break;}
     }
     const a=tuneA(state,racesAll), after=evalLoss(state,races);
-    const run={at:new Date().toISOString(),mode:"簡易",races:races.length,newRaces:newN,sig,version:VERSION,folds:last.folds,priorCV:last.priorCV,cv:last.cv,
+    const run={at:new Date().toISOString(),mode:"簡易",races:races.length,newRaces:newN,sig,version:VERSION,model:MODEL_VER,folds:last.folds,priorCV:last.priorCV,cv:last.cv,
       chosen:last.adopted?last.chosen:null,adopted:!!last.adopted,before:r2(before,4),after:r2(after,4),iterations:it,a};
     state.metaRuns=[...(state.metaRuns||[]),run].slice(-50);
     yield {phase:"終了",done:true,run};return;
@@ -906,7 +931,7 @@ function* metaLoop(state,racesAll,opts={}){
   }
   const a=tuneA(state,racesAll);
   const after=evalLoss(state,races);
-  const run={at:new Date().toISOString(),mode:"全体",races:races.length,newRaces:newN,sig,version:VERSION,folds:kf,priorCV:r2(priorCV,4),cv:cv.map(c=>({lam:c.lam,cv:r2(c.cv,4)})),
+  const run={at:new Date().toISOString(),mode:"全体",races:races.length,newRaces:newN,sig,version:VERSION,model:MODEL_VER,folds:kf,priorCV:r2(priorCV,4),cv:cv.map(c=>({lam:c.lam,cv:r2(c.cv,4)})),
     chosen:useFit?best.lam:null,adopted:useFit,before:r2(before,4),after:r2(after,4),iterations:res.it,a};
   state.metaRuns=[...(state.metaRuns||[]),run].slice(-50);
   yield {phase:"終了",done:true,run};
@@ -939,8 +964,8 @@ function stats(races){
   const agg=list=>{const pts=sum(list.map(r=>r.settle.bets?.length||r.pred?.bets?.length||0)),hitPts=sum(list.map(r=>(r.settle.bets||[]).filter(b=>b.hit).length));
     const st=sum(list.map(r=>r.settle.stake)),rt=sum(list.map(r=>r.settle.ret));
     const mod=list.filter(r=>!r.legacy&&r.pred?.phit!=null);
-    return {races:list.length,hitRaces:list.filter(r=>r.settle.ret>0).length,pts,hitPts,stake:st,ret:rt,profit:rt-st,roi:st?rt/st:0,
-      calN:mod.length,expHits:sum(mod.map(r=>r.pred.phit)),hits:mod.filter(r=>r.settle.ret>0).length,expRet:sum(mod.map(r=>r.pred.roi*r.settle.stake)),realRet:sum(mod.map(r=>r.settle.ret)),modStake:sum(mod.map(r=>r.settle.stake))};};
+    return {races:list.length,hitRaces:list.filter(r=>r.settle.hit??r.settle.ret>0).length,pts,hitPts,stake:st,ret:rt,profit:rt-st,roi:st?rt/st:0,
+      calN:mod.length,expHits:sum(mod.map(r=>r.pred.phit)),hits:mod.filter(r=>r.settle.hit??r.settle.ret>0).length,expRet:sum(mod.map(r=>r.pred.roi*r.settle.stake)),realRet:sum(mod.map(r=>r.settle.ret)),modStake:sum(mod.map(r=>r.settle.stake))};};
   const by=f=>{const m={};for(const r of rs){const k=f(r);(m[k]=m[k]||[]).push(r);}return Object.fromEntries(Object.entries(m).map(([k,l])=>[k,agg(l)]));};
   return {all:agg(rs),cat:by(r=>r.pred?.cat||"不明"),grade:by(r=>r.meta?.gk||"不明"),cars:by(r=>(r.meta?.n||"?")+"車"),venue:by(r=>r.meta?.venue||"不明"),
     live:agg(rs.filter(r=>!r.replay)),replay:agg(rs.filter(r=>r.replay))};
@@ -1141,6 +1166,19 @@ const Wx={server:"AccuWeather®",keys:{},
     const kmh=Number(cc.extended?.windValue), ph=String(cc.phrase||"");
     return {weather:/雪/.test(ph)?"雪":/雨|雷/.test(ph)?"雨":/晴/.test(ph)?"晴":/曇|くもり/.test(ph)?"曇":null,wind:Number.isFinite(kmh)?Math.round(kmh/3.6*10)/10:null,phrase:ph};
   }};
+const COORD={函館:[41.77,140.73],青森:[40.82,140.74],いわき平:[37.05,140.89],弥彦:[37.69,138.83],前橋:[36.39,139.06],取手:[35.91,140.05],宇都宮:[36.56,139.88],大宮:[35.91,139.63],西武園:[35.77,139.44],京王閣:[35.64,139.54],立川:[35.71,139.41],松戸:[35.78,139.90],千葉:[35.62,140.12],川崎:[35.53,139.71],平塚:[35.33,139.35],小田原:[35.26,139.15],伊東温泉:[34.97,139.10],静岡:[34.98,138.40],名古屋:[35.17,136.87],岐阜:[35.41,136.77],大垣:[35.36,136.62],豊橋:[34.76,137.39],富山:[36.75,137.24],松阪:[34.58,136.53],四日市:[34.96,136.64],福井:[36.06,136.21],奈良:[34.70,135.78],京都向日町:[34.94,135.71],和歌山:[34.23,135.17],岸和田:[34.46,135.38],玉野:[34.49,133.95],広島:[34.35,132.46],防府:[34.05,131.57],高松:[34.35,134.06],小松島:[34.00,134.59],高知:[33.56,133.56],松山:[33.81,132.76],小倉:[33.88,130.88],久留米:[33.32,130.52],武雄:[33.19,130.02],佐世保:[33.16,129.72],別府:[33.31,131.49],熊本:[32.80,130.73]};
+const OpenWx={
+  async get(venue){
+    const c=COORD[venue];if(!c||window.claude?.use)return null;
+    const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),6000);
+    try{
+      const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+c[0]+"&longitude="+c[1]+"&current=weather_code,wind_speed_10m&wind_speed_unit=ms&timezone=Asia%2FTokyo",{signal:ctl.signal,cache:"no-store"});
+      if(!r.ok)return null;const cur=(await r.json()).current;if(!cur)return null;
+      const w=cur.weather_code, weather=w==null?null:w<=1?"晴":w<=48?"曇":(w>=71&&w<=77)||w===85||w===86?"雪":"雨";
+      const wind=Number.isFinite(cur.wind_speed_10m)?Math.round(cur.wind_speed_10m*10)/10:null;
+      return {weather,wind,phrase:(weather||"—")+"・風速"+(wind??"—")+"m"};
+    }catch(e){return null;}finally{clearTimeout(tm);}
+  }};
 const todayJst=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
 
 /* ---------- データの出入り ---------- */
@@ -1197,8 +1235,8 @@ async function doPredict(fromEdit){
   }
   let metaIn=fromEdit?metaInputs():{};
   const idt=parsed.identity;
-  if(!fromEdit&&idt&&idt.date===todayJst()&&!(parsed.env.weather&&parsed.env.wind!=null)&&!S.wx[idt.date+" "+idt.venue]&&Drive.avail()){
-    try{msg("entryMsg","開催地の現在の天気を取得中…");const w=await Wx.get(idt.venue);
+  if(!fromEdit&&idt&&idt.date===todayJst()&&!(parsed.env.weather&&parsed.env.wind!=null)&&!S.wx[idt.date+" "+idt.venue]){
+    try{msg("entryMsg","開催地の現在の天気を取得中…");const w=Drive.avail()?await Wx.get(idt.venue):await OpenWx.get(idt.venue);
       if(w&&(w.weather||w.wind!=null))metaIn={weather:w.weather||"",wind:w.wind??"",wxSrc:"外部の天気（現在："+w.phrase+"）"};}catch(e){}
     msg("entryMsg","");
   }
@@ -1321,6 +1359,12 @@ async function doSettle(){
     if(res.winners[0]&&!race.F.keys.includes(res.winners[0].key))throw Error("結果の組番 "+res.winners[0].key+" が出走表の車番と合いません。");
   }catch(e){msg("resultMsg",e.message,"err");return;}
   K.settle(race,res,S,allRaces());
+  race.metaAuto=null;
+  try{
+    for(const y of K.metaLoop(S,allRaces(),{quickOnly:true})){
+      if(y.done){race.metaAuto=y.run?{mode:"簡易",at:y.run.at,before:y.run.before,after:y.run.after,adopted:y.run.adopted}:y.needFull?{mode:"要全体",newN:y.newN}:null;break;}
+    }
+  }catch(e){}
   race.raw={...race.raw,result:text||null};race.updatedAt=new Date().toISOString();
   S.updatedAt=race.updatedAt;
   $("result").value="";$("mKey").value="";$("mPay").value="";
@@ -1336,16 +1380,17 @@ function showSettle(r){
   <div class="card new">
     <div class="banner ${st.hit?"h":"m"}">${st.hit?"的中":"不的中"}　${st.profit>=0?"+":""}${yen(st.profit)}</div>
     <div class="row" style="justify-content:space-between"><b>${esc(r.id)}</b><span class="badge b-${esc(P.cat)}">${esc(P.cat)}</span></div>
-    <p style="margin:6px 0">結果 ${cars(r.result.winners[0]?.key||"")} <b>${esc(r.result.winners[0]?.key||"")}</b>　払戻 ${yen(r.result.winners[0]?.pay)}${st.estimated?"（オッズから推定）":""}</p>
+    <p style="margin:6px 0">結果 ${cars(r.result.winners[0]?.key||"")} <b>${esc(r.result.winners[0]?.key||"")}</b>　払戻 ${yen(r.result.winners[0]?.pay)}${st.estimated?"（オッズから推定）":""}${st.refunds?"・返還 "+st.refunds+"点":""}</p>
     <div class="kpi"><div><b>${yen(st.stake)}</b><span>投資</span></div><div><b>${yen(st.ret)}</b><span>回収</span></div><div><b class="${st.profit>=0?"hit":"miss"}">${st.profit>=0?"+":""}${yen(st.profit)}</b><span>収支</span></div></div>
     <p class="sub">${esc(st.note||"")}</p>
   </div>
   <div class="card new"><h2>買い目ごとの勝因・敗因</h2>
-    ${st.bets.map(b=>`<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="row">${cars(b.key)}<b>${esc(b.key)}</b><span class="sub">${b.odds??"—"}倍</span><b class="${b.hit?"hit":"miss"}" style="margin-left:auto">${b.hit?"的中":"不的中"}</b></div>
+    ${st.bets.map(b=>`<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="row">${cars(b.key)}<b>${esc(b.key)}</b><span class="sub">${b.odds??"—"}倍</span><b class="${b.hit?"hit":b.refund?"warn":"miss"}" style="margin-left:auto">${b.hit?"的中":b.refund?"返還":"不的中"}</b></div>
       <p class="why"><b>勝因</b>　${esc(b.win)}</p><p class="why"><b>敗因</b>　${esc(b.loss)}</p></div>`).join("")}
   </div>
   <div class="card new"><h2>学習（1レース1周）</h2>
     <p style="margin:0 0 6px">${lr.skipped?esc(lr.skipped):lr.kept?"更新を反映しました。":"更新すると成績が悪化するため巻き戻しました（過学習・負のスパイラルの防止）。"}</p>
+    ${r.metaAuto?.mode==="簡易"?`<p class="sub" style="margin:0 0 6px">メタループ（簡易）を自動で実行しました（前回選んだ学習の強さのまま、このレースを含めて学習し直し）。</p>`:r.metaAuto?.mode==="要全体"?`<p class="sub" style="margin:0 0 6px">照合済みのレースが前回のメタループから${r.metaAuto.newN}件増えたため、自動の簡易調整では足りません。「学習」タブの「メタループを実行」で全体を見直してください。</p>`:""}
     ${loopHtml(st)}
   </div>`;
 }
