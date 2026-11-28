@@ -10,7 +10,7 @@
 /* 使う人がするのは「貼る」だけ。画面は1枚、タブもボタンもない。
    車番の色札がそのまま買い目になる。白地と墨、緑の帯、数字は等幅。 */
 :root{color-scheme:light dark;--bg:light-dark(#f4f6f4,#0f1412);--card:light-dark(#ffffff,#18201c);--ink:light-dark(#141a17,#e9efeb);--sub:light-dark(#5b6762,#9aa8a1);
---line:light-dark(#dde4df,#2b3631);--band:#0b6b4f;--band2:#08553f;--hit:light-dark(#0b7a3e,#5fd394);--miss:light-dark(#b3261e,#ff8a80);--warn:light-dark(#8a5a00,#ffcc66);
+--line:light-dark(#dde4df,#2b3631);--band:#0b6b4f;--chart:light-dark(#08845a,#3fb27c);--band2:#08553f;--hit:light-dark(#0b7a3e,#5fd394);--miss:light-dark(#b3261e,#ff8a80);--warn:light-dark(#8a5a00,#ffcc66);
 --k:light-dark(#0d5fa8,#7cb8ff);--s:light-dark(#3d4a44,#c5d1cb);--a:light-dark(#b3261e,#ff8a80)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
@@ -77,6 +77,11 @@ summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:
 .foot summary{font-weight:400;color:var(--sub);font-size:13.5px;justify-content:center}
 #out{scroll-margin-top:64px}
 #recKpi .kpi{grid-template-columns:repeat(2,1fr)}
+.chart{position:relative;margin:12px 0 4px}
+.chart h3{margin:0 0 2px}
+.chart svg{display:block;width:100%;height:auto;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.chart .ax{font-size:11px;fill:var(--sub);font-variant-numeric:tabular-nums}
+.chart .tip{position:absolute;top:30px;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 9px;font-size:13px;line-height:1.45;box-shadow:0 2px 8px rgba(0,0,0,.12);white-space:nowrap}
 .ver{text-align:center;color:var(--sub);font-size:12px;margin:10px 0 0}
 .wait{padding:10px 0;border-top:1px solid var(--line)}.wait:first-of-type{border-top:0}
 .rec{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:14.5px}.rec:first-child{border-top:0}
@@ -111,6 +116,7 @@ summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:
   <div class="card" id="recCard" hidden>
     <h2>これまでの成績</h2>
     <div id="recKpi"></div>
+    <div class="chart" id="recChart" hidden></div>
     <div id="recList" style="margin-top:10px"></div>
   </div>
 
@@ -131,7 +137,7 @@ summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:
 // 競輪予想 Ver.3 中核：画面なし・通信なしで動く（予想・照合・学習・メタループ）
 const K=(()=>{
 "use strict";
-const VERSION="3.13.0";
+const VERSION="3.13.1";
 const MODEL_VER="1";
 const normal=s=>String(s??"").normalize("NFKC").replace(/\r/g,"");
 const keyOf=a=>[...a].map(Number).sort((x,y)=>x-y).join("-");
@@ -1282,8 +1288,47 @@ function renderLists(){
   if(!done.length)return;
   const s=K.stats(live).all;
   $("recKpi").innerHTML=`<div class="kpi"><div><b>${s.races}</b><span>レース</span></div><div><b>${s.hitRaces}</b><span>的中</span></div><div><b class="${s.profit>=0?"hit":"miss"}">${s.profit>=0?"+":""}${yen(s.profit)}</b><span>収支</span></div><div><b>${pct(s.roi,0)}</b><span>回収率</span></div></div>`;
+  drawChart(done);
   $("recList").innerHTML=[...done].reverse().slice(0,10).map(r=>{const st=r.settle;
     return `<div class="rec"><span>${esc(r.id)}</span><span><b class="${st.hit?"hit":"miss"}">${st.voided?"返還":st.hit?"的中":"はずれ"}</b> ${st.profit>=0?"+":""}${yen(st.profit)}</span></div>`;}).join("");
+}
+
+/* ---------- 成績のグラフ：収支の移り変わり（見るだけ。指でなぞると各レースの数字） ---------- */
+const sgn=n=>(n>0?"+":"")+yen(n);
+function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(x)));for(const m of [1,2,5,10])if(m*p>=x)return m*p;return 10*p;}
+function drawChart(done){
+  const box=$("recChart");
+  const rs=[...done].sort((a,b)=>(a.id.slice(0,10)+(a.settle.at||a.updatedAt||"")).localeCompare(b.id.slice(0,10)+(b.settle.at||b.updatedAt||"")));
+  if(rs.length<2){box.hidden=true;box.innerHTML="";return;}
+  let c=0;const P=[{r:null,p:0,v:0}].concat(rs.map(r=>({r,p:r.settle.profit||0,v:(c+=r.settle.profit||0)})));
+  const W=340,H=180,L=46,Rm=12,T=12,B=24,n=P.length;
+  const vals=P.map(q=>q.v);let lo=Math.min(0,...vals),hi=Math.max(0,...vals);
+  const step=niceStep(Math.max(hi-lo,300)/3);lo=Math.floor(lo/step)*step;hi=Math.ceil(hi/step)*step;if(hi===lo)hi=lo+step;
+  const x=i=>L+(W-L-Rm)*i/(n-1), y=v=>T+(H-T-B)*(hi-v)/(hi-lo);
+  let g="";
+  for(let v=lo;v<=hi+1e-9;v+=step){g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(${v===0?"--sub":"--line"})" stroke-width="1"${v===0?' opacity=".7"':""}/><text class="ax" x="${L-6}" y="${(y(v)+4).toFixed(1)}" text-anchor="end">${v===0?"0":(v>0?"+":"−")+Math.abs(v).toLocaleString("ja-JP")}</text>`;}
+  const d=P.map((q,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(q.v).toFixed(1)).join(" ");
+  const last=P[n-1], lx=x(n-1), ly=y(last.v);
+  box.innerHTML=`<h3>収支の移り変わり</h3><div class="sub" style="font-size:12.5px">線が上がると勝ち越し、下がると負け越し（円）。指でなぞると各レースの収支が出ます。</div>
+  <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="収支の移り変わり。${n-1}レースで${sgn(last.v)}">
+    ${g}
+    <text class="ax" x="${L}" y="${H-6}">はじめ</text><text class="ax" x="${W-Rm}" y="${H-6}" text-anchor="end">${n-1}レース目</text>
+    <path d="${d}" fill="none" stroke="var(--chart)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <line id="chX" y1="${T}" y2="${H-B}" stroke="var(--sub)" stroke-width="1" visibility="hidden"/>
+    <circle id="chDot" r="4" fill="var(--chart)" stroke="var(--card)" stroke-width="2" visibility="hidden"/>
+    <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="4" fill="var(--chart)" stroke="var(--card)" stroke-width="2"/>
+    <rect id="chHit" x="${L}" y="0" width="${W-L-Rm}" height="${H}" fill="transparent"/>
+  </svg><div class="tip" id="chTip" hidden></div>`;
+  box.hidden=false;
+  const svg=box.querySelector("svg"),hit=box.querySelector("#chHit"),cx=box.querySelector("#chX"),dot=box.querySelector("#chDot"),tip=box.querySelector("#chTip");
+  const at=e=>{const r=svg.getBoundingClientRect(),sx=(e.clientX-r.left)*W/r.width;const i=Math.max(1,Math.min(n-1,Math.round((sx-L)/(W-L-Rm)*(n-1))));
+    const q=P[i],px=x(i);cx.setAttribute("x1",px);cx.setAttribute("x2",px);cx.setAttribute("visibility","visible");
+    dot.setAttribute("cx",px);dot.setAttribute("cy",y(q.v));dot.setAttribute("visibility","visible");
+    const st=q.r.settle;tip.innerHTML=`<b>${esc(q.r.id)}</b><br>${st.voided?"返還":st.hit?"的中":"はずれ"} ${sgn(q.p)}<br>ここまでの収支 <b>${sgn(q.v)}</b>`;tip.hidden=false;
+    const left=px*r.width/W, tw=tip.offsetWidth;tip.style.top=svg.offsetTop+"px";tip.style.left=Math.max(0,Math.min(r.width-tw,left-tw/2))+"px";};
+  const off=()=>{cx.setAttribute("visibility","hidden");dot.setAttribute("visibility","hidden");tip.hidden=true;};
+  hit.addEventListener("pointerdown",at);hit.addEventListener("pointermove",at);
+  hit.addEventListener("pointerleave",off);hit.addEventListener("pointercancel",off);
 }
 
 /* ---------- 控え・機種変更（ふだんは使わない） ---------- */
