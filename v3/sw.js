@@ -1,5 +1,5 @@
 // 競輪予想 Ver.3：通信がなくても開けるように本体を保存する（新しい版があれば優先して取得）
-const CACHE = "keirin-v3-3.12.7";
+const CACHE = "keirin-v3-3.13.1";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

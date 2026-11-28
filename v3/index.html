@@ -7,25 +7,21 @@
 <meta name="theme-color" content="#0b6b4f">
 <title>競輪予想 Ver.3</title>
 <style>
-/* VOICE: 投資の作業台。静かで正確、数字が主役。
-   IDEA: 競輪場の出走表ボード。車番の色札がそのまま買い目になる。
-   PICTURE: 買い目の色札と、区分（堅め・標準・荒れ）のメーター。
-   COLOUR and TYPE: 白地と墨、従来の緑の帯。車番色（1白 2黒 3赤 4青 5黄 6緑 7橙 8桃 9紫）だけを差し色に。日本語ゴシック、数字は等幅。
-   LAYOUT: スマホ1カラム、下タブ固定、操作は親指の届く下側に。 */
+/* 使う人がするのは「貼る」だけ。画面は1枚、タブもボタンもない。
+   車番の色札がそのまま買い目になる。白地と墨、緑の帯、数字は等幅。 */
 :root{color-scheme:light dark;--bg:light-dark(#f4f6f4,#0f1412);--card:light-dark(#ffffff,#18201c);--ink:light-dark(#141a17,#e9efeb);--sub:light-dark(#5b6762,#9aa8a1);
---line:light-dark(#dde4df,#2b3631);--band:#0b6b4f;--band2:#08553f;--hit:light-dark(#0b7a3e,#5fd394);--miss:light-dark(#b3261e,#ff8a80);--warn:light-dark(#8a5a00,#ffcc66);
+--line:light-dark(#dde4df,#2b3631);--band:#0b6b4f;--chart:light-dark(#08845a,#3fb27c);--band2:#08553f;--hit:light-dark(#0b7a3e,#5fd394);--miss:light-dark(#b3261e,#ff8a80);--warn:light-dark(#8a5a00,#ffcc66);
 --k:light-dark(#0d5fa8,#7cb8ff);--s:light-dark(#3d4a44,#c5d1cb);--a:light-dark(#b3261e,#ff8a80)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;overflow-x:clip;padding-bottom:84px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;overflow-x:clip;padding-bottom:40px}
 header{background:var(--band);color:#fff;padding:12px 16px 10px;position:sticky;top:0;z-index:5;box-shadow:0 1px 0 var(--band2)}
 header h1{margin:0;font-size:19px;line-height:1.2;letter-spacing:.02em}
 header .meta{font-size:12.5px;opacity:.9;display:flex;gap:10px;flex-wrap:wrap;margin-top:3px}
 header .meta span{white-space:nowrap}
 main{max-width:760px;margin:0 auto;padding:12px}
-section.tab{display:none}section.tab.on{display:block}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 12px}
 .card h2{margin:0 0 8px;font-size:17px}.card h3{margin:12px 0 6px;font-size:15px}
 .sub{color:var(--sub);font-size:13.5px}
@@ -50,9 +46,6 @@ button:disabled{opacity:.5}
 .big{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
 .badge{display:inline-block;padding:3px 12px;border-radius:999px;font-weight:800;font-size:15px;color:#fff}
 .b-堅め{background:var(--k)}.b-標準{background:#5b6762}.b-荒れ{background:var(--a)}
-.meter{position:relative;height:14px;border-radius:7px;background:linear-gradient(90deg,var(--a) 0 33.3%,#8b9690 33.3% 66.6%,var(--k) 66.6%);opacity:.85;margin:10px 0 4px}
-.meter i{position:absolute;top:-5px;width:4px;height:24px;background:var(--ink);border-radius:2px;transform:translateX(-2px)}
-.meter-l{display:flex;justify-content:space-between;font-size:12px;color:var(--sub)}
 .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px}
 .kpi div{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
 .kpi b{display:block;font-size:20px;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -75,138 +68,76 @@ summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:
 .msg{padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14.5px;margin-top:8px;white-space:pre-wrap}
 .msg.err{border-color:var(--miss);color:var(--miss)}
 .msg.ok{border-color:var(--hit)}
-nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);z-index:6;padding-bottom:env(safe-area-inset-bottom)}
-nav button{border:0;border-radius:0;min-height:60px;background:none;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--sub)}
-nav button svg{width:22px;height:22px}
-nav button.on{color:var(--band);font-weight:800}
-.eng{display:grid;grid-template-columns:44px 1fr auto;gap:2px 8px;font-size:14px;padding:6px 0;border-top:1px solid var(--line)}
-.eng .st{font-size:12px;white-space:nowrap}
-.loop dt{font-weight:700;font-size:13.5px;margin-top:6px}.loop dd{margin:0 0 2px 0;font-size:14px}
-.prog{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--line)}.prog i{display:block;height:100%;background:var(--band);width:0}
 @media (prefers-reduced-motion:no-preference){.card.new{animation:rise .35s ease-out}@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}}
 @media(max-width:600px){table{font-size:13.5px}}
+.paste{min-height:150px;font-size:16px}
+.howto{margin:0 0 10px;font-size:15px}
+.howto b{color:var(--band)}
+.foot{border:0;margin:6px 0 0;padding:0}
+.foot summary{font-weight:400;color:var(--sub);font-size:13.5px;justify-content:center}
+#out{scroll-margin-top:64px}
+#recKpi .kpi{grid-template-columns:repeat(2,1fr)}
+.chart{position:relative;margin:12px 0 4px}
+.chart h3{margin:0 0 2px}
+.chart svg{display:block;width:100%;height:auto;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.chart .ax{font-size:11px;fill:var(--sub);font-variant-numeric:tabular-nums}
+.chart .tip{position:absolute;top:30px;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 9px;font-size:13px;line-height:1.45;box-shadow:0 2px 8px rgba(0,0,0,.12);white-space:nowrap}
+.ver{text-align:center;color:var(--sub);font-size:12px;margin:10px 0 0}
+.wait{padding:10px 0;border-top:1px solid var(--line)}.wait:first-of-type{border-top:0}
+.rec{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:14.5px}.rec:first-child{border-top:0}
 </style>
 </head>
 <body>
 <header>
-  <h1>競輪予想 Ver.3</h1>
-  <div class="meta"><span id="hVer"></span><span id="hStore">保存先：確認中</span><span id="hDrive">ドライブ：確認中</span></div>
+  <h1>競輪予想</h1>
 </header>
 <main>
-<section class="tab on" id="t-yoso">
-  <div class="card" id="backupNag" hidden>
-    <h2>ドライブに控えを残しましょう</h2>
-    <p class="sub" id="nagText" style="margin:0 0 8px"></p>
-    <div class="row"><button class="main" id="nagShare" style="flex:1">いま控えを残す</button><button class="sm" id="nagLater">あとで</button></div>
-  </div>
   <div class="card" id="installCard" hidden>
     <h2>アプリとして入れる</h2>
-    <p class="sub" id="installNote" style="margin:0 0 8px">ボタンを押すと、アプリ一覧に「競輪予想3」が入ります。次からはアイコンから開けます。</p>
+    <p class="sub" id="installNote" style="margin:0 0 8px">押すと、アプリ一覧に「競輪予想3」が入ります。次からはアイコンから開けます。</p>
     <button class="main" id="installBtn" hidden>アプリとして入れる</button>
-    <div id="installHelp" hidden>
-      <p style="margin:0 0 6px">クロームのメニュー（︙）から「ホーム画面に追加」→「インストール」で、アプリ一覧に入ります。</p>
-      <p class="sub" style="margin:0 0 8px">LINEなど別のアプリの中で開いているときは、先にその画面のメニューから「ブラウザで開く」（または「Chromeで開く」）を選んでください。すでに入れている場合は、アプリ一覧の「競輪予想3」から開いてください。</p>
-      <button id="copyUrl" style="width:100%">このページのアドレスをコピー</button>
-    </div>
+    <p class="sub" id="installHelp" hidden style="margin:0">クロームの右上「︙」から「ホーム画面に追加」または「アプリをインストール」を選んでください。</p>
     <div id="installMsg"></div>
   </div>
-  <div class="card" id="startCard" hidden>
-    <h2>はじめに</h2>
-    <p class="sub" style="margin:0 0 8px" id="startNote">この端末にはまだ記録がありません。ドライブに保存済みの学習データがあれば読み込めます。</p>
-    <button class="main" id="startRestore">ドライブから学習データを読み込む</button>
-    <button id="startImport" style="width:100%;margin-top:8px">前のスマホのデータを読み込む（機種変更のとき）</button>
-    <input type="file" id="startFile" accept=".json,.txt,application/json,text/plain" multiple hidden>
-    <p class="sub" style="margin:8px 0 0">使い方：チャリロトの出走表とオッズ表をまとめて貼る →「予想する」→ 結果が出たらKEIRIN.JPの結果を「結果」タブに貼る →「照合する」。記録はこの端末に保存されます。車券の購入は20歳になってから。必中ではありません。</p>
-    <div id="startMsg"></div>
-  </div>
+
   <div class="card">
-    <h2>出走表とオッズ表を貼る</h2>
-    <p class="sub" style="margin:0 0 8px">チャリロトの「出走表詳細」と「オッズ表詳細（3連複）」をまとめて貼り付けます。オッズが変わったら、何度でも貼り直せます（2回目からはオッズ表だけでも可）。</p>
-    <textarea id="entry" placeholder="ここに貼り付け"></textarea>
-    <div class="row" style="margin-top:8px"><button class="main" id="doPredict" style="flex:1">予想する</button><button class="sm" id="clrEntry">消す</button></div>
-    <div id="entryMsg"></div>
+    <p class="howto"><b>レース前</b>　チャリロトの出走表とオッズ表をまとめて貼る → 買い目が出ます<br><b>レース後</b>　KEIRIN.JPの結果を貼る → 当たり外れが出ます</p>
+    <textarea id="paste" class="paste" placeholder="ここに貼り付け" aria-label="ここに貼り付け"></textarea>
+    <div id="pasteMsg"></div>
   </div>
-  <div id="predOut"></div>
-</section>
 
-<section class="tab" id="t-kekka">
-  <div class="card">
-    <h2>結果表を貼る</h2>
-    <label class="sub" for="raceSel">照合するレース</label>
-    <select id="raceSel"></select>
-    <div id="selBets"></div>
-    <p class="sub" style="margin:8px 0">KEIRIN.JPの結果ページ（払戻金と着順）を貼り付けます。レースは貼った内容から自動で探します。</p>
-    <textarea id="result" placeholder="ここに貼り付け"></textarea>
-    <details><summary>貼り付けできないとき（手入力）</summary>
-      <div class="grid" style="margin-top:6px"><div><label for="mKey">3連複の組番（例 1-5-7）</label><input id="mKey" inputmode="numeric"></div><div><label for="mPay">払戻金（円）</label><input id="mPay" inputmode="numeric"></div></div>
-    </details>
-    <button class="main" id="doSettle" style="margin-top:10px">照合する</button>
-    <div id="resultMsg"></div>
-  </div>
-  <div id="settleOut"></div>
-</section>
+  <div id="out"></div>
 
-<section class="tab" id="t-seiseki">
-  <div class="card"><h2>成績</h2>
-    <div class="row" role="group"><button class="sm" data-view="live">実戦</button><button class="sm" data-view="replay">再現（過去データ）</button><button class="sm" data-view="all">すべて</button></div>
-    <div id="kpi" style="margin-top:10px"></div>
-    <p class="sub" id="kpiNote" style="margin:8px 0 0"></p>
+  <div class="card" id="waitCard" hidden>
+    <h2>結果待ちのレース</h2>
+    <div id="waitList"></div>
   </div>
-  <div class="card"><h3 style="margin-top:0">区分別・グレード別・車立別</h3><div id="breakdown"></div></div>
-  <div class="card"><h3 style="margin-top:0">レース一覧</h3><ul class="list" id="raceList"></ul></div>
-</section>
 
-<section class="tab" id="t-gakushu">
-  <div class="card"><h2>メタループ</h2>
-    <p class="sub" style="margin:0 0 8px">照合済みの全レースで変数を見直します。過学習を防ぐ強さは交差検証で決め、よくならない変更は採用しません。収束するまで回数の上限なしで回ります。</p>
-    <div class="row"><button class="main" id="doMeta" style="flex:1">メタループを実行</button><button class="sm" id="stopMeta" hidden>止める</button></div>
-    <div class="prog" style="margin-top:10px"><i id="metaBar"></i></div>
-    <div id="metaMsg"></div>
+  <div class="card" id="recCard" hidden>
+    <h2>これまでの成績</h2>
+    <div id="recKpi"></div>
+    <div class="chart" id="recChart" hidden></div>
+    <div id="recList" style="margin-top:10px"></div>
   </div>
-  <div class="card"><h2>直近のループ</h2><div id="loops"></div></div>
-  <div class="card"><h2>36エンジン</h2><div id="engines"></div></div>
-  <div class="card"><h2>変数（すべて変数化）</h2><p class="sub" style="margin:0 0 6px">「学習」は自動で更新されます。「固定」は運用指針で決まっている値です。</p><div id="vars"></div></div>
-  <div class="card"><h2>変更の履歴</h2><ul class="list" id="changes"></ul></div>
-</section>
 
-<section class="tab" id="t-hozon">
-  <div class="card"><h2>Googleドライブ</h2>
-    <p class="sub" style="margin:0 0 8px" id="driveNote">保存先：「競輪Ver3_予想_学習データ」（無ければ自動で作成）。レースごとの記録は中の「競輪Ver3_レース記録」へ。形式はAIが読み取れる汎用形式です。</p>
-    <label class="row" id="autoDriveRow" style="gap:10px;margin-bottom:10px"><input type="checkbox" id="autoDrive" style="width:22px;height:22px"><span>予想と照合のたびに自動で保存する</span></label>
-    <button class="main" id="shareDrive" hidden>スマホの共有でドライブに保存</button>
-    <p class="sub" id="shareNote" style="margin:8px 0 0">記録はこのスマホに自動で保存されています。ドライブへの控えは機種変更や故障に備えるためのもので、週に1回ほどで十分です。共有の画面では、上の段の「My Drive」（ドライブのマーク付き）を押すと早く保存できます。戻すときは下の「読み込み」でそのファイルを選びます。</p>
-    <p class="sub" id="lastShare" style="margin:6px 0 0"></p>
-    <div class="row"><button class="main" id="saveFull" style="flex:1">全データをドライブに保存</button></div>
-    <div class="row" style="margin-top:8px"><button id="restore" style="flex:1">ドライブから復元</button></div>
-    <div id="driveMsg"></div>
-  </div>
-  <div class="card"><h2>書き出し・読み込み</h2>
-    <div class="row"><button id="exportFile" style="flex:1">ファイルに書き出す</button><button id="copyAll" style="flex:1">コピー</button></div>
-    <h3>読み込み</h3>
-    <input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" multiple>
-    <textarea id="importText" placeholder="書き出したデータを貼り付けても読み込めます" style="min-height:70px;margin-top:8px"></textarea>
-    <button id="doImport" style="margin-top:8px;width:100%">読み込む（同じレースは新しい方を残す）</button>
-    <div id="ioMsg"></div>
-  </div>
-  <div class="card"><h2>この端末の状態</h2><div id="storeInfo" class="sub"></div>
-    <h3>ホーム画面に置く</h3><p class="sub" style="margin:0">クロームでこのページを開き、右上のメニュー →「アプリをインストール」または「ホーム画面に追加」でアイコンから起動できます。</p>
-    <p class="sub">車券の購入は20歳になってから。必中ではありません。</p>
-  </div>
-</section>
+  <details class="foot" id="foot">
+    <summary>データの控え・機種変更のとき</summary>
+    <div class="card" style="margin-top:6px">
+      <p class="sub" style="margin:0 0 10px" id="footNote">ふだんは使いません。記録は自動で保存されています。</p>
+      <button id="backupBtn" style="width:100%">控えを残す</button>
+      <button id="importBtn" style="width:100%;margin-top:8px">前のスマホの控えを読み込む</button>
+      <input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" multiple hidden>
+      <div id="footMsg"></div>
+    </div>
+  </details>
+  <p class="ver" id="ver"></p>
 </main>
-<nav>
-  <button data-tab="yoso" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/></svg>予想</button>
-  <button data-tab="kekka"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg>結果</button>
-  <button data-tab="seiseki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>成績</button>
-  <button data-tab="gakushu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 14-5l2-2v6h-6l2-2a6 6 0 1 0 1 7"/></svg>学習</button>
-  <button data-tab="hozon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"/></svg>保存</button>
-</nav>
 <script type="application/json" id="seed">{"format":"keirin-v3-state","version":"3.11.0","vars":{"yen":100,"maxPts":3,"minPts":1,"candM":8,"aKatame":0.661,"aStd":0.457,"aAre":0.267,"eLo":0.6666666666666666,"eHi":0.3333333333333333,"k0":5,"aK0":20,"torigami":1,"eta":0.019556168427451743,"etaMin":0.005,"etaMax":0.2,"cap":0.1,"topK":2,"l2g":0.3,"l2d":1.5,"dRate":0.5,"evalN":50,"eps":0.002,"missOdds":0.5,"venueK0":10,"riderK0":3,"metaTol":1e-06,"cvEps":0.003},"theta":{"w":{"E01":0.9035546758468331,"E02":0.1654350449328119,"E03":0.16112104964231685,"E04":0.09799875089119754,"E05":0.17435971109339682,"E06":0.11360754286511321,"E07":0.003051390948263432,"E08":0.02620987247124072,"E09":0.10383870637504769,"E10":0.04624295465249873,"E11":-0.005019651775199326,"E12":0.004869155626237171,"E13":-0.019216010538855553,"E14":-0.09755995427681098,"E15":0.18442597460483398,"E16":0.010381441895964835,"E17":0.15239625874400975,"E18":0.038048397122233055,"E19":-0.06352439953056993,"E20":0.09881192026741689,"E21":0.2230028024842093,"E22":-0.07556147169013347,"E23":-0.0310246782318203,"E24":0.028154403168361916,"E25":0.12425895538690128,"E26":0.11623244014296474},"u1":0.3293343952515491,"u2":0.19367988569519987,"b":-2.927135200739141,"t":0.08784229865024683},"theta0":{"w":{"E01":0.9,"E02":0.15,"E03":0.2,"E04":0.15,"E05":0.2,"E06":0.15,"E07":0.08,"E08":0.08,"E09":0.05,"E10":0,"E11":0.05,"E12":0.08,"E13":0,"E14":0,"E15":0.2,"E16":0.08,"E17":0.12,"E18":0,"E19":-0.08,"E20":0.05,"E21":0.25,"E22":-0.03,"E23":0,"E24":0.03,"E25":0.15,"E26":0.1},"u1":0.3,"u2":0.2,"b":-2.9444389791664403,"t":0},"dG":{"G1":{"w":{"E01":-2.1173179569565454e-05,"E02":-0.0004721486802042413,"E03":0.0028598456314112056,"E04":-0.003052523486925673,"E05":-0.0031098459870040835,"E06":-0.0015184398659539296,"E07":-0.0025522900506647684,"E08":0.0003883617188396662,"E09":0.002668810425537092,"E10":-0.00262436855406287,"E11":-0.0012447911067020156,"E12":-0.002565793065950148,"E13":0.0014691882299868585,"E14":-0.002423177166745189,"E15":-0.004960399690977033,"E16":0.0028136407389320263,"E17":-0.004088725357434665,"E18":-4.024878708520725e-05,"E19":0.0023385862781827964,"E20":0.0016490770510274283,"E21":0.0005207305286037611,"E22":0,"E23":0,"E24":0,"E25":0,"E26":0.0022505655715402252},"u1":-0.0006954701210230425,"u2":-0.0006197091886703945,"b":-0.0004811906836535017,"t":-0.026621936461783166},"F1":{"w":{"E01":-0.005015718527456616,"E02":0.002749305501066824,"E03":-0.006848726861611903,"E04":-0.00806141196887463,"E05":-0.004573861428029612,"E06":-0.006516494373416954,"E07":-0.003964650758230356,"E08":-0.0037806524282875576,"E09":0.0018333089282800516,"E10":0.004615400216675869,"E11":-0.011322367301129161,"E12":-0.003976661720352757,"E13":-0.0009161287795922515,"E14":-0.009554314404772812,"E15":-0.0021310897896231243,"E16":-0.007698815516370426,"E17":0.004209001105418859,"E18":0.0036964856715645507,"E19":0.0012302832649191413,"E20":0.0024062977374132264,"E21":-0.005716748530308494,"E22":-0.004215634000947578,"E23":-0.0022489490425560256,"E24":-0.0003600617850225568,"E25":0,"E26":0.00022459020669564879},"u1":0.003896511651270915,"u2":0.0003174264131047411,"b":-0.00393799046155272,"t":0.028948126934895107},"F2":{"w":{"E01":0.005589033638446277,"E02":0.000868901506472895,"E03":-0.0030558537292633653,"E04":0.0008081653432948691,"E05":0.0028898729298778582,"E06":0.0011122073289890066,"E07":-0.009003820772004952,"E08":-0.006947738251130857,"E09":0.006773806400482569,"E10":0.007282886154965042,"E11":0.0015965209311794822,"E12":-0.008113160863965307,"E13":-0.0053129702042548545,"E14":-0.007083120751548052,"E15":0.003678960850231036,"E16":-0.009165827091146021,"E17":0.006365051475216041,"E18":0.004042405625142026,"E19":-0.00019168518045904292,"E20":0.005844175062521751,"E21":-0.0006071928107860306,"E22":-0.0056280008351034805,"E23":-0.004040869483533592,"E24":0,"E25":-0.004205528963280383,"E26":0.0017263242382949656},"u1":0.002754889132501907,"u2":-0.000990932756040048,"b":0.00808769637931577,"t":0.027002634398342856},"ガールズ":{"w":{"E01":0.00021692672590759224,"E02":0,"E03":-0.0008607121114602845,"E04":-0.0002293900637792213,"E05":-0.0003747268710433841,"E06":-0.0004394758235240323,"E07":-3.684852710125511e-05,"E08":-0.0005164518697064765,"E09":-0.00040639661461100635,"E10":5.0295889194912456e-05,"E11":-0.00019488042023443745,"E12":-0.0005293011580588086,"E13":0.0008764868000011052,"E14":-0.0007327240731871602,"E15":0.0002169267259075923,"E16":0,"E17":0,"E18":0,"E19":0,"E20":0,"E21":0.00035339935913071026,"E22":0.0006727711021593263,"E23":0,"E24":0,"E25":-0.0010281194838666723,"E26":-0.0009607716065026185},"u1":0,"u2":0,"b":0.00028262868353406463,"t":-0.011557004821492058}},"dN":{"6":{"w":{"E01":-0.0004549341375262348,"E02":0,"E03":-0.0024073815609206876,"E04":-0.0011475085141092359,"E05":-0.0008129085517845623,"E06":-0.0014001636597538085,"E07":-0.0006973960550039856,"E08":-0.002627414649007776,"E09":-0.0008170722922066251,"E10":0.001970414654909285,"E11":-0.0010344477234462384,"E12":-0.00213199669858515,"E13":0.0014989290815927482,"E14":-0.0009915366994371043,"E15":0.0003146566564056825,"E16":-0.00019325066579494826,"E17":0.0003559287817363089,"E18":4.02722466107969e-05,"E19":-9.900107532068064e-05,"E20":9.900107532068062e-05,"E21":0.0005958668895345383,"E22":-0.0005144748418982866,"E23":-9.743111914241164e-05,"E24":0,"E25":-0.0013979148196829154,"E26":-0.0020878746106734966},"u1":0.0006568359533140694,"u2":0.00024034744872587327,"b":-0.00101311255841865,"t":0.0025584704760019915},"7":{"w":{"E01":0.0012451759744234886,"E02":0.00361820700753972,"E03":-0.008357911141414865,"E04":-0.0063351281752497485,"E05":-0.001245806817410575,"E06":-0.0044435992081981734,"E07":-0.01230792400233258,"E08":-0.008617427900117115,"E09":0.009017791006358241,"E10":0.009978167605926534,"E11":-0.008886279066737876,"E12":-0.010487127043791723,"E13":-0.006851541265438752,"E14":-0.01637862253007092,"E15":0.0014501411301098205,"E16":-0.016671391941721497,"E17":0.010218123798898592,"E18":0.00769861905009578,"E19":0.0011375991597807795,"E20":0.0081514717246143,"E21":-0.0065664088714983545,"E22":-0.008656388891993444,"E23":-0.0061923874069472066,"E24":-0.0003600617850225568,"E25":-0.0038357336274641406,"E26":0.003078017449161492},"u1":0.005994564830458752,"u2":-0.00091385379166118,"b":0.0054454471597157605,"t":0.04183528603574391},"9":{"w":{"E01":-2.1173179569565454e-05,"E02":-0.0004721486802042413,"E03":0.0028598456314112056,"E04":-0.003052523486925673,"E05":-0.0031098459870040835,"E06":-0.0015184398659539296,"E07":-0.0025522900506647684,"E08":0.0003883617188396662,"E09":0.002668810425537092,"E10":-0.00262436855406287,"E11":-0.0012447911067020156,"E12":-0.002565793065950148,"E13":0.0014691882299868585,"E14":-0.002423177166745189,"E15":-0.004960399690977033,"E16":0.0028136407389320263,"E17":-0.004088725357434665,"E18":-4.024878708520725e-05,"E19":0.0023385862781827964,"E20":0.0016490770510274283,"E21":0.0005207305286037611,"E22":0,"E23":0,"E24":0,"E25":0,"E26":0.0022505655715402252},"u1":-0.0006954701210230425,"u2":-0.0006197091886703945,"b":-0.0004811906836535017,"t":-0.026621936461783166}},"kappa":{"全体":{"H":26,"S":28.600387854897875,"N":72},"n9":{"H":0,"S":2.8181406709241896,"N":12},"G1|9":{"H":0,"S":2.8181406709241896,"N":12},"n7":{"H":23,"S":23.314690754824497,"N":56},"F1|7":{"H":12,"S":11.035210915383168,"N":25},"F2|7":{"H":10,"S":11.559223019984005,"N":29},"n6":{"H":3,"S":2.4675564291491923,"N":4},"ガールズ|6":{"H":1,"S":0.9743753790480928,"N":2},"ガールズ|7":{"H":1,"S":0.7202568194573222,"N":2},"F2|6":{"H":2,"S":1.4931810501010996,"N":2}},"venue":{"小倉":{"逃":0,"捲":4,"差":7,"マ":0},"小田原":{"逃":2,"捲":6,"差":2,"マ":0},"広島":{"逃":5,"捲":2,"差":14,"マ":0},"豊橋":{"逃":2,"捲":4,"差":4,"マ":0},"武雄":{"逃":4,"捲":5,"差":4,"マ":0},"静岡":{"逃":0,"捲":0,"差":4,"マ":1}},"vglobal":{"逃":13,"捲":21,"差":35,"マ":1},"rider":{"中川誠一郎":{"n":1,"top3":1,"wins":1,"agari":11.7,"last":"2026-11-22"},"飯野祐太":{"n":1,"top3":1,"wins":0,"agari":11.6,"last":"2026-11-22"},"根田空史":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"纐纈洸翔":{"n":1,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-22"},"佐藤礼文":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"林慶次郎":{"n":1,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-22"},"川口聖二":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"森川大輔":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"内藤宣彦":{"n":1,"top3":1,"wins":0,"agari":11.2,"last":"2026-11-22"},"橋本紀彰":{"n":1,"top3":1,"wins":0,"agari":10.4,"last":"2026-11-22"},"大関祐也":{"n":1,"top3":0,"wins":0,"agari":10,"last":"2026-11-22"},"河村章憲":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"吉成貴博":{"n":1,"top3":1,"wins":0,"agari":10.4,"last":"2026-11-22"},"橋谷成海":{"n":1,"top3":1,"wins":1,"agari":10.5,"last":"2026-11-22"},"堀僚介":{"n":1,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-22"},"赤井学":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"佐竹和也":{"n":3,"top3":1,"wins":1,"agari":12.4,"last":"2026-11-24"},"松岡孝高":{"n":3,"top3":2,"wins":1,"agari":12.7,"last":"2026-11-24"},"江本博明":{"n":3,"top3":2,"wins":1,"agari":12.4,"last":"2026-11-24"},"田頭寛之":{"n":3,"top3":0,"wins":0,"agari":13,"last":"2026-11-24"},"原井剣也":{"n":3,"top3":1,"wins":0,"agari":12,"last":"2026-11-24"},"金子兼久":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-22"},"眞砂英作":{"n":3,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-24"},"引地正人":{"n":1,"top3":1,"wins":0,"agari":12.8,"last":"2026-11-22"},"横内裕人":{"n":1,"top3":0,"wins":0,"agari":13.2,"last":"2026-11-22"},"岩城佑典":{"n":1,"top3":0,"wins":0,"agari":12.9,"last":"2026-11-22"},"中西司":{"n":1,"top3":1,"wins":1,"agari":12.6,"last":"2026-11-22"},"柴田功一郎":{"n":1,"top3":1,"wins":0,"agari":12.6,"last":"2026-11-22"},"三浦靖":{"n":1,"top3":0,"wins":0,"agari":13,"last":"2026-11-22"},"内村竜也":{"n":1,"top3":0,"wins":0,"agari":13,"last":"2026-11-22"},"佐藤一伸":{"n":1,"top3":0,"wins":0,"agari":12.8,"last":"2026-11-22"},"木村隆弘":{"n":1,"top3":1,"wins":0,"agari":11.7,"last":"2026-11-22"},"青柳靖起":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"角令央奈":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"佐々木豪":{"n":1,"top3":1,"wins":1,"agari":11.7,"last":"2026-11-22"},"岡本大嗣":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"五日市誠":{"n":1,"top3":1,"wins":0,"agari":11.4,"last":"2026-11-22"},"安彦統賀":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"香川雄介":{"n":1,"top3":0,"wins":0,"agari":11.7,"last":"2026-11-22"},"門脇翼":{"n":1,"top3":0,"wins":0,"agari":10,"last":"2026-11-22"},"野上竜太":{"n":1,"top3":1,"wins":1,"last":"2026-11-22"},"堺文人":{"n":1,"top3":1,"wins":0,"agari":10.1,"last":"2026-11-22"},"須永勝太":{"n":1,"top3":0,"wins":0,"agari":10.1,"last":"2026-11-22"},"奥出良":{"n":1,"top3":0,"wins":0,"agari":10.3,"last":"2026-11-22"},"板崎佑矢":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"三浦生誠":{"n":1,"top3":0,"wins":0,"agari":10.3,"last":"2026-11-22"},"長松大祐":{"n":3,"top3":1,"wins":1,"agari":12.1,"last":"2026-11-24"},"阿部充宏":{"n":3,"top3":2,"wins":0,"agari":12.7,"last":"2026-11-24"},"山信田学":{"n":3,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-24"},"十文字菊雄":{"n":3,"top3":1,"wins":0,"agari":12.5,"last":"2026-11-24"},"谷元奎心":{"n":3,"top3":2,"wins":0,"agari":12.5,"last":"2026-11-24"},"山口貴弘":{"n":3,"top3":1,"wins":1,"agari":13.6,"last":"2026-11-24"},"高橋紀史":{"n":3,"top3":1,"wins":0,"agari":12.2,"last":"2026-11-24"},"藤岡徹也":{"n":1,"top3":1,"wins":1,"agari":13.1,"last":"2026-11-22"},"新井剛央":{"n":1,"top3":1,"wins":0,"agari":13.8,"last":"2026-11-22"},"城戸崎隆史":{"n":1,"top3":1,"wins":0,"agari":13.6,"last":"2026-11-22"},"松本昂大":{"n":1,"top3":0,"wins":0,"agari":13.9,"last":"2026-11-22"},"北村貴幸":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"佐々木孝司":{"n":1,"top3":0,"wins":0,"agari":14,"last":"2026-11-22"},"吉川悟":{"n":1,"top3":0,"wins":0,"agari":13.9,"last":"2026-11-22"},"岩井芯":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"林大悟":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"金子幸央":{"n":1,"top3":1,"wins":1,"agari":11.5,"last":"2026-11-22"},"大川龍二":{"n":1,"top3":0,"wins":0,"agari":11.1,"last":"2026-11-22"},"岩谷拓磨":{"n":1,"top3":1,"wins":0,"agari":11.2,"last":"2026-11-22"},"海老根恵太":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"晝田宗一郎":{"n":1,"top3":0,"wins":0,"agari":11.2,"last":"2026-11-22"},"志村龍己":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"東口善朋":{"n":1,"top3":1,"wins":0,"agari":11.7,"last":"2026-11-22"},"稲村好将":{"n":1,"top3":0,"wins":0,"agari":10,"last":"2026-11-22"},"寺崎祐樹":{"n":1,"top3":1,"wins":0,"agari":10,"last":"2026-11-22"},"舘泰守":{"n":1,"top3":0,"wins":0,"agari":10,"last":"2026-11-22"},"佐藤亙":{"n":1,"top3":1,"wins":0,"agari":10.2,"last":"2026-11-22"},"馬場和広":{"n":1,"top3":0,"wins":0,"agari":10.1,"last":"2026-11-22"},"前田義和":{"n":1,"top3":1,"wins":1,"agari":10.1,"last":"2026-11-22"},"真木寛斗":{"n":1,"top3":0,"wins":0,"agari":10.7,"last":"2026-11-22"},"平石浩之":{"n":3,"top3":2,"wins":1,"agari":12.2,"last":"2026-11-24"},"立花成泰":{"n":3,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"福田要":{"n":3,"top3":2,"wins":1,"agari":12.3,"last":"2026-11-24"},"高比良豪":{"n":3,"top3":1,"wins":1,"agari":12,"last":"2026-11-24"},"小島雅章":{"n":3,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-24"},"藤原亮太":{"n":3,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-24"},"夏目新吾":{"n":3,"top3":2,"wins":0,"agari":12.3,"last":"2026-11-24"},"小埜正義":{"n":1,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-22"},"國村洋":{"n":1,"top3":0,"wins":0,"agari":12.7,"last":"2026-11-22"},"弓矢輪太郎":{"n":1,"top3":0,"wins":0,"agari":12.9,"last":"2026-11-22"},"藤井優希":{"n":1,"top3":1,"wins":0,"agari":12.7,"last":"2026-11-22"},"坂上忠克":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-22"},"井手健":{"n":1,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-22"},"山中秀将":{"n":1,"top3":1,"wins":1,"agari":12,"last":"2026-11-22"},"長島大介":{"n":1,"top3":0,"wins":0,"agari":11.4,"last":"2026-11-22"},"山崎歩夢":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"三谷将太":{"n":1,"top3":1,"wins":1,"agari":11.3,"last":"2026-11-22"},"脇本勇希":{"n":1,"top3":1,"wins":0,"agari":11.5,"last":"2026-11-22"},"渡邉雅也":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"大石剣士":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"守澤太志":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"志智俊夫":{"n":1,"top3":1,"wins":0,"agari":11.3,"last":"2026-11-22"},"鈴木竜士":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"荻原寿嗣":{"n":1,"top3":1,"wins":0,"agari":10.9,"last":"2026-11-22"},"天野純平":{"n":1,"top3":1,"wins":0,"agari":10.4,"last":"2026-11-22"},"小橋明紀":{"n":1,"top3":1,"wins":1,"agari":10.7,"last":"2026-11-22"},"鈴木誠":{"n":3,"top3":2,"wins":0,"agari":12.7,"last":"2026-11-24"},"松本卓也":{"n":3,"top3":2,"wins":1,"agari":12.5,"last":"2026-11-24"},"安東英博":{"n":3,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-24"},"青井賢治":{"n":3,"top3":2,"wins":2,"agari":12.1,"last":"2026-11-24"},"高橋幸司":{"n":3,"top3":2,"wins":1,"agari":12.4,"last":"2026-11-24"},"佐藤啓斗":{"n":3,"top3":0,"wins":0,"agari":12.8,"last":"2026-11-24"},"行成大祐":{"n":3,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-24"},"表原周":{"n":1,"top3":1,"wins":0,"agari":11.7,"last":"2026-11-22"},"三好恵一郎":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"西森一稀":{"n":1,"top3":1,"wins":1,"agari":11.8,"last":"2026-11-22"},"小笹隼人":{"n":1,"top3":1,"wins":0,"agari":11.7,"last":"2026-11-22"},"須賀和彦":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"川田真也":{"n":1,"top3":0,"wins":0,"agari":12.7,"last":"2026-11-22"},"池田浩士":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"園田匠":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-22"},"杉浦侑吾":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"三谷竜生":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"笠松信幸":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"小林泰正":{"n":1,"top3":0,"wins":0,"agari":11.4,"last":"2026-11-22"},"菅原大也":{"n":1,"top3":0,"wins":0,"agari":14,"last":"2026-11-22"},"柏野智典":{"n":1,"top3":1,"wins":0,"agari":11.4,"last":"2026-11-22"},"阿部将大":{"n":1,"top3":1,"wins":0,"agari":11.3,"last":"2026-11-22"},"岩本俊介":{"n":1,"top3":1,"wins":1,"agari":11.4,"last":"2026-11-22"},"古賀勝大":{"n":1,"top3":1,"wins":1,"last":"2026-11-22"},"久樹克門":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"中井勇介":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"上田隼":{"n":1,"top3":0,"wins":0,"agari":10.2,"last":"2026-11-22"},"山崎航":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"中曽直彦":{"n":3,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"坂本晃輝":{"n":3,"top3":2,"wins":2,"agari":12.7,"last":"2026-11-24"},"加賀美智史":{"n":3,"top3":1,"wins":0,"agari":12.7,"last":"2026-11-24"},"宮倉勇":{"n":3,"top3":2,"wins":0,"agari":12,"last":"2026-11-24"},"曽我圭佑":{"n":3,"top3":3,"wins":1,"agari":12.9,"last":"2026-11-24"},"米嶋賢二":{"n":3,"top3":0,"wins":0,"agari":12.2,"last":"2026-11-24"},"坂本将太郎":{"n":3,"top3":1,"wins":0,"agari":12.5,"last":"2026-11-24"},"富永益生":{"n":1,"top3":1,"wins":1,"agari":12.2,"last":"2026-11-22"},"小竹洋平":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"相澤政宏":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"林敬宏":{"n":1,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-22"},"野津宏介":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"田中勝仁":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"土岐幹多":{"n":1,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-22"},"横関裕樹":{"n":1,"top3":0,"wins":0,"agari":10.4,"last":"2026-11-22"},"野崎将史":{"n":1,"top3":0,"wins":0,"agari":10.3,"last":"2026-11-22"},"吉田昌司":{"n":1,"top3":1,"wins":0,"agari":10.5,"last":"2026-11-22"},"橋本壮史":{"n":1,"top3":1,"wins":1,"agari":10.3,"last":"2026-11-22"},"近藤俊明":{"n":1,"top3":1,"wins":0,"agari":10.3,"last":"2026-11-22"},"福元啓太":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"今村麟太郎":{"n":1,"top3":0,"wins":0,"agari":11.1,"last":"2026-11-22"},"藤田楓":{"n":3,"top3":3,"wins":2,"agari":12.4,"last":"2026-11-24"},"小峰烈":{"n":3,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-24"},"井寺亮太":{"n":3,"top3":1,"wins":0,"agari":13.3,"last":"2026-11-24"},"山崎悟":{"n":3,"top3":2,"wins":0,"agari":12.5,"last":"2026-11-24"},"市本隆司":{"n":3,"top3":2,"wins":0,"agari":12.4,"last":"2026-11-24"},"佐伯辰哉":{"n":3,"top3":1,"wins":0,"agari":12.7,"last":"2026-11-24"},"堀越翔己":{"n":3,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-24"},"本郷雄三":{"n":1,"top3":1,"wins":0,"agari":13,"last":"2026-11-22"},"小畑勝広":{"n":1,"top3":1,"wins":1,"agari":13,"last":"2026-11-22"},"佐藤雅春":{"n":1,"top3":1,"wins":0,"agari":12.9,"last":"2026-11-22"},"大澤雄大":{"n":1,"top3":0,"wins":0,"agari":13,"last":"2026-11-22"},"内田英介":{"n":1,"top3":0,"wins":0,"agari":13.1,"last":"2026-11-22"},"中島竜誠":{"n":1,"top3":0,"wins":0,"agari":13.6,"last":"2026-11-22"},"松本憲斗":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"嘉永泰斗":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"森田優弥":{"n":1,"top3":1,"wins":0,"agari":11.8,"last":"2026-11-22"},"和田健太郎":{"n":1,"top3":1,"wins":0,"agari":11.5,"last":"2026-11-22"},"村田雅一":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"鈴木玄人":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"芦澤大輔":{"n":1,"top3":0,"wins":0,"agari":11.5,"last":"2026-11-22"},"山田庸平":{"n":1,"top3":1,"wins":1,"agari":11.7,"last":"2026-11-22"},"松井宏佑":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"山田久徳":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"河合佑弥":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"伊藤裕貴":{"n":1,"top3":1,"wins":1,"agari":10,"last":"2026-11-22"},"小酒大勇":{"n":1,"top3":1,"wins":0,"agari":10,"last":"2026-11-22"},"伊藤成紀":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-22"},"小榑佑弥":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"内山貴裕":{"n":1,"top3":0,"wins":0,"agari":10.3,"last":"2026-11-22"},"片折亮太":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"三澤康人":{"n":3,"top3":1,"wins":0,"agari":12.2,"last":"2026-11-24"},"矢部駿人":{"n":3,"top3":1,"wins":0,"agari":12.5,"last":"2026-11-24"},"菅原裕太":{"n":3,"top3":3,"wins":1,"agari":12.3,"last":"2026-11-24"},"岡部陸斗":{"n":3,"top3":1,"wins":1,"agari":13.8,"last":"2026-11-24"},"森安崇之":{"n":3,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"飯田辰哉":{"n":3,"top3":2,"wins":1,"agari":12.2,"last":"2026-11-24"},"齊藤英伊須":{"n":3,"top3":2,"wins":1,"agari":12.2,"last":"2026-11-24"},"川上隆義":{"n":1,"top3":1,"wins":1,"agari":12.4,"last":"2026-11-22"},"山根慶太":{"n":1,"top3":0,"wins":0,"agari":14.1,"last":"2026-11-22"},"山内卓也":{"n":1,"top3":1,"wins":0,"agari":12.2,"last":"2026-11-22"},"吉松直人":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"今藤康裕":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"棚橋勉":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"古川尚耶":{"n":1,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-22"},"稲川翔":{"n":1,"top3":1,"wins":0,"agari":11.3,"last":"2026-11-22"},"小川勇介":{"n":1,"top3":1,"wins":0,"agari":10.9,"last":"2026-11-22"},"和田真久留":{"n":1,"top3":0,"wins":0,"agari":11.4,"last":"2026-11-22"},"小倉竜二":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"脇本雄太":{"n":1,"top3":1,"wins":1,"agari":11,"last":"2026-11-22"},"上野優太":{"n":1,"top3":0,"wins":0,"agari":11.2,"last":"2026-11-22"},"簗田一輝":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-22"},"北津留翼":{"n":1,"top3":0,"wins":0,"agari":11.2,"last":"2026-11-22"},"田村大":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"小原佑太":{"n":1,"top3":1,"wins":1,"agari":10,"last":"2026-11-22"},"山本直":{"n":1,"top3":0,"wins":0,"agari":10.2,"last":"2026-11-22"},"佐藤和也":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"阪本和也":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"荒川仁":{"n":1,"top3":0,"wins":0,"agari":10.4,"last":"2026-11-22"},"小川賢人":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"窓場千加頼":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-22"},"立部楓真":{"n":1,"top3":1,"wins":0,"agari":12.6,"last":"2026-11-22"},"高橋和也":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-22"},"野中龍之介":{"n":1,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-22"},"椎木尾拓哉":{"n":1,"top3":1,"wins":0,"agari":12,"last":"2026-11-22"},"佐川翔吾":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"松岡貴久":{"n":1,"top3":1,"wins":1,"agari":12.5,"last":"2026-11-22"},"松崎広太":{"n":1,"top3":1,"wins":0,"agari":11.5,"last":"2026-11-22"},"村上博幸":{"n":1,"top3":0,"wins":0,"agari":11.4,"last":"2026-11-22"},"中野慎詞":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"佐藤友和":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"寺崎浩平":{"n":1,"top3":1,"wins":0,"agari":11.3,"last":"2026-11-22"},"恩田淳平":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"小原太樹":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-22"},"宿口陽一":{"n":1,"top3":1,"wins":1,"agari":11.4,"last":"2026-11-22"},"橋本強":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-22"},"丸山留依":{"n":1,"top3":0,"wins":0,"agari":10.2,"last":"2026-11-22"},"中井太祐":{"n":1,"top3":1,"wins":1,"last":"2026-11-22"},"箱田優樹":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"西村光太":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"松永将":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"高橋晋也":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"松坂洋平":{"n":1,"top3":1,"wins":0,"last":"2026-11-22"},"岡本総":{"n":1,"top3":1,"wins":0,"agari":11.9,"last":"2026-11-22"},"一戸康宏":{"n":1,"top3":1,"wins":0,"agari":12,"last":"2026-11-22"},"坂本周輝":{"n":1,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-22"},"吉川起也":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"伊藤信":{"n":1,"top3":1,"wins":1,"agari":12,"last":"2026-11-22"},"後藤悠":{"n":1,"top3":0,"wins":0,"agari":13.4,"last":"2026-11-22"},"佐藤壮":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"荒井崇博":{"n":1,"top3":0,"wins":0,"agari":11.4,"last":"2026-11-22"},"阿部拓真":{"n":1,"top3":0,"wins":0,"agari":11.1,"last":"2026-11-22"},"清水裕友":{"n":1,"top3":1,"wins":1,"agari":11.2,"last":"2026-11-22"},"新田祐大":{"n":1,"top3":1,"wins":0,"agari":11.1,"last":"2026-11-22"},"坂井洋":{"n":1,"top3":0,"wins":0,"agari":11,"last":"2026-11-22"},"和田圭":{"n":1,"top3":0,"wins":0,"agari":11,"last":"2026-11-22"},"犬伏湧也":{"n":1,"top3":1,"wins":0,"agari":11.5,"last":"2026-11-22"},"山崎賢人":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-22"},"武藤龍生":{"n":1,"top3":0,"wins":0,"agari":10.9,"last":"2026-11-22"},"小川真太郎":{"n":1,"top3":1,"wins":0,"agari":10.3,"last":"2026-11-22"},"高橋築":{"n":1,"top3":1,"wins":1,"last":"2026-11-22"},"田中晴基":{"n":1,"top3":1,"wins":0,"agari":10.2,"last":"2026-11-22"},"田中誠":{"n":1,"top3":0,"wins":0,"agari":10.5,"last":"2026-11-22"},"川越勇星":{"n":1,"top3":0,"wins":0,"agari":10.5,"last":"2026-11-22"},"武田亮":{"n":1,"top3":0,"wins":0,"agari":10.3,"last":"2026-11-22"},"渡口勝成":{"n":1,"top3":0,"wins":0,"agari":10.7,"last":"2026-11-22"},"湊聖二":{"n":1,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-22"},"張野幸聖":{"n":1,"top3":0,"wins":0,"agari":11.9,"last":"2026-11-22"},"大矢崇弘":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"都築巧":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-22"},"和泉尚吾":{"n":1,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-22"},"中村一将":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"篠田幸希":{"n":1,"top3":1,"wins":1,"agari":12,"last":"2026-11-22"},"郡司浩平":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"佐々木悠葵":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"菅田壱道":{"n":1,"top3":1,"wins":0,"agari":11.2,"last":"2026-11-22"},"山口拳矢":{"n":1,"top3":1,"wins":1,"agari":11.2,"last":"2026-11-22"},"眞杉匠":{"n":1,"top3":0,"wins":0,"agari":13,"last":"2026-11-22"},"町田太我":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"深谷知広":{"n":1,"top3":0,"wins":0,"agari":12,"last":"2026-11-22"},"渡部幸訓":{"n":1,"top3":0,"wins":0,"agari":11.1,"last":"2026-11-22"},"松浦悠士":{"n":1,"top3":1,"wins":0,"agari":11.4,"last":"2026-11-22"},"松本貴治":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"新山響平":{"n":1,"top3":1,"wins":0,"agari":11.8,"last":"2026-11-22"},"菊池岳仁":{"n":1,"top3":0,"wins":0,"last":"2026-11-22"},"阿部力也":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-22"},"成田和也":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"古性優作":{"n":1,"top3":1,"wins":1,"agari":11.3,"last":"2026-11-22"},"吉澤純平":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-22"},"石原颯":{"n":1,"top3":1,"wins":0,"agari":11.3,"last":"2026-11-22"},"小谷文康":{"n":2,"top3":0,"wins":0,"agari":12.2,"last":"2026-11-24"},"安坂洋一":{"n":2,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-24"},"加藤昌平":{"n":2,"top3":2,"wins":1,"agari":12.1,"last":"2026-11-24"},"小林高志":{"n":2,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"重一徳":{"n":2,"top3":2,"wins":0,"agari":12.2,"last":"2026-11-24"},"高谷敏史":{"n":2,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-24"},"長岡豪":{"n":2,"top3":0,"wins":0,"last":"2026-11-24","agari":15.6},"財満伊織":{"n":2,"top3":1,"wins":0,"agari":12.7,"last":"2026-11-24"},"爲田学":{"n":2,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"鈴木広人":{"n":2,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-24"},"中西将太郎":{"n":2,"top3":1,"wins":1,"agari":11.7,"last":"2026-11-24"},"ラモスレオ":{"n":1,"top3":0,"wins":0,"agari":12.9,"last":"2026-11-23"},"早坂道義":{"n":2,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-24"},"山崎明寛":{"n":1,"top3":0,"wins":0,"agari":12.7,"last":"2026-11-23"},"門馬琢麿":{"n":2,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-24"},"渡邊諒馬":{"n":2,"top3":2,"wins":2,"agari":12.4,"last":"2026-11-24"},"飯田威文":{"n":1,"top3":0,"wins":0,"agari":12.7,"last":"2026-11-23"},"時松正":{"n":1,"top3":0,"wins":0,"agari":12.2,"last":"2026-11-23"},"菱沼元樹":{"n":2,"top3":0,"wins":0,"agari":11.7,"last":"2026-11-24"},"相良勝美":{"n":2,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-24"},"坂本智哉":{"n":2,"top3":1,"wins":0,"agari":12.2,"last":"2026-11-24"},"曽我部匡史":{"n":2,"top3":2,"wins":0,"agari":12.2,"last":"2026-11-24"},"小田桐義継":{"n":2,"top3":1,"wins":0,"agari":12.3,"last":"2026-11-24"},"南和夫":{"n":2,"top3":1,"wins":0,"agari":12.5,"last":"2026-11-24"},"古川大輔":{"n":2,"top3":0,"wins":0,"agari":14,"last":"2026-11-24"},"奥山雅士":{"n":2,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-24"},"井上典善":{"n":2,"top3":0,"wins":0,"agari":12.7,"last":"2026-11-24"},"田崎隼翔":{"n":2,"top3":2,"wins":1,"agari":12.4,"last":"2026-11-24"},"布居光":{"n":2,"top3":1,"wins":1,"agari":13.1,"last":"2026-11-24"},"清水美海":{"n":2,"top3":0,"wins":0,"agari":13.2,"last":"2026-11-24"},"青木美保":{"n":2,"top3":1,"wins":0,"agari":13.3,"last":"2026-11-24"},"西島叶子":{"n":2,"top3":2,"wins":1,"agari":13,"last":"2026-11-24"},"山本知佳":{"n":2,"top3":1,"wins":0,"agari":13.2,"last":"2026-11-24"},"平子結菜":{"n":2,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-24"},"中村由香里":{"n":2,"top3":1,"wins":0,"agari":13,"last":"2026-11-24"},"緒方詩央里":{"n":2,"top3":2,"wins":2,"agari":12.5,"last":"2026-11-24"},"牧田咲子":{"n":2,"top3":0,"wins":0,"agari":12.9,"last":"2026-11-24"},"谷元音羽":{"n":2,"top3":1,"wins":0,"agari":12.6,"last":"2026-11-24"},"高橋美沙紀":{"n":2,"top3":1,"wins":0,"agari":13.2,"last":"2026-11-24"},"枝光美奈":{"n":2,"top3":1,"wins":0,"agari":12.5,"last":"2026-11-24"},"普久原美海":{"n":2,"top3":0,"wins":0,"agari":13.3,"last":"2026-11-24"},"須々田大昇":{"n":1,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-24"},"田山誠":{"n":1,"top3":1,"wins":1,"agari":12.6,"last":"2026-11-24"},"近藤直幹":{"n":1,"top3":0,"wins":0,"agari":12.3,"last":"2026-11-24"},"松本充生":{"n":1,"top3":0,"wins":0,"agari":12.2,"last":"2026-11-24"},"福地晶":{"n":1,"top3":1,"wins":1,"agari":12.5,"last":"2026-11-24"},"佐藤魁皇":{"n":1,"top3":1,"wins":1,"agari":12.1,"last":"2026-11-24"},"檀雄二":{"n":1,"top3":1,"wins":0,"agari":11.9,"last":"2026-11-24"},"三登誉哲":{"n":1,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-24"},"南部亮太":{"n":1,"top3":1,"wins":1,"agari":12.2,"last":"2026-11-24"},"黒田淳":{"n":1,"top3":1,"wins":1,"agari":11.4,"last":"2026-11-24"},"渡邉一成":{"n":1,"top3":0,"wins":0,"agari":11.2,"last":"2026-11-24"},"小林大介":{"n":1,"top3":0,"wins":0,"agari":11.1,"last":"2026-11-24"},"野村典嗣":{"n":1,"top3":1,"wins":0,"agari":11.4,"last":"2026-11-24"},"山根将太":{"n":1,"top3":1,"wins":0,"agari":11.6,"last":"2026-11-24"},"三ツ石康洋":{"n":1,"top3":0,"wins":0,"agari":11.3,"last":"2026-11-24"},"中田雄喜":{"n":1,"top3":0,"wins":0,"agari":11,"last":"2026-11-24"},"荻原尚人":{"n":1,"top3":1,"wins":1,"agari":11.8,"last":"2026-11-24"},"石川裕二":{"n":1,"top3":1,"wins":0,"agari":11.8,"last":"2026-11-24"},"吉田裕全":{"n":1,"top3":1,"wins":0,"agari":11.8,"last":"2026-11-24"},"藤田勝也":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-24"},"岡村潤":{"n":1,"top3":1,"wins":0,"agari":12.1,"last":"2026-11-24"},"太田竜馬":{"n":1,"top3":0,"wins":0,"agari":11.8,"last":"2026-11-24"},"佐々木雄一":{"n":1,"top3":1,"wins":0,"agari":12,"last":"2026-11-24"},"皿屋豊":{"n":1,"top3":1,"wins":1,"agari":11.8,"last":"2026-11-24"},"塩島嵩一朗":{"n":1,"top3":0,"wins":0,"agari":12.4,"last":"2026-11-24"},"原井博斗":{"n":1,"top3":0,"wins":0,"agari":11.6,"last":"2026-11-24"},"大竹哲也":{"n":1,"top3":1,"wins":1,"agari":12.5,"last":"2026-11-25"},"辰己豊":{"n":1,"top3":1,"wins":0,"agari":12.7,"last":"2026-11-25"},"船曳義之":{"n":1,"top3":0,"wins":0,"agari":13.8,"last":"2026-11-25"},"杉浦康一":{"n":1,"top3":0,"wins":0,"agari":12.6,"last":"2026-11-25"},"山本康旗":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-25"},"濱口健二":{"n":1,"top3":0,"wins":0,"agari":12.5,"last":"2026-11-25"},"林佳宗依":{"n":1,"top3":1,"wins":0,"agari":12.9,"last":"2026-11-25"},"白濱一平":{"n":1,"top3":1,"wins":0,"agari":12.4,"last":"2026-11-25"},"櫻井丈":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-25"},"山口慎吾":{"n":1,"top3":0,"wins":0,"agari":12.2,"last":"2026-11-25"},"中村賢二":{"n":1,"top3":0,"wins":0,"agari":12.1,"last":"2026-11-25"},"薮謙治":{"n":1,"top3":1,"wins":0,"agari":12.2,"last":"2026-11-25"},"細沼健治":{"n":1,"top3":0,"wins":0,"agari":13,"last":"2026-11-25"},"田口守":{"n":1,"top3":1,"wins":1,"agari":12.3,"last":"2026-11-25"}},"loops":72,"metaRuns":[{"at":"2026-11-27T22:09:28.361Z","races":72,"folds":5,"priorCV":2.7756,"cv":[{"lam":0.003,"cv":4.1649},{"lam":0.01,"cv":3.9531},{"lam":0.03,"cv":3.6063},{"lam":0.1,"cv":2.7891},{"lam":0.3,"cv":2.7592},{"lam":1,"cv":2.7681},{"lam":3,"cv":2.772}],"chosen":0.3,"adopted":true,"before":2.7568,"after":2.7361,"iterations":27,"a":{"堅め":{"n":29,"best":0.6,"a":0.661,"prof":-2920,"hits":14},"標準":{"n":33,"best":0.4,"a":0.457,"prof":-4780,"hits":11},"荒れ":{"n":10,"best":0.1,"a":0.267,"prof":-2800,"hits":0}}}]}</script>
 <script>
 // 競輪予想 Ver.3 中核：画面なし・通信なしで動く（予想・照合・学習・メタループ）
 const K=(()=>{
 "use strict";
-const VERSION="3.12.7";
+const VERSION="3.13.1";
 const MODEL_VER="1";
 const normal=s=>String(s??"").normalize("NFKC").replace(/\r/g,"");
 const keyOf=a=>[...a].map(Number).sort((x,y)=>x-y).join("-");
@@ -882,19 +813,22 @@ function* metaLoop(state,racesAll,opts={}){
     return;
   }
   const newN=last?races.length-(last.races||0):races.length;
-  const quick=!opts.force&&last&&mv(last)===MODEL_VER&&last.cv&&newN>0&&newN<Math.max(v.metaQuickN,races.length*v.metaQuickRate);
-  if(opts.quickOnly&&!quick){yield {phase:"終了",done:true,needFull:true,newN};return;}
+  // 簡易を重ねても、最後の全体（交差検証）からの増加で判断する
+  const lf=[...(state.metaRuns||[])].reverse().find(x=>x.mode!=="簡易"&&x.cv);
+  const sinceFull=lf?races.length-(lf.races||0):races.length;
+  const quick=!opts.force&&lf&&mv(lf)===MODEL_VER&&newN>0&&sinceFull<Math.max(v.metaQuickN,races.length*v.metaQuickRate);
+  if(opts.quickOnly&&!quick){yield {phase:"終了",done:true,needFull:true,newN:sinceFull};return;}
   if(quick){
     // 増えたレースが少ないとき：前回選んだ強さを使い、交差検証を省いて本学習だけ行う
     const before=evalLoss(state,races);let it=0;
-    if(last.adopted&&last.chosen!=null){
-      reset(state);v.l2g=last.chosen;v.l2d=last.chosen*5;
+    if(lf.adopted&&lf.chosen!=null){
+      reset(state);v.l2g=lf.chosen;v.l2d=lf.chosen*5;
       let J=objective(state,races,v.l2g,v.l2d);
       while(true){const r=fit(state,races,v.l2g,v.l2d,10,v.metaTol);it+=r.it;const imp=J-r.J;J=r.J;yield {phase:"本学習",it,J};if(imp<v.metaTol||r.it<10)break;}
     }
     const a=tuneA(state,racesAll), after=evalLoss(state,races);
-    const run={at:new Date().toISOString(),mode:"簡易",races:races.length,newRaces:newN,sig,version:VERSION,model:MODEL_VER,folds:last.folds,priorCV:last.priorCV,cv:last.cv,
-      chosen:last.adopted?last.chosen:null,adopted:!!last.adopted,before:r2(before,4),after:r2(after,4),iterations:it,a};
+    const run={at:new Date().toISOString(),mode:"簡易",races:races.length,newRaces:newN,sig,version:VERSION,model:MODEL_VER,folds:lf.folds,priorCV:lf.priorCV,cv:lf.cv,
+      chosen:lf.adopted?lf.chosen:null,adopted:!!lf.adopted,before:r2(before,4),after:r2(after,4),iterations:it,a};
     state.metaRuns=[...(state.metaRuns||[]),run].slice(-50);
     yield {phase:"終了",done:true,run};return;
   }
@@ -988,7 +922,7 @@ const car=id=>`<span class="car c${+id}">${+id}</span>`;
 const cars=key=>String(key).split("-").map(car).join("");
 const msg=(el,text,kind="")=>{$(el).innerHTML=text?`<div class="msg ${kind}">${esc(text)}</div>`:"";};
 const FOLDER="競輪Ver3_予想_学習データ", SUBFOLDER="競輪Ver3_レース記録", LOCALKEY="keirin-v3-app";
-let S=K.newState(), R={}, curId=null, viewMode="live", metaStop=false;
+let S=K.newState(), R={}, shownId=null;
 
 /* ---------- 保存（クラウド優先・なければこの端末） ---------- */
 const IDB={db:null,
@@ -1042,7 +976,7 @@ const Store={mode:"端末",db:null,uid:null,q:Promise.resolve(),
         try{await this.saveCloud(races,onp);}
         catch(e){
           if(["invalid_argument","revoked","not_granted","capability_disabled","capability_removed"].includes(e?.code)){
-            this.mode="端末";await this.saveLocal(Object.values(R));refreshHeader();return;}
+            this.mode="端末";await this.saveLocal(Object.values(R));return;}
           throw e;
         }
       }else await this.saveLocal(races||[]);
@@ -1146,7 +1080,6 @@ const Drive={server:"Google Drive",mcp:null,folder:null,sub:null,ok:null,
       if(!text){try{res=await this.call("read_file_content",{fileId:file.id});text=this.decode(res);}catch(e){}}
       if(!text)throw Error("「"+file.title+"」を読み取れませんでした。ドライブからダウンロードして「読み込み」で選んでください。");
       mergeData(JSON.parse(text));n++;
-      $("hDrive").textContent="ドライブ：読み込み "+n+"/"+(full.length+later.length);
     }
     if(!n)throw Error("ドライブに保存済みのデータが見つかりません。");
     return n;
@@ -1213,415 +1146,257 @@ function splitFull(d,limit=700000){
 }
 const allRaces=()=>Object.values(R).sort((a,b)=>(a.meta?.date||"").localeCompare(b.meta?.date||"")||((a.meta?.raceNo||0)-(b.meta?.raceNo||0))||String(a.meta?.venue).localeCompare(String(b.meta?.venue)));
 
-/* ---------- 予想 ---------- */
-function metaInputs(){
-  const g=id=>$(id)?.value?.trim()??"";
-  if(!$("fDate"))return {};
-  return {date:g("fDate"),venue:g("fVenue"),raceNo:Number(g("fRace"))||null,grade:g("fGrade"),girls:$("fGirls").checked,weather:g("fWx"),wind:g("fWind")};
+/* ---------- 貼り付け：出走表＋オッズ表か、結果かを見分ける ---------- */
+const openRaces=()=>allRaces().filter(r=>!r.settle&&!r.legacy);
+const NOREAD="読み取れませんでした。チャリロトの出走表とオッズ表、またはKEIRIN.JPの結果を、ページごとそのまま貼り付けてください。";
+// 続けて貼っても取りこぼさないよう、順番に処理する
+let pasteQ=Promise.resolve();
+function onPasted(text){
+  text=String(text||"").trim();
+  if(!text)return;
+  $("paste").value="";$("paste").blur();msg("pasteMsg","読み取り中…");
+  pasteQ=pasteQ.then(async()=>{
+    try{await handle(text);}
+    catch(e){msg("pasteMsg",e.message||NOREAD,"err");}
+  });
 }
-async function doPredict(fromEdit){
-  msg("entryMsg","");
-  const text=$("entry").value.trim()||(fromEdit&&R[curId]?.raw?.entry)||"";
-  if(!text){msg("entryMsg","出走表とオッズ表を貼り付けてください。","err");return;}
-  let parsed, src=text;
-  try{parsed=K.parseEntry(text);}
-  catch(e){
-    // オッズ表だけを貼ったとき：同じレースの出走表を使って最新オッズで予想し直す
+async function handle(text){
+  // ① 出走表とオッズ表
+  let parsed=null, src=text;
+  try{parsed=K.parseEntry(text);}catch(e){}
+  // ② 2回目からのオッズ表だけ（同じレースの出走表を使う）
+  if(!parsed){
     const idt=K.identity(text), prev=idt&&R[idt.id];
     if(prev&&!prev.settle&&prev.raw?.entry&&/3\s*連\s*複/u.test(K.normal(text))){
-      src=K.normal(prev.raw.entry).split(/オッズ表詳細|3\s*連\s*(?:勝\s*)?複/u)[0]+"\n"+text;
-      try{parsed=K.parseEntry(src);}catch(e2){msg("entryMsg",e2.message,"err");return;}
-    }else{msg("entryMsg",e.message+(idt&&!prev?"（オッズ表だけを貼る場合は、先に出走表とまとめて一度予想してください）":""),"err");return;}
+      const s2=K.normal(prev.raw.entry).split(/オッズ表詳細|3\s*連\s*(?:勝\s*)?複/u)[0]+"\n"+text;
+      try{const p=K.parseEntry(s2);if(Object.keys(p.odds).length>=K.C3(p.ids.length)/2){parsed=p;src=s2;}}catch(e){}
+    }
   }
-  let metaIn=fromEdit?metaInputs():{};
+  if(parsed)return predictFrom(parsed,src);
+  // ③ 結果
+  return settleFrom(text);
+}
+
+/* ---------- 予想 ---------- */
+async function predictFrom(parsed,src){
   const idt=parsed.identity;
-  if(!fromEdit&&idt&&idt.date===todayJst()&&!(parsed.env.weather&&parsed.env.wind!=null)&&!S.wx[idt.date+" "+idt.venue]){
-    try{msg("entryMsg","開催地の現在の天気を取得中…");const w=Drive.avail()?await Wx.get(idt.venue):await OpenWx.get(idt.venue);
+  const old=idt&&R[idt.id];
+  if(old?.settle){show(old);msg("pasteMsg","このレースは結果まで済んでいます。","ok");return;}
+  let metaIn={};
+  if(idt&&idt.date===todayJst()&&!(parsed.env.weather&&parsed.env.wind!=null)&&!S.wx[idt.date+" "+idt.venue]){
+    try{const w=Drive.avail()?await Wx.get(idt.venue):await OpenWx.get(idt.venue);
       if(w&&(w.weather||w.wind!=null))metaIn={weather:w.weather||"",wind:w.wind??"",wxSrc:"外部の天気（現在："+w.phrase+"）"};}catch(e){}
-    msg("entryMsg","");
   }
   const race=K.buildRace(parsed,metaIn,S);
-  const old=R[race.id];
-  if(old?.settle){msg("entryMsg",race.id+" は照合済みです。成績タブで確認できます。","err");showPrediction(old);return;}
+  const prev=R[race.id];
   const {F,pred}=K.predict(race,S);
-  Object.assign(race,{F,pred,raw:{entry:src},oddsAt:new Date().toISOString(),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),revisions:(old?.revisions||0)+(old?1:0)});
-  R[race.id]=race;curId=race.id;
-  showPrediction(race);
-  $("entry").value="";
-  msg("entryMsg",old?race.id+" を最新のオッズで予想し直しました（"+race.revisions+"回目）。照合には最後の予想を使います。":"","ok");
-  await persist([race],old?null:"予想");
+  Object.assign(race,{F,pred,raw:{entry:src},oddsAt:new Date().toISOString(),createdAt:prev?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),revisions:(prev?.revisions||0)+(prev?1:0)});
+  R[race.id]=race;
+  show(race);
+  msg("pasteMsg",prev?"最新のオッズで予想し直しました。":"", "ok");
+  await persist([race],prev?null:"予想");
 }
+
+/* ---------- 結果 ---------- */
+async function settleFrom(text){
+  const idt=K.identity(text);
+  let race=idt?R[idt.id]||null:null;
+  if(!race&&!idt){const open=openRaces();if(open.length===1&&/払戻|着/u.test(K.normal(text)))race=open[0];}
+  if(!race){
+    if(idt&&/払戻/u.test(K.normal(text)))throw Error(idt.id+" の予想がありません。先に、このレースの出走表とオッズ表を貼ってください。");
+    throw Error(NOREAD);
+  }
+  if(race.settle){show(race);msg("pasteMsg","このレースの結果はもう反映済みです。","ok");return;}
+  const res=K.parseResult(text,race.F.ids);
+  if(!res.winners.length&&!res.voided)throw Error("結果を読み取れませんでした。KEIRIN.JPの結果ページを全部選んで貼り付けてください。");
+  if(res.winners[0]&&!race.F.keys.includes(res.winners[0].key))throw Error("結果の車番（"+res.winners[0].key+"）が、このレースの出走表と合いません。");
+  K.settle(race,res,S,allRaces());
+  race.raw={...race.raw,result:text};race.updatedAt=new Date().toISOString();
+  S.updatedAt=race.updatedAt;
+  show(race);msg("pasteMsg","");
+  await persist([race],"結果");
+  autoLearn();
+}
+
+/* ---------- 学習の見直し（すべて自動・画面には出さない） ---------- */
+let learning=false;
+async function autoLearn(){
+  if(learning)return;
+  let need=false;
+  try{for(const y of K.metaLoop(S,allRaces(),{quickOnly:true})){if(y.done){need=!!y.needFull;if(y.run){S.updatedAt=new Date().toISOString();await Store.save([]);}break;}}}catch(e){return;}
+  if(!need)return;
+  learning=true;
+  try{
+    const T=JSON.parse(JSON.stringify(S));
+    const g=K.metaLoop(T,allRaces(),{});
+    for(;;){const y=g.next().value;if(!y||y.done)break;await new Promise(z=>setTimeout(z,0));}
+    Object.assign(S,{theta:T.theta,dG:T.dG,dN:T.dN,vars:T.vars,metaRuns:T.metaRuns,updatedAt:new Date().toISOString()});
+    await Store.save([]);
+  }catch(e){}
+  learning=false;
+}
+
+/* ---------- 保存（自動） ---------- */
 async function persist(races,kind){
-  try{await Store.save(races);}catch(e){msg("entryMsg",e.message,"err");}
-  refreshHeader();renderRaceSel();
-  if($("autoDrive").checked&&Drive.avail()&&races.length===1&&kind){
-    const r=races[0];
-    $("hDrive").textContent="ドライブ：保存中";
-    try{await Drive.saveRace(r,kind);$("hDrive").textContent="ドライブ：保存済み "+new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});
+  try{await Store.save(races);}catch(e){msg("pasteMsg",e.message,"err");}
+  renderLists();
+  if(Drive.avail()&&races.length===1&&kind){
+    try{await Drive.saveRace(races[0],kind);
       if(!S.lastFull||Date.now()-Date.parse(S.lastFull)>20*3600e3){await Drive.saveFull().catch(()=>{});await Store.save([]);}
-    }catch(e){$("hDrive").textContent="ドライブ：未保存";msg(kind==="予想"?"entryMsg":"resultMsg",Drive.why(e),"err");}
+    }catch(e){}
   }
 }
-function showPrediction(r){
-  const P=r.pred,m=r.meta,c=P.cls,yenPt=S.vars.yen;
-  const pos=x=>Math.max(0,Math.min(100,100*(Math.log(Math.max(x,1e-6))-Math.log(c.base))/(0-Math.log(c.base))));
-  const riders=[...r.riders].sort((a,b)=>P.rank[a.id]-P.rank[b.id]);
-  const engOn=K.ENGINES.map(e=>{const a=P.act[e.id];const st=e.id<="E26"?(a?"稼働":"待機（データなし）"):"稼働";return {e,st};});
-  $("predOut").innerHTML=`
-  <div class="card new">
+
+/* ---------- 表示 ---------- */
+const hhmm=t=>t?new Date(t).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"}):"";
+function betLine(b){return `<div class="bet"><div>${cars(b.key)}</div><div><b>${esc(b.key)}</b></div><div class="num big">${b.odds!=null?b.odds.toFixed(1)+"<small style='font-size:14px'>倍</small>":"—"}</div></div>`;}
+function show(r){
+  shownId=r.id;
+  $("out").innerHTML=r.settle?settleHtml(r):predHtml(r);
+  renderLists();
+  $("out").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function predHtml(r){
+  const P=r.pred,m=r.meta;
+  const wx=m.weather||m.wind!=null?"・"+(m.weather||"")+(m.wind!=null?" 風"+m.wind+"m":""):"";
+  return `<div class="card new">
     <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(r.id)}</h2><span class="badge b-${esc(P.cat)}">${esc(P.cat)}</span></div>
-    <div class="sub">${esc(m.gk)}・${m.n}車立${m.girls?"・ガールズ":""}・バンク${m.bank??"—"}m${m.indoor?"（屋内）":""}・天候${esc(m.weather??"未取得")}・風速${m.wind??"—"}m${m.wxSrc?"（"+esc(m.wxSrc)+"）":""}${r.revisions?"・再予想"+r.revisions+"回":""}${r.oddsAt?"・オッズ取込 "+esc(new Date(r.oddsAt).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})):""}</div>
-    <div class="meter" aria-label="区分メーター"><i style="left:${pos(c.P3c)}%"></i></div>
-    <div class="meter-l"><span>荒れ</span><span>標準</span><span>堅め</span></div>
-    <p class="sub" style="margin:6px 0 0">上位3組の確率 ${pct(c.P3)}（${esc(c.src)}）× 実績補正 ${c.kappa.toFixed(3)} ＝ ${pct(c.P3c)}。境界は全数${K.C3(m.n)}通りからの理論値：荒れ＜${pct(c.Tlo)}、堅め≧${pct(c.Thi)}。</p>
-  </div>
-  <div class="card new">
-    <h2>買い目　<span class="sub">3連複・${P.bets.length}点・${yen(P.bets.length*yenPt)}</span></h2>
-    ${P.bets.map(b=>`<div class="bet"><div>${cars(b.key)}</div><div><b>${esc(b.key)}</b><div class="sub">的中確率 ${pct(b.p)}・期待回収 ${b.ev!=null?pct(b.ev,0):"—"}</div></div><div class="num big">${b.odds!=null?b.odds.toFixed(1)+"<small style='font-size:14px'>倍</small>":"—"}</div></div>`).join("")}
-    <div class="kpi" style="margin-top:8px"><div><b>${pct(P.phit)}</b><span>的中確率（合計）</span></div><div><b>${pct(P.roi,0)}</b><span>期待回収率</span></div><div><b class="${P.torigamiSafe?"hit":"warn"}">${P.torigamiSafe?"なし":"注意"}</b><span>取りガミ</span></div></div>
-    ${(()=>{const c=K.stats(allRaces()).cat[P.cat];return c&&c.calN?`<p class="sub" style="margin:8px 0 0">これまでの「${esc(P.cat)}」：予想した的中数 ${c.expHits.toFixed(1)} に対し実際 ${c.hits}（${c.calN}レース）・期待回収 ${yen(c.expRet)} に対し実回収 ${yen(c.realRet)}</p>`:"";})()}
-    ${P.forced?`<div class="msg warn">取りガミにならない組合せが無いため、最上位の1点にしています。</div>`:""}
-  </div>
-  <div class="card new">
-    <h2>選手の評価</h2>
-    <div class="scroll"><table><thead><tr><th>車</th><th>選手</th><th class="n">評価</th><th class="n">3着内</th><th>主な根拠</th></tr></thead><tbody>
-    ${riders.map(x=>`<tr><td>${car(x.id)}</td><td>${esc(x.name)}<div class="sub">${esc(x.cls??"")} ${esc(x.style??"")} ${x.score??"—"}点${x.mark?" "+esc(x.mark):""}</div></td><td class="n">${P.rank[x.id]}位</td><td class="n">${pct(P.marg[x.id],0)}</td><td class="sub">${esc((P.contrib[x.id]||[]).filter(c=>c.c>0).slice(0,2).map(c=>K.EN[c.e]).join("・")||"—")}</td></tr>`).join("")}
-    </tbody></table></div>
-    <p class="sub" style="margin:6px 0 0">並び：${r.lines.length?r.lines.map(l=>l.join("→")).join("　/　"):"読み取れず（ライン系エンジンは待機）"}</p>
-    <details><summary>確率の上位10組（モデル統合と市場）</summary>
-      <div class="scroll"><table><thead><tr><th>組番</th><th class="n">オッズ</th><th class="n">統合</th><th class="n">市場</th></tr></thead><tbody>
-      ${P.top.map(t=>`<tr><td>${cars(t.key)}</td><td class="n">${t.odds??"—"}</td><td class="n">${pct(t.p)}</td><td class="n">${pct(t.mk)}</td></tr>`).join("")}</tbody></table></div>
-      <p class="sub">モデルの比率 ${pct(P.beta)}・市場の鋭さ ${P.tau.toFixed(3)}（どちらも学習で変わります）</p>
-    </details>
-    <details><summary>観察・状況判断・意思決定・実行</summary><dl class="loop">${Object.entries(P.ooda).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl></details>
-    <details><summary>36エンジンの稼働（${engOn.filter(x=>x.st==="稼働").length}/36）</summary>${engOn.map(({e,st})=>`<div class="eng"><span>${e.id}</span><span>${esc(e.name)} <span class="sub">${esc(e.src)}</span></span><span class="st ${st==="稼働"?"hit":"sub"}">${esc(st)}</span></div>`).join("")}</details>
-    <details><summary>読み取った内容を直す</summary>
-      <div class="grid" style="margin-top:6px">
-        <div><label for="fDate">開催日</label><input id="fDate" value="${esc(m.date)}" placeholder="2026-11-28"></div>
-        <div><label for="fVenue">競輪場</label><input id="fVenue" value="${esc(m.venue)}"></div>
-        <div><label for="fRace">レース番号</label><input id="fRace" inputmode="numeric" value="${m.raceNo??""}"></div>
-        <div><label for="fGrade">グレード</label><select id="fGrade">${["不明",...["GP","G1","G2","G3","F1","F2"]].map(g=>`<option${g===m.grade?" selected":""}>${g}</option>`).join("")}</select></div>
-        <div><label for="fWx">天候</label><select id="fWx"><option value="">未取得</option>${["晴","曇","雨","雪"].map(w=>`<option${w===m.weather?" selected":""}>${w}</option>`).join("")}</select></div>
-        <div><label for="fWind">風速（m）</label><input id="fWind" inputmode="decimal" value="${m.wind??""}"></div>
-      </div>
-      <label class="row" style="gap:10px;margin-top:8px"><input type="checkbox" id="fGirls" style="width:22px;height:22px"${m.girls?" checked":""}><span>ガールズ</span></label>
-      <button id="reCalc" style="margin-top:8px;width:100%">この内容で予想し直す</button>
-    </details>
-    ${(r.notes||[]).length?`<div class="msg warn">${esc(r.notes.join("\n"))}</div>`:""}
+    <div class="sub">${esc(m.gk)}・${m.n}車立${m.girls?"・ガールズ":""}${esc(wx)}${r.oddsAt?"・オッズ "+hhmm(r.oddsAt):""}</div>
+    <h3>買い目（3連複・${P.bets.length}点・${yen(P.bets.length*S.vars.yen)}）</h3>
+    ${P.bets.map(betLine).join("")}
+    ${(r.notes||[]).length?`<p class="sub" style="margin:8px 0 0">${esc(r.notes.join("　"))}</p>`:""}
   </div>`;
-  $("reCalc").onclick=()=>doPredict(true);
 }
-
-/* ---------- 照合 ---------- */
-function renderRaceSel(){
-  const list=allRaces().reverse(), cur=$("raceSel").value;
-  const open=list.filter(r=>!r.settle&&!r.legacy), done=list.filter(r=>r.settle).slice(0,30);
-  $("raceSel").innerHTML=`<option value="">貼った結果から自動で探す</option>`+open.map(r=>`<option value="${esc(r.id)}">${esc(r.id)}（結果待ち）</option>`).join("")+done.map(r=>`<option value="${esc(r.id)}">${esc(r.id)}（照合済み）</option>`).join("");
-  if(cur&&R[cur])$("raceSel").value=cur;
-  renderSelBets();
-}
-/* 選んだレースの買い目を表示（未選択のときは結果待ちの一覧） */
-function betRow(r){
-  const P=r.pred||{}, st=r.settle;
-  const t=r.oddsAt||r.updatedAt||r.createdAt;
-  return `<div class="row" style="justify-content:space-between;margin-top:8px"><b>${esc(r.id)}</b><span class="badge b-${esc(P.cat||"標準")}" style="font-size:12.5px">${esc(P.cat||"—")}</span></div>
-    ${(P.bets||[]).map(b=>`<div class="row" style="margin-top:4px">${cars(b.key)}<b>${esc(b.key)}</b><span class="sub">${b.odds!=null?b.odds.toFixed(1)+"倍":"—"}${b.p!=null?"・的中確率 "+pct(b.p):""}</span></div>`).join("")}
-    <div class="sub" style="margin-top:4px">${(P.bets||[]).length}点・${yen((P.bets||[]).length*S.vars.yen)}${t?"・予想 "+esc(new Date(t).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})):""}${r.revisions?"（再予想"+r.revisions+"回）":""}${st?"・結果 "+esc(r.result?.winners?.[0]?.key||"—")+"・"+(st.voided?"返還":st.hit?"的中":"不的中")+" "+(st.profit>=0?"+":"")+yen(st.profit):""}</div>`;
-}
-function renderSelBets(){
-  const id=$("raceSel").value, el=$("selBets");
-  if(id&&R[id]){el.innerHTML=`<div class="msg" style="white-space:normal">${betRow(R[id])}</div>`;return;}
-  const open=allRaces().filter(r=>!r.settle&&!r.legacy).reverse().slice(0,12);
-  el.innerHTML=open.length?`<details open style="border:0;margin-top:4px"><summary class="sub" style="min-height:32px">結果待ちのレースと買い目（${open.length}レース）・押すと選べます</summary>${open.map(r=>`<div data-pick="${esc(r.id)}" style="padding:4px 0 8px;border-bottom:1px solid var(--line);cursor:pointer">${betRow(r)}</div>`).join("")}</details>`:"";
-}
-async function doSettle(){
-  msg("resultMsg","");
-  const text=$("result").value.trim();
-  let race=R[$("raceSel").value]||null;
-  let res=null;
-  try{
-    if(text){
-      const idt=K.identity(text);
-      if(!race&&idt)race=R[idt.id]||null;
-      if(!race){const open=allRaces().filter(r=>!r.settle&&!r.legacy);if(open.length===1)race=open[0];}
-      if(!race)throw Error(idt?idt.id+" の予想が見つかりません。先に出走表を貼って予想してください。":"どのレースの結果か特定できません。上の一覧からレースを選んでください。");
-      if(idt&&idt.id!==race.id&&!race.id.startsWith("未特定"))throw Error("貼った結果（"+idt.id+"）と選んだレース（"+race.id+"）が違います。");
-      res=K.parseResult(text,race.F.ids);
-      if(!res.winners.length&&!res.voided)throw Error("3連複の払戻金も着順も読み取れませんでした。結果ページ全体を貼るか、手入力を使ってください。");
-    }else{
-      if(!race)throw Error("レースを選んでください。");
-      const key=$("mKey").value.replace(/[^\d]/g,"").split("").map(Number);
-      if(key.length!==3)throw Error("結果表を貼るか、3連複の組番（例 1-5-7）を入力してください。");
-      const pay=Number($("mPay").value.replace(/[^\d]/g,""))||null;
-      res={winners:[{key:K.keyOf(key),pay}],finish:{},voided:false,estimated:!pay,env:{},identity:null};
-    }
-    if(race.settle)throw Error(race.id+" は照合済みです（二重に学習しないため、やり直しはできません）。");
-    if(res.winners[0]&&!race.F.keys.includes(res.winners[0].key))throw Error("結果の組番 "+res.winners[0].key+" が出走表の車番と合いません。");
-  }catch(e){msg("resultMsg",e.message,"err");return;}
-  K.settle(race,res,S,allRaces());
-  race.metaAuto=null;
-  try{
-    for(const y of K.metaLoop(S,allRaces(),{quickOnly:true})){
-      if(y.done){race.metaAuto=y.run?{mode:"簡易",at:y.run.at,before:y.run.before,after:y.run.after,adopted:y.run.adopted}:y.needFull?{mode:"要全体",newN:y.newN}:null;break;}
-    }
-  }catch(e){}
-  race.raw={...race.raw,result:text||null};race.updatedAt=new Date().toISOString();
-  S.updatedAt=race.updatedAt;
-  $("result").value="";$("mKey").value="";$("mPay").value="";
-  showSettle(race);
-  await persist([race],"結果");
-  renderAll();
-}
-function showSettle(r){
-  const st=r.settle,P=r.pred;
-  if(st.voided){$("settleOut").innerHTML=`<div class="card"><div class="banner m">返還（不成立）</div></div>`;return;}
-  const lr=st.learn||{};
-  $("settleOut").innerHTML=`
-  <div class="card new">
-    <div class="banner ${st.hit?"h":"m"}">${st.hit?"的中":"不的中"}　${st.profit>=0?"+":""}${yen(st.profit)}</div>
+function settleHtml(r){
+  const st=r.settle,P=r.pred,w=r.result?.winners?.[0];
+  if(st.voided)return `<div class="card new"><div class="banner m">返還（レース不成立）</div><b>${esc(r.id)}</b></div>`;
+  return `<div class="card new">
+    <div class="banner ${st.hit?"h":"m"}">${st.hit?"的中":"はずれ"}　${st.profit>=0?"+":""}${yen(st.profit)}</div>
     <div class="row" style="justify-content:space-between"><b>${esc(r.id)}</b><span class="badge b-${esc(P.cat)}">${esc(P.cat)}</span></div>
-    <p style="margin:6px 0">結果 ${cars(r.result.winners[0]?.key||"")} <b>${esc(r.result.winners[0]?.key||"")}</b>　払戻 ${yen(r.result.winners[0]?.pay)}${st.estimated?"（オッズから推定）":""}${st.refunds?"・返還 "+st.refunds+"点":""}</p>
-    <div class="kpi"><div><b>${yen(st.stake)}</b><span>投資</span></div><div><b>${yen(st.ret)}</b><span>回収</span></div><div><b class="${st.profit>=0?"hit":"miss"}">${st.profit>=0?"+":""}${yen(st.profit)}</b><span>収支</span></div></div>
-    <p class="sub">${esc(st.note||"")}</p>
-  </div>
-  <div class="card new"><h2>買い目ごとの勝因・敗因</h2>
-    ${st.bets.map(b=>`<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="row">${cars(b.key)}<b>${esc(b.key)}</b><span class="sub">${b.odds??"—"}倍</span><b class="${b.hit?"hit":b.refund?"warn":"miss"}" style="margin-left:auto">${b.hit?"的中":b.refund?"返還":"不的中"}</b></div>
-      <p class="why"><b>勝因</b>　${esc(b.win)}</p><p class="why"><b>敗因</b>　${esc(b.loss)}</p></div>`).join("")}
-  </div>
-  <div class="card new"><h2>学習（1レース1周）</h2>
-    <p style="margin:0 0 6px">${lr.skipped?esc(lr.skipped):lr.kept?"更新を反映しました。":"更新すると成績が悪化するため巻き戻しました（過学習・負のスパイラルの防止）。"}</p>
-    ${r.metaAuto?.mode==="簡易"?`<p class="sub" style="margin:0 0 6px">メタループ（簡易）を自動で実行しました（前回選んだ学習の強さのまま、このレースを含めて学習し直し）。</p>`:r.metaAuto?.mode==="要全体"?`<p class="sub" style="margin:0 0 6px">照合済みのレースが前回のメタループから${r.metaAuto.newN}件増えたため、自動の簡易調整では足りません。「学習」タブの「メタループを実行」で全体を見直してください。</p>`:""}
-    ${loopHtml(st)}
+    <p style="margin:6px 0">結果 ${cars(w?.key||"")} <b>${esc(w?.key||"")}</b>　払戻 ${yen(w?.pay)}${st.refunds?"（返還 "+st.refunds+"点）":""}</p>
+    ${st.bets.map(b=>`<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="row">${cars(b.key)}<b>${esc(b.key)}</b><span class="sub">${b.odds??"—"}倍</span><b class="${b.hit?"hit":b.refund?"warn":"miss"}" style="margin-left:auto">${b.hit?"的中":b.refund?"返還":"はずれ"}</b></div>
+      <p class="why"><b>よかった点</b>　${esc(b.win)}</p><p class="why"><b>足りなかった点</b>　${esc(b.loss)}</p></div>`).join("")}
   </div>`;
 }
-function loopHtml(st){
-  const blk=(t,o)=>o?`<h3>${t}</h3><dl class="loop">${Object.entries(o).map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`:"";
-  return blk("計画・実行・評価・改善",st.pdca)+blk("①改善 ②改良 ③実装 ④自己分析 ⑤再実装 ⑥ループ",st.A)+blk("①必要なもの ②増やすべきもの ③直すべきもの ④調整すべきもの ⑤削除すべきもの ⑥ループ",st.B);
+function renderLists(){
+  const open=openRaces().filter(r=>r.id!==shownId).reverse().slice(0,12);
+  $("waitCard").hidden=!open.length;
+  $("waitList").innerHTML=open.map(r=>`<div class="wait"><div class="row" style="justify-content:space-between"><b>${esc(r.id)}</b><span class="badge b-${esc(r.pred?.cat||"標準")}" style="font-size:12.5px">${esc(r.pred?.cat||"—")}</span></div>
+    ${(r.pred?.bets||[]).map(b=>`<div class="row" style="margin-top:4px">${cars(b.key)}<b>${esc(b.key)}</b><span class="sub">${b.odds!=null?b.odds.toFixed(1)+"倍":""}</span></div>`).join("")}</div>`).join("");
+  const live=allRaces().filter(r=>!r.replay), done=live.filter(r=>r.settle);
+  $("recCard").hidden=!done.length;
+  if(!done.length)return;
+  const s=K.stats(live).all;
+  $("recKpi").innerHTML=`<div class="kpi"><div><b>${s.races}</b><span>レース</span></div><div><b>${s.hitRaces}</b><span>的中</span></div><div><b class="${s.profit>=0?"hit":"miss"}">${s.profit>=0?"+":""}${yen(s.profit)}</b><span>収支</span></div><div><b>${pct(s.roi,0)}</b><span>回収率</span></div></div>`;
+  drawChart(done);
+  $("recList").innerHTML=[...done].reverse().slice(0,10).map(r=>{const st=r.settle;
+    return `<div class="rec"><span>${esc(r.id)}</span><span><b class="${st.hit?"hit":"miss"}">${st.voided?"返還":st.hit?"的中":"はずれ"}</b> ${st.profit>=0?"+":""}${yen(st.profit)}</span></div>`;}).join("");
 }
 
-/* ---------- 成績 ---------- */
-function renderStats(){
-  const all=allRaces();
-  const pick=viewMode==="live"?all.filter(r=>!r.replay):viewMode==="replay"?all.filter(r=>r.replay):all;
-  const s=K.stats(pick).all;
-  document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("sel",b.dataset.view===viewMode));
-  $("kpi").innerHTML=`<div class="kpi">
-    <div><b>${s.races}</b><span>レース</span></div><div><b>${s.hitRaces}</b><span>的中レース</span></div>
-    <div><b>${pct(s.races?s.hitRaces/s.races:null)}</b><span>レース的中率</span></div><div><b>${pct(s.pts?s.hitPts/s.pts:null)}</b><span>点的中率（${s.hitPts}/${s.pts}）</span></div>
-    <div><b>${yen(s.stake)}</b><span>投資</span></div><div><b>${yen(s.ret)}</b><span>回収</span></div>
-    <div><b class="${s.profit>=0?"hit":"miss"}">${s.profit>=0?"+":""}${yen(s.profit)}</b><span>収支</span></div><div><b>${pct(s.roi,1)}</b><span>回収率</span></div></div>`;
-  $("kpiNote").textContent=viewMode==="replay"?"再現：ドライブに残っていた過去の貼り付けを時系列順に予想→照合→学習した記録（予想はその時点までの学習だけで実施）。":viewMode==="live"?"実戦：レース前に予想した記録（旧版の4レースを含む）。":"";
-  const by=K.stats(pick);
-  const tbl=(title,o)=>`<h3>${title}</h3><div class="scroll"><table><thead><tr><th></th><th class="n">レース</th><th class="n">的中</th><th class="n">投資</th><th class="n">回収</th><th class="n">回収率</th></tr></thead><tbody>${
-    Object.entries(o).sort((a,b)=>b[1].races-a[1].races).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${v.races}</td><td class="n">${v.hitRaces}</td><td class="n">${yen(v.stake)}</td><td class="n">${yen(v.ret)}</td><td class="n">${pct(v.roi,0)}</td></tr>`).join("")||`<tr><td colspan="6" class="sub">まだありません</td></tr>`}</tbody></table></div>`;
-  const cal=Object.entries({全体:by.all,...by.cat}).filter(([,v])=>v.calN>0);
-  const calHtml=`<h3>自己分析（予想の理論値と実際）</h3><div class="scroll"><table><thead><tr><th></th><th class="n">予想した的中数</th><th class="n">実際</th><th class="n">期待回収</th><th class="n">実回収</th></tr></thead><tbody>${
-    cal.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${v.expHits.toFixed(1)}</td><td class="n">${v.hits}/${v.calN}</td><td class="n">${yen(v.expRet)}</td><td class="n">${yen(v.realRet)}</td></tr>`).join("")||`<tr><td colspan="5" class="sub">まだありません</td></tr>`}</tbody></table></div>
-    <p class="sub" style="margin:4px 0 0">予想した的中数＝各レースの的中確率の合計。実際と離れている区分は、学習とメタループで補正されていきます。</p>`;
-  $("breakdown").innerHTML=calHtml+tbl("区分",by.cat)+tbl("グレード・ガールズ",by.grade)+tbl("車立",by.cars)+tbl("競輪場",by.venue);
-  $("raceList").innerHTML=[...pick].reverse().slice(0,150).map(r=>{
-    const st=r.settle;
-    return `<li><div class="row" style="justify-content:space-between"><b>${esc(r.id)}</b><span class="badge b-${esc(r.pred?.cat||"標準")}" style="font-size:12.5px">${esc(r.pred?.cat||"—")}</span></div>
-      <div class="row" style="margin-top:4px">${(r.pred?.bets||[]).map(b=>`<span style="margin-right:8px">${cars(b.key)}</span>`).join("")}</div>
-      <div class="sub">${st?`結果 ${esc(r.result?.winners?.[0]?.key||"—")}・<b class="${st.hit?"hit":"miss"}">${st.voided?"返還":st.hit?"的中":"不的中"}</b>・${st.profit>=0?"+":""}${yen(st.profit)}`:"結果待ち"}${r.replay?"・再現":""}${r.legacy?"・旧版記録":""}</div>
-      <div class="row" style="margin-top:4px"><button class="sm" data-open="${esc(r.id)}">詳しく</button>${!st?`<button class="sm" data-del="${esc(r.id)}">削除</button>`:""}</div></li>`;}).join("")||`<li class="sub">まだ記録がありません</li>`;
+/* ---------- 成績のグラフ：収支の移り変わり（見るだけ。指でなぞると各レースの数字） ---------- */
+const sgn=n=>(n>0?"+":"")+yen(n);
+function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(x)));for(const m of [1,2,5,10])if(m*p>=x)return m*p;return 10*p;}
+function drawChart(done){
+  const box=$("recChart");
+  const rs=[...done].sort((a,b)=>(a.id.slice(0,10)+(a.settle.at||a.updatedAt||"")).localeCompare(b.id.slice(0,10)+(b.settle.at||b.updatedAt||"")));
+  if(rs.length<2){box.hidden=true;box.innerHTML="";return;}
+  let c=0;const P=[{r:null,p:0,v:0}].concat(rs.map(r=>({r,p:r.settle.profit||0,v:(c+=r.settle.profit||0)})));
+  const W=340,H=180,L=46,Rm=12,T=12,B=24,n=P.length;
+  const vals=P.map(q=>q.v);let lo=Math.min(0,...vals),hi=Math.max(0,...vals);
+  const step=niceStep(Math.max(hi-lo,300)/3);lo=Math.floor(lo/step)*step;hi=Math.ceil(hi/step)*step;if(hi===lo)hi=lo+step;
+  const x=i=>L+(W-L-Rm)*i/(n-1), y=v=>T+(H-T-B)*(hi-v)/(hi-lo);
+  let g="";
+  for(let v=lo;v<=hi+1e-9;v+=step){g+=`<line x1="${L}" x2="${W-Rm}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(${v===0?"--sub":"--line"})" stroke-width="1"${v===0?' opacity=".7"':""}/><text class="ax" x="${L-6}" y="${(y(v)+4).toFixed(1)}" text-anchor="end">${v===0?"0":(v>0?"+":"−")+Math.abs(v).toLocaleString("ja-JP")}</text>`;}
+  const d=P.map((q,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(q.v).toFixed(1)).join(" ");
+  const last=P[n-1], lx=x(n-1), ly=y(last.v);
+  box.innerHTML=`<h3>収支の移り変わり</h3><div class="sub" style="font-size:12.5px">線が上がると勝ち越し、下がると負け越し（円）。指でなぞると各レースの収支が出ます。</div>
+  <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="収支の移り変わり。${n-1}レースで${sgn(last.v)}">
+    ${g}
+    <text class="ax" x="${L}" y="${H-6}">はじめ</text><text class="ax" x="${W-Rm}" y="${H-6}" text-anchor="end">${n-1}レース目</text>
+    <path d="${d}" fill="none" stroke="var(--chart)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <line id="chX" y1="${T}" y2="${H-B}" stroke="var(--sub)" stroke-width="1" visibility="hidden"/>
+    <circle id="chDot" r="4" fill="var(--chart)" stroke="var(--card)" stroke-width="2" visibility="hidden"/>
+    <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="4" fill="var(--chart)" stroke="var(--card)" stroke-width="2"/>
+    <rect id="chHit" x="${L}" y="0" width="${W-L-Rm}" height="${H}" fill="transparent"/>
+  </svg><div class="tip" id="chTip" hidden></div>`;
+  box.hidden=false;
+  const svg=box.querySelector("svg"),hit=box.querySelector("#chHit"),cx=box.querySelector("#chX"),dot=box.querySelector("#chDot"),tip=box.querySelector("#chTip");
+  const at=e=>{const r=svg.getBoundingClientRect(),sx=(e.clientX-r.left)*W/r.width;const i=Math.max(1,Math.min(n-1,Math.round((sx-L)/(W-L-Rm)*(n-1))));
+    const q=P[i],px=x(i);cx.setAttribute("x1",px);cx.setAttribute("x2",px);cx.setAttribute("visibility","visible");
+    dot.setAttribute("cx",px);dot.setAttribute("cy",y(q.v));dot.setAttribute("visibility","visible");
+    const st=q.r.settle;tip.innerHTML=`<b>${esc(q.r.id)}</b><br>${st.voided?"返還":st.hit?"的中":"はずれ"} ${sgn(q.p)}<br>ここまでの収支 <b>${sgn(q.v)}</b>`;tip.hidden=false;
+    const left=px*r.width/W, tw=tip.offsetWidth;tip.style.top=svg.offsetTop+"px";tip.style.left=Math.max(0,Math.min(r.width-tw,left-tw/2))+"px";};
+  const off=()=>{cx.setAttribute("visibility","hidden");dot.setAttribute("visibility","hidden");tip.hidden=true;};
+  hit.addEventListener("pointerdown",at);hit.addEventListener("pointermove",at);
+  hit.addEventListener("pointerleave",off);hit.addEventListener("pointercancel",off);
 }
 
-/* ---------- 学習タブ ---------- */
-function renderLearn(){
-  const last=allRaces().filter(r=>r.settle&&!r.legacy).slice(-1)[0];
-  $("loops").innerHTML=last?`<p class="sub" style="margin:0">${esc(last.id)}</p>${loopHtml(last.settle)}`:`<p class="sub">照合するとここに表示されます。</p>`;
-  const th=S.theta;
-  const used=e=>allRaces().filter(r=>r.pred?.act?.[e]).length;
-  $("engines").innerHTML=K.ENGINES.map(e=>{
-    let val="";
-    if(e.id<="E26")val="重み "+(th.w[e.id]??0).toFixed(3);
-    else if(e.id==="E30")val="モデル "+pct(1/(1+Math.exp(-th.b)))+"・鋭さ "+Math.exp(th.t).toFixed(3);
-    else if(e.id==="E31")val="係数 "+th.u1.toFixed(3);
-    else if(e.id==="E32")val="係数 "+th.u2.toFixed(3);
-    else if(e.id==="E27")val="グループ "+(Object.keys(S.dG).length+Object.keys(S.dN).length);
-    else if(e.id==="E33")val="補正 "+K.kappaOf(S,"全体",7).toFixed(3);
-    else if(e.id==="E36")val="通算 "+(S.loops||0)+"周";
-    return `<div class="eng"><span>${e.id}</span><span>${esc(e.name)}<br><span class="sub">${esc(e.kind)}・${esc(e.src)}${e.id<="E26"?"・稼働 "+used(e.id)+"レース":""}</span></span><span class="st">${esc(val)}</span></div>`;}).join("");
-  $("vars").innerHTML=`<div class="scroll"><table><thead><tr><th>変数</th><th class="n">値</th><th>種類</th></tr></thead><tbody>${
-    K.VARS_DEF.map(d=>`<tr><td>${esc(d.label)}</td><td class="n">${d.kind==="調整可"?`<input data-var="${d.k}" value="${+(+S.vars[d.k]).toPrecision(4)}" inputmode="decimal" style="width:92px;text-align:right;padding:6px">`:+(+S.vars[d.k]).toPrecision(4)}</td><td class="sub">${esc(d.kind)}</td></tr>`).join("")}</tbody></table></div>`;
-  const m=(S.metaRuns||[]).slice(-1)[0];
-  if(m&&!$("metaMsg").textContent)$("metaMsg").innerHTML=metaSummary(m);
-  $("changes").innerHTML=(S.changes||[]).slice(-20).reverse().map(c=>`<li><b>${esc(c.race)}</b> <span class="sub">${c.kept?"反映":"巻き戻し"}</span><div class="sub">${esc((c.changes||[]).map(x=>x.label+(x.d>0?" +":" ")+x.d).join("、")||"変更なし")}</div></li>`).join("")||`<li class="sub">まだありません</li>`;
-}
-function metaSummary(m){
-  if(m.mode==="簡易")return `<div class="msg ok">${esc(new Date(m.at).toLocaleString("ja-JP"))}　簡易（増えたレース ${m.newRaces}件のため、前回の交差検証の結果を使って本学習だけ実行）
-${m.adopted?"強さ "+m.chosen+" で学び直し（損失 "+m.before+" → "+m.after+"）":"前回、事前の変数のほうが良かったため、変数は変えていません"}
-的中重視度：${Object.entries(m.a).map(([k,v])=>k+" "+v.a+"（"+v.n+"レース）").join("、")}</div>`;
-  return `<div class="msg ok">${esc(new Date(m.at).toLocaleString("ja-JP"))}　${m.races}レース・交差検証${m.folds}分割
-事前のまま：${m.priorCV}　/　強さ別：${m.cv.map(c=>c.lam+"→"+c.cv).join("、")}
-${m.adopted?"採用：強さ "+m.chosen+"（損失 "+m.before+" → "+m.after+"）":"どの強さでも事前より良くならないため、変数は変えていません"}
-的中重視度：${Object.entries(m.a).map(([k,v])=>k+" "+v.a+"（"+v.n+"レース）").join("、")}</div>`;
-}
-async function runMeta(force){
-  metaStop=false;$("doMeta").disabled=true;$("stopMeta").hidden=false;msg("metaMsg","");
-  const g=K.metaLoop(S,allRaces(),{force:force===true});const total=7*5;let k=0;
-  const step=()=>new Promise(r=>setTimeout(r,0));
-  try{
-    for(;;){
-      if(metaStop){msg("metaMsg","止めました（途中までの変更は残っています）。");break;}
-      const y=g.next().value;if(!y)break;
-      if(y.phase==="検証"){k++;$("metaBar").style.width=Math.min(95,k/total*100)+"%";$("metaMsg").innerHTML=`<div class="msg">検証中：強さ ${y.lam}・${y.fold}/${y.kf}</div>`;}
-      if(y.phase==="本学習"){$("metaBar").style.width="97%";$("metaMsg").innerHTML=`<div class="msg">本学習：${y.it}回目・目的関数 ${y.J.toFixed(5)}</div>`;}
-      if(y.done){$("metaBar").style.width="100%";
-        $("metaMsg").innerHTML=y.run?metaSummary(y.run):`<div class="msg">${esc(y.msg)}</div>`+(y.skipped?`<button id="forceMeta" style="width:100%;margin-top:8px">それでも最初から実行する</button>`:"");
-        if(y.skipped){$("forceMeta").onclick=()=>runMeta(true);}
-        break;}
-      await step();
-    }
-    S.updatedAt=new Date().toISOString();
-    await Store.save([]);
-  }catch(e){msg("metaMsg","エラー："+e.message,"err");}
-  $("doMeta").disabled=false;$("stopMeta").hidden=true;renderLearn();
-}
-
-/* ---------- 画面 ---------- */
-function refreshHeader(){
-  $("hVer").textContent="実装 "+K.VERSION;
-  $("hStore").textContent="保存先："+(Store.mode==="クラウド"?"クラウド（どの端末でも同じ）":"この端末");
-  if(!window.claude?.use)$("hDrive").hidden=true;
-  if(!Drive.avail())$("hDrive").textContent="ドライブ：このページでは不可";
-  else if(!/保存/.test($("hDrive").textContent))$("hDrive").textContent="ドライブ：準備完了";
-  const n=Object.keys(R).length;
-  $("storeInfo").textContent=`記録 ${n}レース（照合済み ${allRaces().filter(r=>r.settle).length}）・学習 通算${S.loops||0}周・保存先 ${Store.mode==="クラウド"?"クラウド":"この端末"}・最終の全データ保存 ${S.lastFull?new Date(S.lastFull).toLocaleString("ja-JP"):"なし"}`;
-  $("startCard").hidden=n>0;
-  $("startRestore").hidden=!Drive.avail();
-  $("startImport").hidden=Drive.avail();
-  if(!Drive.avail())$("startNote").textContent=S.seeded?"はじめての方は、これまでの72レースで学習した変数から始まります。予想と照合を重ねるほど、あなたの記録で学習が進みます。":"この端末にはまだ記録がありません。";
-  for(const id of ["saveFull","restore","autoDriveRow","driveNote"])if($(id))$(id).hidden=!Drive.avail();
-  if($("shareDrive"))$("shareDrive").hidden=Drive.avail()||!canShareFile();
-}
-function renderAll(){refreshHeader();renderRaceSel();renderStats();renderLearn();renderNag();}
-function tab(name){
-  document.querySelectorAll("section.tab").forEach(s=>s.classList.toggle("on",s.id==="t-"+name));
-  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===name));
-  if(name==="seiseki")renderStats();if(name==="gakushu")renderLearn();
-  window.scrollTo(0,0);
-}
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
-document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{viewMode=b.dataset.view;renderStats();});
-$("doPredict").onclick=()=>doPredict(false);
-$("clrEntry").onclick=()=>{$("entry").value="";msg("entryMsg","");};
-$("doSettle").onclick=doSettle;
-$("raceSel").onchange=renderSelBets;
-$("selBets").onclick=e=>{const d=e.target.closest("[data-pick]");if(d){$("raceSel").value=d.dataset.pick;renderSelBets();}};
-$("doMeta").onclick=()=>runMeta(false);$("stopMeta").onclick=()=>{metaStop=true;};
-$("raceList").onclick=async e=>{
-  const o=e.target.closest("[data-open]"),d=e.target.closest("[data-del]");
-  if(o){const r=R[o.dataset.open];if(!r)return;if(r.legacy){alertBox(r);return;}curId=r.id;showPrediction(r);if(r.settle){showSettle(r);tab("kekka");$("settleOut").scrollIntoView();}else tab("yoso");}
-  if(d){const id=d.dataset.del;if(d.dataset.sure!=="1"){d.dataset.sure="1";d.textContent="もう一度押すと削除";return;}delete R[id];await Store.remove(id);renderAll();}
-};
-function alertBox(r){
-  $("settleOut").innerHTML=`<div class="card"><h2>${esc(r.id)}（旧版記録）</h2><p>買い目 ${r.pred.bets.map(b=>esc(b.key)).join("・")}　結果 ${esc(r.result?.winners?.[0]?.key)}　${r.settle.hit?"的中":"不的中"}　${yen(r.settle.profit)}</p>
-  ${r.settle.bets.map(b=>`<p class="why"><b>${esc(b.key)} 勝因</b> ${esc(b.win)}</p><p class="why"><b>敗因</b> ${esc(b.loss)}</p>`).join("")}<p class="sub">${esc(r.settle.note||"")}</p></div>`;tab("kekka");
-}
-$("vars").addEventListener("change",async e=>{
-  const k=e.target.dataset.var;if(!k)return;const v=Number(e.target.value);
-  if(!isFinite(v)){e.target.value=S.vars[k];return;}
-  S.vars[k]=v;S.updatedAt=new Date().toISOString();await Store.save([]);
-});
-$("autoDrive").onchange=()=>{try{localStorage.setItem(LOCALKEY+"-auto",$("autoDrive").checked?"1":"0");}catch(e){}};
-$("saveFull").onclick=async()=>{
-  if(!Drive.avail()){msg("driveMsg","このページからはドライブを使えません。「ファイルに書き出す」を使ってください。","err");return;}
-  msg("driveMsg","保存中…");
-  try{const f=await Drive.saveFull();await Store.save([]);msg("driveMsg","保存しました："+(f?.title||"全データ"),"ok");$("hDrive").textContent="ドライブ：保存済み";refreshHeader();}catch(e){msg("driveMsg",Drive.why(e),"err");}
-};
-async function restoreFlow(el){
-  if(!Drive.avail()){msg(el,"このページからはドライブを使えません。","err");return;}
-  msg(el,"ドライブから読み込み中…");
-  try{const n=await Drive.restore();renderAll();
-    await Store.save(Object.values(R),(i,m)=>msg(el,"読み込み完了。この端末とクラウドに記録中… "+i+"/"+m));
-    msg(el,n+"件のファイルから復元しました（記録 "+Object.keys(R).length+"レース）。","ok");renderAll();}
-  catch(e){msg(el,e.code?Drive.why(e):e.message,"err");}
-}
-$("restore").onclick=()=>restoreFlow("driveMsg");
-$("startRestore").onclick=()=>restoreFlow("startMsg");
-$("exportFile").onclick=async()=>{
-  const text=JSON.stringify(fullData());const name="競輪Ver3_全データ_"+new Date().toISOString().slice(0,10)+".json";
-  try{
-    const dl=window.claude?.use?await claude.use("downloads"):null;
-    if(dl){await dl.save({filename:name,data:new Blob([text],{type:"application/json"})});msg("ioMsg","書き出しました。","ok");return;}
-    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"application/json"}));a.download=name;document.body.appendChild(a);a.click();a.remove();msg("ioMsg","書き出しました。","ok");
-  }catch(e){msg("ioMsg","書き出せませんでした。「コピー」を使ってください。","err");}
-};
+/* ---------- 控え・機種変更（ふだんは使わない） ---------- */
 function canShareFile(){try{return !!navigator.canShare&&navigator.canShare({files:[new File(["{}"],"t.txt",{type:"text/plain"})]});}catch(e){return false;}}
-async function shareBackup(el){
-  const name="競輪Ver3_全データ_"+new Date(Date.now()+9*3600e3).toISOString().slice(0,16).replace(/[-:]/g,"").replace("T","_")+".txt";
-  try{await navigator.share({files:[new File([JSON.stringify(fullData())],name,{type:"text/plain"})],title:name});S.lastFull=new Date().toISOString();await Store.save([]);msg(el,"控えを残しました。","ok");renderNag();refreshHeader();}
-  catch(e){if(e?.name!=="AbortError")msg(el,"共有できませんでした。「ファイルに書き出す」を使ってください。","err");}
-}
-$("shareDrive").onclick=()=>shareBackup("driveMsg");
-let nagLater=false;
-function renderNag(){
-  const days=S.vars.backupDays??7, last=S.lastFull?Date.parse(S.lastFull):0;
-  const since=allRaces().filter(r=>r.settle&&!r.legacy&&!r.replay&&Date.parse(r.settle.at||0)>last).length;
-  const stale=!last||Date.now()-last>days*86400e3;
-  const show=!Drive.avail()&&canShareFile()&&!nagLater&&since>0&&stale;
-  $("backupNag").hidden=!show;
-  if(show)$("nagText").textContent=(last?"前回の控えから"+Math.floor((Date.now()-last)/86400e3)+"日たちました。":"まだドライブに控えがありません。")+"その後に照合したレースが"+since+"件あります。記録はスマホに残っていますが、機種変更や故障に備えて控えを残しておくと安心です。";
-  if($("lastShare"))$("lastShare").textContent="前回の控え："+(last?new Date(last).toLocaleString("ja-JP"):"まだありません");
-}
-$("nagShare").onclick=()=>shareBackup("installMsg");
-$("nagLater").onclick=()=>{nagLater=true;renderNag();};
-$("copyAll").onclick=async()=>{try{await navigator.clipboard.writeText(JSON.stringify(fullData()));msg("ioMsg","コピーしました。","ok");}catch(e){msg("ioMsg","コピーできませんでした。","err");}};
-async function importFiles(files,text,el){
-  const texts=[];
-  for(const f of files||[])texts.push(await f.text());
-  if(text)texts.push(text);
-  if(!texts.length)throw Error("ファイルを選ぶか、データを貼り付けてください。");
-  for(const x of texts)mergeData(JSON.parse(x));
-  renderAll();await Store.save(Object.values(R),(i,m)=>msg(el,"記録中… "+i+"/"+m));
-  msg(el,"読み込みました（"+texts.length+"件・記録 "+Object.keys(R).length+"レース）。","ok");renderAll();
-}
-$("doImport").onclick=async()=>{
-  try{await importFiles([...($("importFile").files||[])],$("importText").value.trim(),"ioMsg");$("importText").value="";}
-  catch(e){msg("ioMsg","読み込めませんでした："+e.message,"err");}
+$("backupBtn").onclick=async()=>{
+  const name="競輪Ver3_全データ_"+new Date(Date.now()+9*3600e3).toISOString().slice(0,16).replace(/[-:]/g,"").replace("T","_");
+  try{
+    if(Drive.avail()){msg("footMsg","ドライブに保存中…");await Drive.saveFull();await Store.save([]);msg("footMsg","ドライブに控えを残しました。","ok");return;}
+    const text=JSON.stringify(fullData());
+    if(canShareFile()){await navigator.share({files:[new File([text],name+".txt",{type:"text/plain"})],title:name});}
+    else{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"application/json"}));a.download=name+".json";document.body.appendChild(a);a.click();a.remove();}
+    S.lastFull=new Date().toISOString();await Store.save([]);msg("footMsg","控えを残しました。","ok");
+  }catch(e){if(e?.name!=="AbortError")msg("footMsg","控えを残せませんでした。","err");}
 };
-$("startImport").onclick=()=>$("startFile").click();
-$("startFile").onchange=async()=>{
-  try{await importFiles([...($("startFile").files||[])],"","startMsg");msg("entryMsg","前のスマホのデータを読み込みました（記録 "+Object.keys(R).length+"レース）。","ok");}
-  catch(e){msg("startMsg","読み込めませんでした："+e.message,"err");}
+$("importBtn").onclick=()=>$("importFile").click();
+$("importFile").onchange=async()=>{
+  try{
+    const files=[...($("importFile").files||[])];if(!files.length)return;
+    for(const f of files)mergeData(JSON.parse(await f.text()));
+    await Store.save(Object.values(R),(i,m)=>msg("footMsg","読み込み中… "+i+"/"+m));
+    msg("footMsg","読み込みました（記録 "+Object.keys(R).length+"レース）。","ok");renderLists();autoLearn();
+  }catch(e){msg("footMsg","読み込めませんでした。競輪予想の控えファイルを選んでください。","err");}
+  $("importFile").value="";
 };
-/* アプリとして入れる（クロームのインストール機能） */
+
+/* ---------- アプリとして入れる（ブラウザで開いたときだけ） ---------- */
 let installEvt=null;
 const isApp=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
 function renderInstall(){
   const show=!window.claude?.use&&!isApp()&&/^https?:$/.test(location.protocol);
-  $("installCard").hidden=!show;
-  $("installBtn").hidden=!installEvt;
-  $("installHelp").hidden=!!installEvt;
-  $("installNote").hidden=!installEvt;
+  $("installCard").hidden=!show;$("installBtn").hidden=!installEvt;$("installHelp").hidden=!!installEvt;$("installNote").hidden=!installEvt;
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvt=e;renderInstall();});
 window.addEventListener("appinstalled",()=>{installEvt=null;$("installCard").hidden=true;});
 $("installBtn").onclick=async()=>{
-  if(!installEvt)return;
-  installEvt.prompt();
+  if(!installEvt)return;installEvt.prompt();
   const r=await installEvt.userChoice.catch(()=>null);
   if(r?.outcome==="accepted"){msg("installMsg","入れました。アプリ一覧の「競輪予想3」から開いてください。","ok");installEvt=null;}
   renderInstall();
 };
-$("copyUrl").onclick=async()=>{try{await navigator.clipboard.writeText(location.origin+location.pathname);msg("installMsg","コピーしました。クロームのアドレス欄に貼り付けて開いてください。","ok");}catch(e){msg("installMsg",location.origin+location.pathname);}};
+
+/* ---------- 貼り付けたらすぐ読む ---------- */
+let pasteTimer=null;
+$("paste").addEventListener("paste",e=>{const t=e.clipboardData?.getData("text");if(t&&t.trim()){e.preventDefault();onPasted(t);}});
+$("paste").addEventListener("input",()=>{clearTimeout(pasteTimer);pasteTimer=setTimeout(()=>{const v=$("paste").value;if(v.trim().length>=60)onPasted(v);},700);});
 
 /* ---------- 起動 ---------- */
 (async()=>{
-  try{$("autoDrive").checked=localStorage.getItem(LOCALKEY+"-auto")!=="0";}catch(e){$("autoDrive").checked=true;}
-  refreshHeader();
+  $("ver").textContent="版 "+K.VERSION;
   await Promise.all([Store.init(),Drive.init()]);
   const d=await Store.load();
-  if(d.state)S=K.migrate(d.state);
-  else{try{const seed=JSON.parse($("seed").textContent);if(seed&&seed.theta){S=K.migrate(seed);S.seeded=true;}}catch(e){}}
   R=d.races||{};
-  renderAll();renderInstall();
+  let loaded=false;
+  if(d.state){S=K.migrate(d.state);loaded=true;}
+  else if(!Object.keys(R).length&&Drive.avail()){
+    // クラウドが空のとき：ドライブの控えから自動で読み込む
+    msg("pasteMsg","前回までの記録を読み込んでいます…");
+    try{await Drive.restore();loaded=!!S.updatedAt;await Store.save(Object.values(R));}catch(e){}
+    msg("pasteMsg","");
+  }
+  if(!loaded){try{const seed=JSON.parse($("seed").textContent);if(seed&&seed.theta){S=K.migrate(seed);S.seeded=true;}}catch(e){}}
+  $("footNote").textContent=Drive.avail()?"ふだんは使いません。記録はクラウドとドライブに自動で保存されています。":"ふだんは使いません。記録はこのスマホに自動で保存されています。機種変更の前に「控えを残す」でドライブなどに保存し、新しいスマホで読み込んでください。";
+  renderLists();renderInstall();
   if(!window.claude?.use&&"serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){
     const l=document.createElement("link");l.rel="manifest";l.href="manifest.webmanifest";document.head.appendChild(l);
     navigator.serviceWorker.register("sw.js").catch(()=>{});
   }
+  autoLearn();
 })();
 }
 </script>
