@@ -1,28 +1,8 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-27T08:08:14.031759+00:00",
+  "generatedAt": "2026-11-28T07:33:42.816523+00:00",
   "entries": [],
   "errors": [
-    {
-      "date": "2026-11-27",
-      "venue": "26",
-      "error": "HTTPError"
-    },
-    {
-      "date": "2026-11-27",
-      "venue": "38",
-      "error": "HTTPError"
-    },
-    {
-      "date": "2026-11-27",
-      "venue": "42",
-      "error": "HTTPError"
-    },
-    {
-      "date": "2026-11-27",
-      "venue": "81",
-      "error": "HTTPError"
-    },
     {
       "date": "2026-11-28",
       "venue": "26",
@@ -44,7 +24,27 @@
       "error": "HTTPError"
     },
     {
-      "date": "2026-11-28",
+      "date": "2026-11-29",
+      "venue": "26",
+      "error": "HTTPError"
+    },
+    {
+      "date": "2026-11-29",
+      "venue": "38",
+      "error": "HTTPError"
+    },
+    {
+      "date": "2026-11-29",
+      "venue": "42",
+      "error": "HTTPError"
+    },
+    {
+      "date": "2026-11-29",
+      "venue": "51",
+      "error": "HTTPError"
+    },
+    {
+      "date": "2026-11-29",
       "venue": "81",
       "error": "HTTPError"
     }
