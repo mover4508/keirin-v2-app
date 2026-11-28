@@ -206,7 +206,7 @@ nav button.on{color:var(--band);font-weight:800}
 // 競輪予想 Ver.3 中核：画面なし・通信なしで動く（予想・照合・学習・メタループ）
 const K=(()=>{
 "use strict";
-const VERSION="3.12.5";
+const VERSION="3.12.6";
 const normal=s=>String(s??"").normalize("NFKC").replace(/\r/g,"");
 const keyOf=a=>[...a].map(Number).sort((x,y)=>x-y).join("-");
 const C3=n=>n*(n-1)*(n-2)/6;
@@ -842,10 +842,37 @@ function fit(state,races,l2g,l2d,maxIt,tol){
   return {J,it};
 }
 const LADDER=[.003,.01,.03,.1,.3,1,3];
-function* metaLoop(state,racesAll){
+function sigOf(races){
+  let h=2166136261;
+  for(const x of races.map(r=>r.id+"|"+(r.settle?.at||"")).sort()){for(const ch of x){h^=ch.codePointAt(0);h=Math.imul(h,16777619);}}
+  return (h>>>0).toString(16)+":"+races.length;
+}
+function* metaLoop(state,racesAll,opts={}){
   const races=settledOf(racesAll), v=state.vars;
   if(races.length<4){yield {phase:"終了",done:true,msg:"照合済みのレースが4レース以上になると実行できます"};return;}
   const reset=s=>{s.theta=clone(s.theta0);s.dG={};s.dN={};};
+  const sig=sigOf(races), last=(state.metaRuns||[]).slice(-1)[0];
+  const same=!!last&&(last.sig?last.sig===sig&&last.version===VERSION:
+    last.races===races.length&&races.every(r=>!r.settle?.at||r.settle.at<=last.at));
+  if(!opts.force&&same){
+    yield {phase:"終了",done:true,skipped:true,last,msg:"前回（"+new Date(last.at).toLocaleString("ja-JP")+"）から照合済みのレースが増えていないため、結果は前回と同じです。実行を省きました。"};
+    return;
+  }
+  const newN=last?races.length-(last.races||0):races.length;
+  if(!opts.force&&last&&last.version===VERSION&&newN>0&&newN<Math.max(5,races.length*.1)){
+    // 増えたレースが少ないとき：前回選んだ強さを使い、交差検証を省いて本学習だけ行う
+    const before=evalLoss(state,races);let it=0;
+    if(last.adopted&&last.chosen!=null){
+      reset(state);v.l2g=last.chosen;v.l2d=last.chosen*5;
+      let J=objective(state,races,v.l2g,v.l2d);
+      while(true){const r=fit(state,races,v.l2g,v.l2d,10,v.metaTol);it+=r.it;const imp=J-r.J;J=r.J;yield {phase:"本学習",it,J};if(imp<v.metaTol||r.it<10)break;}
+    }
+    const a=tuneA(state,racesAll), after=evalLoss(state,races);
+    const run={at:new Date().toISOString(),mode:"簡易",races:races.length,newRaces:newN,sig,version:VERSION,folds:last.folds,priorCV:last.priorCV,cv:last.cv,
+      chosen:last.adopted?last.chosen:null,adopted:!!last.adopted,before:r2(before,4),after:r2(after,4),iterations:it,a};
+    state.metaRuns=[...(state.metaRuns||[]),run].slice(-50);
+    yield {phase:"終了",done:true,run};return;
+  }
   const base=clone(state);reset(base);
   const kf=Math.min(5,Math.max(2,Math.floor(races.length/8)));
   const folds=Array.from({length:kf},(_,k)=>races.filter((_,i)=>i%kf===k));
@@ -879,7 +906,7 @@ function* metaLoop(state,racesAll){
   }
   const a=tuneA(state,racesAll);
   const after=evalLoss(state,races);
-  const run={at:new Date().toISOString(),races:races.length,folds:kf,priorCV:r2(priorCV,4),cv:cv.map(c=>({lam:c.lam,cv:r2(c.cv,4)})),
+  const run={at:new Date().toISOString(),mode:"全体",races:races.length,newRaces:newN,sig,version:VERSION,folds:kf,priorCV:r2(priorCV,4),cv:cv.map(c=>({lam:c.lam,cv:r2(c.cv,4)})),
     chosen:useFit?best.lam:null,adopted:useFit,before:r2(before,4),after:r2(after,4),iterations:res.it,a};
   state.metaRuns=[...(state.metaRuns||[]),run].slice(-50);
   yield {phase:"終了",done:true,run};
@@ -1378,14 +1405,17 @@ function renderLearn(){
   $("changes").innerHTML=(S.changes||[]).slice(-20).reverse().map(c=>`<li><b>${esc(c.race)}</b> <span class="sub">${c.kept?"反映":"巻き戻し"}</span><div class="sub">${esc((c.changes||[]).map(x=>x.label+(x.d>0?" +":" ")+x.d).join("、")||"変更なし")}</div></li>`).join("")||`<li class="sub">まだありません</li>`;
 }
 function metaSummary(m){
+  if(m.mode==="簡易")return `<div class="msg ok">${esc(new Date(m.at).toLocaleString("ja-JP"))}　簡易（増えたレース ${m.newRaces}件のため、前回の交差検証の結果を使って本学習だけ実行）
+${m.adopted?"強さ "+m.chosen+" で学び直し（損失 "+m.before+" → "+m.after+"）":"前回、事前の変数のほうが良かったため、変数は変えていません"}
+的中重視度：${Object.entries(m.a).map(([k,v])=>k+" "+v.a+"（"+v.n+"レース）").join("、")}</div>`;
   return `<div class="msg ok">${esc(new Date(m.at).toLocaleString("ja-JP"))}　${m.races}レース・交差検証${m.folds}分割
 事前のまま：${m.priorCV}　/　強さ別：${m.cv.map(c=>c.lam+"→"+c.cv).join("、")}
 ${m.adopted?"採用：強さ "+m.chosen+"（損失 "+m.before+" → "+m.after+"）":"どの強さでも事前より良くならないため、変数は変えていません"}
 的中重視度：${Object.entries(m.a).map(([k,v])=>k+" "+v.a+"（"+v.n+"レース）").join("、")}</div>`;
 }
-async function runMeta(){
+async function runMeta(force){
   metaStop=false;$("doMeta").disabled=true;$("stopMeta").hidden=false;msg("metaMsg","");
-  const g=K.metaLoop(S,allRaces());const total=7*5;let k=0;
+  const g=K.metaLoop(S,allRaces(),{force:force===true});const total=7*5;let k=0;
   const step=()=>new Promise(r=>setTimeout(r,0));
   try{
     for(;;){
@@ -1393,7 +1423,10 @@ async function runMeta(){
       const y=g.next().value;if(!y)break;
       if(y.phase==="検証"){k++;$("metaBar").style.width=Math.min(95,k/total*100)+"%";$("metaMsg").innerHTML=`<div class="msg">検証中：強さ ${y.lam}・${y.fold}/${y.kf}</div>`;}
       if(y.phase==="本学習"){$("metaBar").style.width="97%";$("metaMsg").innerHTML=`<div class="msg">本学習：${y.it}回目・目的関数 ${y.J.toFixed(5)}</div>`;}
-      if(y.done){$("metaBar").style.width="100%";$("metaMsg").innerHTML=y.run?metaSummary(y.run):`<div class="msg">${esc(y.msg)}</div>`;break;}
+      if(y.done){$("metaBar").style.width="100%";
+        $("metaMsg").innerHTML=y.run?metaSummary(y.run):`<div class="msg">${esc(y.msg)}</div>`+(y.skipped?`<button id="forceMeta" style="width:100%;margin-top:8px">それでも最初から実行する</button>`:"");
+        if(y.skipped){$("forceMeta").onclick=()=>runMeta(true);}
+        break;}
       await step();
     }
     S.updatedAt=new Date().toISOString();
@@ -1432,7 +1465,7 @@ $("clrEntry").onclick=()=>{$("entry").value="";msg("entryMsg","");};
 $("doSettle").onclick=doSettle;
 $("raceSel").onchange=renderSelBets;
 $("selBets").onclick=e=>{const d=e.target.closest("[data-pick]");if(d){$("raceSel").value=d.dataset.pick;renderSelBets();}};
-$("doMeta").onclick=runMeta;$("stopMeta").onclick=()=>{metaStop=true;};
+$("doMeta").onclick=()=>runMeta(false);$("stopMeta").onclick=()=>{metaStop=true;};
 $("raceList").onclick=async e=>{
   const o=e.target.closest("[data-open]"),d=e.target.closest("[data-del]");
   if(o){const r=R[o.dataset.open];if(!r)return;if(r.legacy){alertBox(r);return;}curId=r.id;showPrediction(r);if(r.settle){showSettle(r);tab("kekka");$("settleOut").scrollIntoView();}else tab("yoso");}
